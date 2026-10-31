@@ -10,7 +10,7 @@ Fluxo autorizado em 31/10/2026. Implementação local em `.github/workflows/depl
 - A tag Git e a tag da versão Cloudflare usam `vX.Y.Z`. A mensagem Cloudflare acompanha o idioma inglês do título do PR e vem desse título, acrescida do número do PR e do commit completo; títulos longos são reduzidos por bytes sem cortar caracteres. Tags Git são imutáveis e criadas somente depois da confirmação da versão com 100% do tráfego.
 - Nenhuma migração, criação de recurso, mudança de domínio ou rollback de banco faz parte da automação. Aplicação de migrações de produção continua manual, mediante autorização explícita.
 
-O validador verifica o prefixo feat/fix e uma linha de texto; não identifica automaticamente o idioma. A mensagem de erro do código desta entrega ainda menciona português, preservada na exceção aceita; corrigir esse texto na próxima manutenção, sem tratar isso como regra atual.
+O validador verifica o prefixo feat/fix e uma linha de texto; não identifica automaticamente o idioma. Sua orientação textual exige descrição em inglês, conforme o padrão atual.
 
 ## Configuração no GitHub e Cloudflare
 
@@ -36,7 +36,7 @@ As publicações usam um grupo de concorrência com `cancel-in-progress: false` 
 
 ## Falhas e retomada
 
-O Actions mostra o motivo técnico controlado no log, um resumo e o artefato **`cantina-deployment`**, com retenção de 30 dias. O JSON contém commit/tag/PR, versão anterior, indicação de tentativa de upload e, quando confirmados, IDs da versão/deployment e tráfego. Não inclui credenciais, headers, payloads brutos de API ou registros financeiros. Guardar os identificadores relevantes em RELEASES/STATUS ao conferir uma entrega; o workflow não cria commits automáticos nesses documentos.
+O Actions mostra o motivo técnico controlado no log, um resumo e o artefato **`cantina-deployment`**, com retenção de 30 dias. O JSON contém commit/tag/PR, versão anterior, etapa atual (`phase`), indicação de tentativa de upload e código técnico controlado de falha (`failure`), quando houver, e, quando confirmados, IDs da versão/deployment e tráfego. Não inclui credenciais, headers, payloads brutos de API ou registros financeiros. Falhas de transporte/timeout, JSON inválido e operações locais usam códigos de uma lista explícita, sem serializar mensagem/stack/causa do provedor; a exceção original continua propagando. O resumo também mostra etapa, tentativa de upload e código. Guardar os identificadores relevantes em RELEASES/STATUS ao conferir uma entrega; o workflow não cria commits automáticos nesses documentos.
 
 - Falha antes do upload: sem tag de sucesso; corrigir a causa e executar novamente.
 - Falha/timeout durante ou depois do upload: o resultado pode ser incerto. Não declarar produção inalterada; conferir metadados na Cloudflare e o relatório. Não há retry automático de escrita nem rollback automático.
@@ -45,7 +45,7 @@ O Actions mostra o motivo técnico controlado no log, um resumo e o artefato **`
 - `superseded`: a `main` avançou; nenhuma publicação foi feita por essa execução. Usar a execução do commit mais recente.
 - Depois que a `main` avançou ou houve publicação manual, não forçar tags nem reexecutar código antigo para corrigir histórico. Conferir a situação e tratar a recuperação separadamente.
 
-Para repetir após aplicar manualmente migrações autorizadas ou corrigir permissão: usar Re-run jobs na execução correspondente, se ainda for a `main` atual, ou **Run workflow** escolhendo `main`. O disparo manual também executa testes e precisa de PR mesclado associado. A primeira execução real ainda precisa confirmar autenticação, permissões, nomes das migrações e formatos de metadados; simulações locais não comprovam isso.
+Para repetir após aplicar manualmente migrações autorizadas ou corrigir permissão: usar Re-run jobs na execução correspondente, se ainda for a `main` atual, ou **Run workflow** escolhendo `main`. O disparo manual também executa testes e precisa de PR mesclado associado. A execução real é necessária para confirmar autenticação, permissões, nomes das migrações e formatos de metadados; simulações locais não comprovam isso. Re-run de uma execução antiga usa o código antigo: para obter diagnósticos introduzidos numa correção, primeiro mesclar o PR da correção e usar a execução nova.
 
 ## Referências
 
