@@ -1,6 +1,6 @@
-# Projeto de testes unitários e de integração
+# Testes unitários e de integração
 
-Proposta de 30/10/2026, solicitada pelo responsável. Ainda não implementada: ferramenta, dependências e ambiente de execução aguardam aprovação. Contratos de negócio em [ARCHITECTURE.md](ARCHITECTURE.md); ambiente em [LOCAL.md](LOCAL.md); estado em [STATUS.md](STATUS.md).
+Implementação local autorizada pelo responsável em 30/10/2026. Vitest 5.0.5 e Miniflare 5.20261019.2-beta fixados no package/lockfile; Miniflare conserva a versão já utilizada pelo Wrangler. Nenhuma regra produtiva alterada. Contratos de negócio em [ARCHITECTURE.md](ARCHITECTURE.md); ambiente em [LOCAL.md](LOCAL.md); estado em [STATUS.md](STATUS.md).
 
 ## Objetivo e limite
 
@@ -8,16 +8,16 @@ Proteger as principais regras financeiras e de acesso com uma suíte pequena e d
 
 Este projeto não inclui navegador, comparação visual, carga, cobertura percentual obrigatória ou integração contínua. TypeScript continua responsável pelos tipos estáticos; testes exercitam comportamento e validação de dados durante a execução. Revisão funcional da interface permanece com o responsável.
 
-## Organização proposta
+## Organização aprovada
 
 - Unitários: funções puras de regras, inputs Zod, dinheiro, datas, comprovantes e sessão. Casos tabelados com entrada válida, inválida e limites relevantes; sem banco.
 - Integração: entrada pelo método público do use case, implementações reais dos repositories Drizzle e D1 emulado com as migrações SQL reais. Conferir retorno ou código técnico de erro, consultas públicas de saldo/lista/histórico e persistência. Não substituir repositories financeiros por mocks.
 - Guardas do banco: poucos casos adicionais escrevem pela infraestrutura após uma leitura desatualizada, para provar que as triggers também impedem saldo insuficiente e versões concorrentes. Testar somente o use case não comprova essas proteções atômicas.
 - API externa de login/perfil: respostas controladas, sem internet nem credenciais reais. R2 emulado para integração de anexos. Sessões sintéticas somente no processo de testes, sem bypass na aplicação.
 
-Sugestão técnica para aprovação: Vitest como executor único e Miniflare para D1/R2 emulados no processo de testes. Antes de instalar, conferir compatibilidade e versões com o runtime atual. Não adicionar HTTP interno, API de teste, container de injeção ou modificar a arquitetura produtiva para acomodar o executor.
+Vitest é o executor único e Miniflare emula D1/R2. A configuração de testes usa aliases exclusivos para `server-only` e para o acesso ao contexto Cloudflare, conectando o repository R2 real ao bucket descartável. Isso não altera o código produtivo. Nas verificações das propriedades enviadas aos componentes cliente, a composição é substituída por casos de uso reais e somente a renderização cliente é dispensada. Sem HTTP interno do app, API de teste ou novo container de injeção. Referências técnicas: [configuração Vitest](https://vitest.dev/config/), [D1 em Miniflare](https://developers.cloudflare.com/workers/testing/miniflare/storage/d1/). A API nativa da versão 5 foi conferida também nos tipos instalados; não copiar exemplos antigos da versão 4 sem adaptação.
 
-Estrutura sugerida: `tests/unit/`, `tests/integration/` e `tests/support/`, agrupando arquivos por funcionalidade. Helpers mínimos de criação de caixa, evento, sessão e arquivo sintético; cada teste explicita os valores que importam. Não recriar `verification/`.
+Estrutura: `tests/unit/`, `tests/integration/` e `tests/support/`, agrupando arquivos por funcionalidade. Helpers mínimos de criação de caixa, evento, sessão e arquivo sintético; cada teste explicita os valores que importam. Não recriar `verification/`.
 
 ## Cobertura unitária essencial
 
@@ -51,18 +51,28 @@ Cada linha representa um grupo pequeno de cenários independentes, não um únic
 | Comprovantes privados       | Salvar e ler bytes pelo use case com vínculo válido; manter/remover anexos na edição preserva objetos históricos. Rejeitar receiptId de outro registro, sessão ausente e perfil proibido. Retornos destinados à interface não expõem chaves privadas.                                                   |
 | Acesso e contratos externos | Leituras/gravações representativas recusam sessão ausente ou papel proibido sem efeitos. Login/perfil com resposta inválida, credenciais recusadas ou identidade divergente não concluem autenticação; respostas válidas permitem o fluxo esperado, sem chamar o serviço real.                          |
 
-## Isolamento e execução proposta
+## Isolamento e execução
 
 1. Criar D1 e R2 descartáveis com dados inteiramente sintéticos e aplicar as migrações versionadas em ordem. Não usar `.wrangler/state`, `.env`, banco de desenvolvimento ou recursos remotos.
 2. Limpar/recriar apenas esse ambiente descartável entre cenários. Cada teste deve funcionar sozinho e em qualquer ordem; relógio controlado nos casos de expiração e datas.
 3. Encerrar o emulador ao terminar, inclusive após erro. Sem servidor Next, portas fixas ou processos deixados em segundo plano.
-4. Propor `npm run test:unit`, `npm run test:integration` e `npm test` para ambos, com execução única por padrão; sem comandos disponíveis até implementar.
+4. Executar `npm run test:unit`, `npm run test:integration` ou `npm test` para ambos, com execução única por padrão. Para um cenário isolado: `npm run test:integration -- -t "trecho do nome"`. Os arquivos de integração executam em sequência para manter um contexto descartável por vez. Não usar `it.concurrent` com o harness compartilhado; concorrência financeira é exercitada dentro do próprio cenário.
 5. Ao alterar código, executar os grupos afetados e o build completo Cloudflare/TypeScript conforme o contrato do projeto. Não confundir aprovação da suíte com validação da interface ou publicação.
 
-## Critério de conclusão e sequência
+## Manutenção e limites da evidência
 
-Primeiro aprovar ferramenta, dependência e isolamento. Depois implementar infraestrutura mínima e os unitários; na sequência, integração financeira, concorrência/histórico e acesso/comprovantes. A entrega deste projeto compreende todos os grupos essenciais, não somente o primeiro bloco.
+As migrações SQL são lidas e aplicadas em ordem no banco novo de cada cenário, em batches transacionais, usando o parser SQL do Wrangler para preservar corpos de triggers. O parser é uma API `unstable` do Wrangler: atualizar a dependência exige executar a integração e conferir sua compatibilidade. O harness descarta somente seu diretório temporário e encerra o Miniflare no sucesso e na falha; nunca apaga estado do app.
 
-A suíte estará pronta quando os cenários listados tiverem resultados determinísticos, passarem individualmente e em conjunto e o build continuar aprovado. Uma execução com falha deve terminar com código diferente de zero e identificar a regra violada, sem imprimir dados sensíveis. Nenhuma mudança de regra de negócio pode ser feita apenas para tornar um teste verde.
+O emulador precisa de processos e sockets locais em portas aleatórias de loopback. A execução restrita do agente pode exigir liberação da ferramenta para isso. Não há servidor Next, acesso ao D1/R2 remoto ou chamada real à API de login. Vitest não carrega `.env` (`envDir: false`); os contratos externos recebem respostas sintéticas por injeção de `fetch`. O deploy isolado não copia `tests/` nem a configuração Vitest para o pacote.
 
-Antes da implementação, consolidar nos documentos donos e em AGENTS.md a nova autorização de testes automatizados, substituindo a restrição anterior no escopo aprovado. Produção, migrações do banco local e publicação permanecem fora deste projeto.
+Arquivos donos da cobertura:
+
+- `tests/unit/rules.test.ts`: dinheiro, datas, inputs e regras de pedidos/insumos.
+- `tests/unit/receipts-session.test.ts`: metadados/conteúdo de comprovantes e sessão interna.
+- `tests/integration/finance.test.ts`: saldos, CRUD financeiro, snapshots, repetição, concorrência, vínculos e Home.
+- `tests/integration/receipts-access.test.ts`: R2, vínculos privados, acesso e propriedades enviadas aos componentes cliente pelas páginas reais, sem navegador.
+- `tests/integration/auth.test.ts`: login/perfil com repositories reais, transporte controlado e sessão sintética assinada.
+
+A suíte deve passar individualmente e em conjunto, com saída diferente de zero nas falhas e identificação da regra violada. Ao modificar regras cobertas, atualizar os cenários correspondentes sem espelhar detalhes internos. Não alterar regra de negócio apenas para tornar um teste verde.
+
+Os testes não validam visual, interação no navegador, cabeçalhos HTTP das rotas de comprovantes, carga ou serviço externo real. A implementação não resolve a assinatura pendente do JWT externo nem reconcilia objetos R2 sem vínculo. Não exige limpeza de objetos após falha D1: o contrato preserva resultados incertos. Nenhuma migração no banco de desenvolvimento ou produção faz parte da execução da suíte.

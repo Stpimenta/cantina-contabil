@@ -1,6 +1,6 @@
 # Desenvolvimento local e publicação
 
-Revisado em 28/10/2026. Estado corrente em [STATUS.md](STATUS.md); histórico de entregas e recuperação em [RELEASES.md](RELEASES.md).
+Revisado em 30/10/2026. Estado corrente em [STATUS.md](STATUS.md); histórico de entregas e recuperação em [RELEASES.md](RELEASES.md).
 
 Requisito: Node.js 22.17 ou posterior compatível, npm e dependências do lockfile (`npm ci`). Miniflare/workerd já vêm com o Wrangler instalado no projeto; não há instalação global ou assinatura adicional para rodar localmente.
 
@@ -91,7 +91,17 @@ Não apagar .wrangler/state nem reaplicar migrações manualmente para contornar
 
 ## Verificação autorizada
 
-Para código: npm run build:cloudflare inclui Next/TypeScript e bundle OpenNext completo. Não iniciar o app para testar por conta própria, recriar suíte/fixtures, percorrer fluxos ou gerar screenshots. O responsável faz testes funcionais. Para documentação, revisar conteúdo, referências e formatação; não repetir build. Falha ou mudança adicional pode justificar nova compilação.
+Testes unitários e de integração autorizados em 30/10/2026, com Vitest e Miniflare. Não precisam de `.env`, conta GestPV, app aberto ou recursos Cloudflare. Dados sintéticos e D1/R2 descartáveis em diretórios temporários exclusivos, removidos ao final. As migrações reais são aplicadas somente nesses bancos novos; `.wrangler/state` e os bancos existentes permanecem intactos. O emulador inicia e encerra seus processos/portas aleatórias de loopback durante a execução.
+
+```bash
+npm run test:unit
+npm run test:integration
+npm test
+```
+
+Os comandos executam uma vez e falhas retornam código diferente de zero. Para um cenário: `npm run test:integration -- -t "trecho do nome"`. Cobertura e organização em [TESTING.md](TESTING.md). Em ambiente restrito, `listen EPERM` indica falta de permissão para sockets locais do Miniflare; não mudar o app nem usar banco remoto para contornar.
+
+Para código: executar os grupos afetados e o build completo Cloudflare/TypeScript. Ao alterar a suíte, executar também `npm run typecheck` para conferir os tipos de testes; o build isolado não copia `tests/` ou `vitest.config.mts`. Com ambiente do responsável aberto, usar `npm run deploy -- --build-only`, preservando os builds em uso e sem publicar. Não iniciar o app, percorrer fluxos de interface ou gerar screenshots; esses testes funcionais continuam com o responsável. Para documentação, revisar conteúdo, referências e formatação; não repetir build. Falha ou mudança adicional pode justificar nova compilação.
 
 Migrações exigem cuidado com preservação: backup local privado antes, quick_check, foreign_key_check e comparação dos registros/colunas antigos; snapshots novos conferidos quando houver backfill. Não imprimir dados pessoais completos ou segredos.
 

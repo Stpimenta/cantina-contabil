@@ -1,6 +1,6 @@
 # Arquitetura e padrões aprovados
 
-Contrato atual consolidado em 28/10/2026. Histórico de versões em [RELEASES.md](RELEASES.md); contexto de retomada em [STATUS.md](STATUS.md). Uma pendência não autoriza implementação.
+Contrato atual consolidado em 30/10/2026. Histórico de versões em [RELEASES.md](RELEASES.md); contexto de retomada em [STATUS.md](STATUS.md). Uma pendência não autoriza implementação.
 
 ## Stack e limites atuais
 
@@ -261,7 +261,7 @@ Deploy e alterações remotas somente com pedido explícito. `npm run deploy` ex
 
 Tema/tokens/base e padrões reutilizados em app/globals.css; CSS Modules ao lado de cada dono. SelectField usa lista própria com options serializáveis, valor e onValueChange; hidden input mantém FormData e o evento input do filtro automático. Contratos completos em [DESIGN.md](DESIGN.md) e [UX-CONTRACT.md](UX-CONTRACT.md).
 
-Suíte inicial e fixtures foram removidas por solicitação. Não iniciar cobertura nova; manter verificações essenciais. Notas de releases descrevem verificações históricas, não testes ainda existentes. Não recriar verification/; resumir checagens no chat.
+Testes unitários e de integração foram autorizados em 30/10/2026 e implementados em `tests/`, com Vitest e D1/R2 descartáveis no Miniflare. Casos de uso e repositories reais protegem as regras financeiras; dados e serviços externos são sintéticos, sem bypass no app. Cobertura, isolamento e limites em [TESTING.md](TESTING.md); comandos em [LOCAL.md](LOCAL.md#verificação-autorizada). Executar os grupos afetados pelas mudanças e manter o build completo Cloudflare/TypeScript. Não recriar verification/, testes visuais, carga ou cobertura percentual sem novo pedido. Notas de releases conservam verificações históricas, não substituem este contrato.
 
 A migração 0010_event_soft_delete.sql adiciona autoria/data de exclusão em events e bloqueios atômicos. A exclusão incrementa a versão e grava deletedAt/deletedBy/deletedByName no snapshot; a auditoria existente registra a atualização de estado, apresentada como Evento excluído no histórico do caixa. Versões anteriores e produtos permanecem preservados. Eventos excluídos não aceitam edição nem novos pedidos.
 
@@ -298,7 +298,7 @@ A migração 0010_event_soft_delete.sql adiciona autoria/data de exclusão em ev
 
 - Múltiplos comprovantes: EventSupplyReceipt representa id/key/type/size (tamanho null para anexos legados). Coluna receipts_json em event_supplies guarda até 5 referências como parte da mesma versão/gravação atômica do insumo, conforme snapshots já usados no domínio. receipt_key/receipt_type permanecem como primeiro anexo para compatibilidade e CHECKs anteriores. Migração 0018_supply_multiple_receipts.sql converte referências antigas sem regravar autoria/versão/auditoria; recria guardas financeiros e snapshots, acrescenta validação da lista e imutabilidade na exclusão. Novos snapshots mantêm lista privada e receiptCount; consultas removem receipts/receiptKey antes da interface.
 - Edição envia retainedReceiptIds, não chaves ou metadados confiáveis do navegador. O servidor resolve IDs exclusivamente nos anexos do insumo atual; IDs ausentes/versão concorrente geram conflito. Metadados novos vêm dos Files reais. X retira referência somente ao salvar; cancelar preserva lista original, objetos anteriores ficam no R2 para histórico. A rota autenticada de comprovante recebe receiptId opcional e valida vínculo; URL antiga sem ID continua abrindo o primeiro anexo.
-- Referências de capacidade: [Server Actions bodySizeLimit](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverActions), [limites Workers](https://developers.cloudflare.com/workers/platform/limits/) e [uploads R2](https://developers.cloudflare.com/r2/objects/upload-objects/). Consulta documental não equivale a teste funcional ou de carga; manter verificação autorizada por compilação.
+- Referências de capacidade: [Server Actions bodySizeLimit](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverActions), [limites Workers](https://developers.cloudflare.com/workers/platform/limits/) e [uploads R2](https://developers.cloudflare.com/r2/objects/upload-objects/). Consulta documental não equivale a teste funcional ou de carga; manter compilação e testes autorizados no escopo de TESTING.md, sem inferir validação de carga.
 
 - Migração 0019_supply_donor_name.sql acrescenta donor_name com padrão vazio e limite de 100 caracteres, permitido apenas em doações. Novos snapshots registram o nome; auditorias anteriores permanecem intactas. Exclusão lógica preserva o campo.
 
