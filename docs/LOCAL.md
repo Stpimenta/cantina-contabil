@@ -128,7 +128,7 @@ Quando houver novo pedido explícito:
 1. Conferir STATUS/RELEASES, pacote/lockfile e migrações pendentes. Preservar configurações/segredos; não criar bucket/banco novo sem pedido.
 2. Registrar ponto remoto com D1 Time Travel antes de migrar e conferir contagens/totais agregados. Exportação completa da produção para arquivo local foi recusada pela revisão automática nesta sessão; não contornar ou repetir por conveniência. Recuperação permanece no próprio D1; restauração exige autorização separada e análise de gravações posteriores.
 3. Aplicar somente as migrações remotas autorizadas, conferir integridade/referências e preservação dos agregados. Não executar por rotina enquanto desenvolve. Migração local aplicada não comprova estado remoto.
-4. Atualizar versão de package.json/package-lock.json e publicar pelo comando abaixo, com tag e descrição curta em português. O script prepara uma cópia temporária isolada, compila e seleciona wrangler.jsonc/perfil cantina-contabil; **não aplica migrações remotas**.
+4. Atualizar versão de package.json/package-lock.json e publicar pelo comando abaixo, com tag e descrição curta em inglês. O script prepara uma cópia temporária isolada, compila e seleciona wrangler.jsonc/perfil cantina-contabil; **não aplica migrações remotas**.
 5. Confirmar tag/descrição, ID da versão e porcentagem do tráfego por metadados antes de declarar sucesso. Registrar RELEASES, atualizar STATUS e a matriz de migrações, sem alegar teste funcional pelo build.
 
 ```bash

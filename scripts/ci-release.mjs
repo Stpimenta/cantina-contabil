@@ -1,4 +1,8 @@
-import { ReleaseError } from "./release-error.mjs";
+import {
+  ReleaseError,
+  releaseFailure,
+  releaseFailureMessage,
+} from "./release-error.mjs";
 import { execFileSync } from "node:child_process";
 import {
   readFileSync,
@@ -153,15 +157,18 @@ export async function publishRelease({
   record,
 }) {
   let prepared;
+  record.phase = "check-main";
   if ((await github.head()) !== release.sha) {
     record.status = "superseded";
     return;
   }
+  record.phase = "read-production";
   const live = await cloudflare.active();
   record.previous = {
     deploymentId: live.deployment.id,
     versionId: live.version.id,
   };
+  record.phase = "check-git-tag";
   const decision = deploymentDecision(
     release.tag,
     release.sha,
@@ -169,26 +176,33 @@ export async function publishRelease({
     await github.tag(release.tag),
   );
   if (decision === "deploy") {
+    record.phase = "check-migrations";
     checkMigrationNames(migrationNames, await cloudflare.migrations());
     try {
+      record.phase = "build";
       prepared = await prepare();
       // Recheck after the potentially long build, immediately before the upload.
+      record.phase = "recheck-main";
       if ((await github.head()) !== release.sha) {
         record.status = "superseded";
         return;
       }
+      record.phase = "recheck-migrations";
       checkMigrationNames(migrationNames, await cloudflare.migrations());
+      record.phase = "recheck-production";
       const latest = await cloudflare.active();
       if (latest.deployment.id !== live.deployment.id)
         throw new ReleaseError(
           "Produção mudou durante o build; conferir antes de repetir.",
         );
+      record.phase = "upload";
       record.uploadAttempted = true;
       await upload(prepared, release);
     } finally {
       prepared?.cleanup();
     }
   }
+  record.phase = "confirm-production";
   const actual = await cloudflare.active();
   if (
     actual.version.annotations?.["workers/tag"] !== release.tag ||
@@ -208,8 +222,10 @@ export async function publishRelease({
   };
   // Even a tag API failure must preserve the confirmed deployment in the report.
   record.status = "deployed-tag-pending";
+  record.phase = "create-git-tag";
   await github.createTag(release.tag, release.sha);
   record.status = decision === "already-live" ? "already-live" : "deployed";
+  record.phase = "complete";
 }
 
 async function main(command) {
@@ -254,6 +270,7 @@ async function main(command) {
     uploadAttempted: false,
   };
   try {
+    record.phase = "find-pull-request";
     const pr = await github.pullRequest(sha);
     const release = {
       sha,
@@ -262,6 +279,7 @@ async function main(command) {
       pullRequest: pr.number,
     };
     record.pullRequest = pr.number;
+    record.phase = "read-config";
     const parsed = ts.parseConfigFileTextToJson(
       "wrangler.jsonc",
       readFileSync(join(root, "wrangler.jsonc"), "utf8"),
@@ -305,13 +323,19 @@ async function main(command) {
         deployPrepared(prepared.workspace, metadata.tag, metadata.message, env);
       },
     });
+  } catch (error) {
+    record.failure = releaseFailure(error);
+    console.error(
+      `Etapa ${record.phase}: ${releaseFailureMessage(record.failure)}`,
+    );
+    throw error;
   } finally {
     const report = join(process.env.RUNNER_TEMP, "cantina-deployment.json");
     writeFileSync(report, `${JSON.stringify(record, null, 2)}\n`, {
       mode: 0o600,
     });
     summary(
-      `### Publicação ${record.tag}\n\nEstado: **${record.status}**\n\nCommit: \`${sha}\`\n\n${record.confirmed ? `Worker: \`${record.confirmed.versionId}\` · deployment: \`${record.confirmed.deploymentId}\` · tráfego: 100%.` : "Nenhuma publicação confirmada por este fluxo. Se houve tentativa de upload, conferir o estado remoto antes de repetir."}\n\nRelatório: artefato cantina-deployment desta execução. Migrações não são aplicadas pelo Actions.`,
+      `### Publicação ${record.tag}\n\nEstado: **${record.status}**\n\nEtapa: \`${record.phase ?? "initialization"}\` · envio iniciado: **${record.uploadAttempted ? "sim" : "não"}**${record.failure ? ` · erro: ${record.failure.code}${record.failure.detail ? ` (${record.failure.detail})` : ""}` : ""}\n\nCommit: \`${sha}\`\n\n${record.confirmed ? `Worker: \`${record.confirmed.versionId}\` · deployment: \`${record.confirmed.deploymentId}\` · tráfego: 100%.` : "Nenhuma publicação confirmada por este fluxo. Se houve tentativa de upload, conferir o estado remoto antes de repetir."}\n\nRelatório: artefato cantina-deployment desta execução. Migrações não são aplicadas pelo Actions.`,
     );
   }
 }
@@ -321,7 +345,7 @@ if (
 ) {
   main(process.argv[2]).catch((error) => {
     // Never print HTTP bodies, headers, tokens, raw Zod errors or provider payloads.
-    if (error instanceof ReleaseError) console.error(error.message);
+    console.error(releaseFailureMessage(releaseFailure(error)));
     console.error(
       "Fluxo interrompido: conferir versão/PR, permissões (Workers Editor e D1 Read), migrações e relatório da execução. Não houve rollback ou migração automática.",
     );

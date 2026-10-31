@@ -319,3 +319,41 @@ describe("contratos de API do CI", () => {
     ).rejects.toThrow(/100%/);
   });
 });
+
+describe("safe failure diagnostics", () => {
+  it("identifies a failed API recheck after the build without starting upload", async () => {
+    const h = setup();
+    const cause = Object.assign(new Error("private socket payload"), {
+      code: "UND_ERR_SOCKET",
+    });
+    const error = new TypeError("private fetch payload", { cause });
+    h.github.head.mockResolvedValueOnce(sha).mockRejectedValueOnce(error);
+    await expect(publishRelease(h)).rejects.toBe(error);
+    expect(h.record).toMatchObject({
+      phase: "recheck-main",
+      uploadAttempted: false,
+    });
+    expect(h.cleanup).toHaveBeenCalledOnce();
+    expect(h.upload).not.toHaveBeenCalled();
+    expect(h.github.createTag).not.toHaveBeenCalled();
+  });
+  it.each(["recheck-migrations", "recheck-production"])(
+    "records %s separately from the build",
+    async (phase) => {
+      const h = setup();
+      const error = new TypeError("private response");
+      if (phase === "recheck-migrations")
+        h.cloudflare.migrations
+          .mockResolvedValueOnce(["0001_initial.sql"])
+          .mockRejectedValueOnce(error);
+      else
+        h.cloudflare.active
+          .mockResolvedValueOnce(live())
+          .mockRejectedValueOnce(error);
+      await expect(publishRelease(h)).rejects.toBe(error);
+      expect(h.record.phase).toBe(phase);
+      expect(h.record.uploadAttempted).toBe(false);
+      expect(h.upload).not.toHaveBeenCalled();
+    },
+  );
+});

@@ -68,6 +68,7 @@ O emulador precisa de processos e sockets locais em portas aleatórias de loopba
 Arquivos donos da cobertura:
 
 - `tests/unit/rules.test.ts`: dinheiro, datas, inputs e regras de pedidos/insumos.
+- `tests/unit/release-error.test.mjs`: classificação técnica controlada e ausência de conteúdo privado nos diagnósticos.
 - `tests/unit/deploy-worker.test.mjs`: envio por argumentos, autenticação por token/perfil e resultado incerto, com processo simulado.
 - `tests/unit/release.test.mjs`: versões/tags, APIs controladas e falhas/repetição do fluxo de publicação, sem rede ou deploy real. Arquivo .mjs para testar scripts Node existentes sem acrescentar executor ou configuração de compilação.
 - `tests/unit/receipts-session.test.ts`: metadados/conteúdo de comprovantes e sessão interna.

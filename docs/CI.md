@@ -5,10 +5,12 @@ Fluxo autorizado em 31/10/2026. Implementação local em `.github/workflows/depl
 ## Decisões aprovadas
 
 - Cada PR destinado à `main` informa uma versão nova, escolhida no próprio PR alterando `package.json`, `package-lock.json` e a versão raiz dentro de `packages` no lockfile. O agente prepara esses arquivos; o responsável revisa e faz merge. Versão estável `X.Y.Z`, sem prefixo `v` no pacote; deve ser maior que a anterior, inclusive em PRs somente de documentação/testes.
-- Branches `feat/<descricao-curta>` para melhorias e `fix/<descricao-curta>` para correções; commits e títulos de PR usam `feat: descrição` ou `fix: descrição`, em português. Escopo opcional, como `fix(caixas): corrigir saldo`. A versão não é calculada pelo prefixo. Uma mudança incompatível exige escolher explicitamente a versão e descrever seu impacto no PR.
+- Branches `feat/<short-description>` para melhorias e `fix/<short-description>` para correções; nomes de branches, commits e títulos/descrições de PR são em inglês. Commits e títulos usam `feat: short description` ou `fix: short description`, com escopo opcional, como `fix(cash-boxes): correct balance calculation`. Regra atualizada em 31/10/2026; a entrega de deploy já preparada foi aceita como exceção, sem reescrever seu histórico. A versão não é calculada pelo prefixo. Uma mudança incompatível exige escolher explicitamente a versão e descrever seu impacto no PR.
 - Após merge na `main`, o Actions valida o commit e publica automaticamente o Worker existente. Não há aprovação manual adicional no ambiente; o merge é a autorização deste fluxo. Push direto sem um PR associado não publica. Squash merge é recomendado, mas merge commit também funciona: o SHA precisa corresponder ao `merge_commit_sha` do PR.
-- A tag Git e a tag da versão Cloudflare usam `vX.Y.Z`. A mensagem Cloudflare vem do título do PR, acrescida do número do PR e do commit completo; títulos longos são reduzidos por bytes sem cortar caracteres. Tags Git são imutáveis e criadas somente depois da confirmação da versão com 100% do tráfego.
+- A tag Git e a tag da versão Cloudflare usam `vX.Y.Z`. A mensagem Cloudflare acompanha o idioma inglês do título do PR e vem desse título, acrescida do número do PR e do commit completo; títulos longos são reduzidos por bytes sem cortar caracteres. Tags Git são imutáveis e criadas somente depois da confirmação da versão com 100% do tráfego.
 - Nenhuma migração, criação de recurso, mudança de domínio ou rollback de banco faz parte da automação. Aplicação de migrações de produção continua manual, mediante autorização explícita.
+
+O validador verifica o prefixo feat/fix e uma linha de texto; não identifica automaticamente o idioma. Sua orientação textual exige descrição em inglês, conforme o padrão atual.
 
 ## Configuração no GitHub e Cloudflare
 
@@ -34,7 +36,7 @@ As publicações usam um grupo de concorrência com `cancel-in-progress: false` 
 
 ## Falhas e retomada
 
-O Actions mostra o motivo técnico controlado no log, um resumo e o artefato **`cantina-deployment`**, com retenção de 30 dias. O JSON contém commit/tag/PR, versão anterior, indicação de tentativa de upload e, quando confirmados, IDs da versão/deployment e tráfego. Não inclui credenciais, headers, payloads brutos de API ou registros financeiros. Guardar os identificadores relevantes em RELEASES/STATUS ao conferir uma entrega; o workflow não cria commits automáticos nesses documentos.
+O Actions mostra o motivo técnico controlado no log, um resumo e o artefato **`cantina-deployment`**, com retenção de 30 dias. O JSON contém commit/tag/PR, versão anterior, etapa atual (`phase`), indicação de tentativa de upload e código técnico controlado de falha (`failure`), quando houver, e, quando confirmados, IDs da versão/deployment e tráfego. Não inclui credenciais, headers, payloads brutos de API ou registros financeiros. Falhas de transporte/timeout, JSON inválido e operações locais usam códigos de uma lista explícita, sem serializar mensagem/stack/causa do provedor; a exceção original continua propagando. O resumo também mostra etapa, tentativa de upload e código. Guardar os identificadores relevantes em RELEASES/STATUS ao conferir uma entrega; o workflow não cria commits automáticos nesses documentos.
 
 - Falha antes do upload: sem tag de sucesso; corrigir a causa e executar novamente.
 - Falha/timeout durante ou depois do upload: o resultado pode ser incerto. Não declarar produção inalterada; conferir metadados na Cloudflare e o relatório. Não há retry automático de escrita nem rollback automático.
@@ -43,7 +45,7 @@ O Actions mostra o motivo técnico controlado no log, um resumo e o artefato **`
 - `superseded`: a `main` avançou; nenhuma publicação foi feita por essa execução. Usar a execução do commit mais recente.
 - Depois que a `main` avançou ou houve publicação manual, não forçar tags nem reexecutar código antigo para corrigir histórico. Conferir a situação e tratar a recuperação separadamente.
 
-Para repetir após aplicar manualmente migrações autorizadas ou corrigir permissão: usar Re-run jobs na execução correspondente, se ainda for a `main` atual, ou **Run workflow** escolhendo `main`. O disparo manual também executa testes e precisa de PR mesclado associado. A primeira execução real ainda precisa confirmar autenticação, permissões, nomes das migrações e formatos de metadados; simulações locais não comprovam isso.
+Para repetir após aplicar manualmente migrações autorizadas ou corrigir permissão: usar Re-run jobs na execução correspondente, se ainda for a `main` atual, ou **Run workflow** escolhendo `main`. O disparo manual também executa testes e precisa de PR mesclado associado. A execução real é necessária para confirmar autenticação, permissões, nomes das migrações e formatos de metadados; simulações locais não comprovam isso. Re-run de uma execução antiga usa o código antigo: para obter diagnósticos introduzidos numa correção, primeiro mesclar o PR da correção e usar a execução nova.
 
 ## Referências
 

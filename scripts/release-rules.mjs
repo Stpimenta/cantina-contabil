@@ -41,7 +41,7 @@ export function releaseMessage(title, number, sha) {
     /[\r\n\x00-\x1f\x7f]/.test(title)
   )
     throw new ReleaseError(
-      "Título do PR deve usar feat: ou fix: e uma descrição em português, em uma linha.",
+      "Título do PR deve usar feat: ou fix: e uma descrição em inglês, em uma linha.",
     );
   let short = "";
   for (const char of title) {
