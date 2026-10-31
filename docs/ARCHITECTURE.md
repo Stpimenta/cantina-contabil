@@ -1,6 +1,6 @@
 # Arquitetura e padrões aprovados
 
-Contrato atual consolidado em 30/10/2026. Histórico de versões em [RELEASES.md](RELEASES.md); contexto de retomada em [STATUS.md](STATUS.md). Uma pendência não autoriza implementação.
+Contrato atual consolidado em 31/10/2026. Histórico de versões em [RELEASES.md](RELEASES.md); contexto de retomada em [STATUS.md](STATUS.md). Uma pendência não autoriza implementação.
 
 ## Stack e limites atuais
 
@@ -257,7 +257,7 @@ A integração inicial foi implementada com a pendência acima preservada. A ses
 
 [LOCAL.md](LOCAL.md) descreve comandos, variáveis, persistência e debug. Next 5174 e Worker/Miniflare 8787 iniciam juntos; produção tem configuração separada. Somente .env/.env.example no local, sem ler valores em logs ou recriar .dev.vars/.env.local.
 
-Deploy e alterações remotas somente com pedido explícito. `npm run deploy` exige tag/descrição, compila e seleciona wrangler.jsonc e o perfil cantina-contabil; não aplica migração remota automaticamente. Verificar versão publicada antes de declarar sucesso.
+Deploy automático via GitHub Actions autorizado em 31/10/2026 após merge de PR na main, limitado ao workflow de [CI.md](CI.md). O merge autoriza a execução desse fluxo; preparar alterações não autoriza publicação manual pelo agente. Deploy manual e demais alterações remotas continuam exigindo pedido explícito. `npm run deploy` exige tag/descrição, compila e seleciona wrangler.jsonc; autenticação por token no CI ou perfil cantina-contabil no caminho local sem token. Preparação/inspeção em deploy-build.mjs e envio em deploy-worker.mjs são compartilhados. O CI valida contratos de API com Zod e safeParse nos próprios scripts, sem expor respostas ou credenciais. Consulta somente o histórico de migrações; não aplica migrações remotas. Verificar versão e tráfego antes de declarar sucesso.
 
 Tema/tokens/base e padrões reutilizados em app/globals.css; CSS Modules ao lado de cada dono. SelectField usa lista própria com options serializáveis, valor e onValueChange; hidden input mantém FormData e o evento input do filtro automático. Contratos completos em [DESIGN.md](DESIGN.md) e [UX-CONTRACT.md](UX-CONTRACT.md).
 

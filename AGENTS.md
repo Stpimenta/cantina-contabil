@@ -14,6 +14,7 @@ Antes de alterar, consultar os documentos relevantes. Eles descrevem o estado at
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Backend, autenticação, dados, erros, logs e integrações.                            |
 | [DESIGN.md](docs/DESIGN.md)             | Qualquer alteração visual: tema, tokens, componentes e responsividade.              |
 | [UX-CONTRACT.md](docs/UX-CONTRACT.md)   | Fluxos, interação, filtros, paginação, feedback e acessibilidade.                   |
+| [CI.md](docs/CI.md)                     | Workflow GitHub Actions, versão/tag, permissões, migrações e retomada de falhas.    |
 | [TESTING.md](docs/TESTING.md)           | Testes unitários/integração: cobertura, isolamento e limites.                       |
 | [LOCAL.md](docs/LOCAL.md)               | Inicialização, Miniflare, D1 local, debug e publicação.                             |
 | [RELEASES.md](docs/RELEASES.md)         | Histórico de publicações; não confundir trabalho local com produção.                |
@@ -27,6 +28,13 @@ Antes de alterar, consultar os documentos relevantes. Eles descrevem o estado at
 - Não escolher silenciosamente arquitetura, dependências, infraestrutura, dados, regras de negócio ou exceções visuais. Qualquer estilo exclusivo novo de tela exige aprovação explícita, mesmo pequeno. Não contornar padrões com inline styles ou sobrescritas internas de componentes.
 - Registrar a decisão no documento dono; atualizar referências afetadas. Consolidar o contrato atual, sem empilhar notas contraditórias. Pendências não são decisões nem autorização para implementar.
 - Não iniciar outro bloco de funcionalidades só porque há backlog ou porque o usuário mudou de chat. Não iniciar implementação durante planejamento sem solicitação.
+
+## Git, branches e commits
+
+- Novas melhorias usam branch `feat/<descricao-curta>`; correções usam `fix/<descricao-curta>`, em minúsculas e com hífens. Criar a partir da main remota atualizada, preservando alterações existentes. Não trabalhar diretamente na main.
+- Commits e títulos de PR seguem `feat: descrição em português` ou `fix: descrição em português`, com escopo opcional (`fix(caixas): ...`). Usar a identidade Git do responsável; nunca Codex como autor, committer ou coautor. Se não houver identidade válida configurada, pedir a informação, sem inventar.
+- Versão é escolhida no PR e sincronizada em package.json/package-lock.json; não calcular automaticamente por feat/fix. Tags `vX.Y.Z` pertencem ao commit publicado e não podem ser movidas. Contrato completo em docs/CI.md.
+- Push, abertura de PR e merge dependem de pedido do responsável; preparar branch/commit não autoriza envio. Neste bloco o responsável fará o push e o merge.
 
 ## Preferências visuais e revisão antes de entregar
 
@@ -68,6 +76,6 @@ Antes de alterar, consultar os documentos relevantes. Eles descrevem o estado at
 - Testes unitários e de integração autorizados em 30/10/2026: manter a suíte Vitest em tests/, com D1/R2 descartáveis no Miniflare e dados sintéticos, conforme docs/TESTING.md. Executar os grupos afetados e o build completo Cloudflare/TypeScript nas alterações de código; ao alterar testes, conferir também seus tipos com npm run typecheck, pois o build isolado não copia tests/. A suíte pode iniciar apenas seu emulador temporário em loopback e deve encerrá-lo ao finalizar, sem tocar no banco de desenvolvimento/produção. O responsável mantém os testes funcionais da interface. Não iniciar app/navegador, recriar verification/, acrescentar testes visuais/carga/cobertura percentual ou repetir checks aprovados sem mudança/falha que justifique. Relatar exatamente o que foi verificado. Alterações somente de documentação exigem revisão de conteúdo, links e formatação, sem repetir build.
 - Não enviar prévias ou screenshots. Evidência temporária pode servir à verificação interna, sem permanecer no projeto.
 - Preservar código, dependências, segredos e estado do banco. Não apagar .wrangler/state. Não remover .next/.open-next em uso nem tentar excluir diretórios protegidos. Limpezas só de artefatos dispensáveis.
-- Deploy, migração remota ou alteração de recursos Cloudflare somente com solicitação explícita. A antiga autorização automática foi revogada. Implementar/corrigir não autoriza publicar; acesso à conta não é autorização.
-- Publicação usa npm run deploy com tag e descrição curta em português. Build e envio devem ocorrer em pasta temporária isolada, sem .env, credenciais ou estado local, com ambiente de compilação limitado e verificação dos artefatos antes do upload. Não mover/apagar .env nem sobrescrever builds em uso. Segredos de produção vêm dos Secrets do Worker; .gitignore não protege o pacote compilado. --build-only verifica sem publicar. Confirmar a versão efetivamente publicada e informar metadados/resultado. Não executar migrações remotas automaticamente.
-- Integração com GitHub, R2 e demais pendências aguardam pedido específico. Ao encerrar, resumir mudança, motivo, verificação e pendências de forma curta.
+- Deploy automático autorizado em 31/10/2026 exclusivamente pelo workflow de docs/CI.md após merge de PR na main e aprovação das validações; o merge é a autorização desse fluxo. Preparar código/workflow não autoriza executar deploy pelo agente. Deploy manual, migração remota, rollback ou alteração de recursos Cloudflare continuam exigindo solicitação explícita. O Actions apenas consulta o histórico das migrações; nunca aplica migrações remotas.
+- Publicação manual usa npm run deploy com tag e descrição curta em português; o Actions reutiliza a preparação/inspeção e o envio compartilhados, com versão do pacote e título do PR, conforme docs/CI.md. Build e envio devem ocorrer em pasta temporária isolada, sem .env, credenciais ou estado local, com ambiente de compilação limitado e verificação dos artefatos antes do upload. Não mover/apagar .env nem sobrescrever builds em uso. Segredos de produção vêm dos Secrets do Worker; .gitignore não protege o pacote compilado. --build-only verifica sem publicar. Confirmar a versão efetivamente publicada e informar metadados/resultado. Não executar migrações remotas automaticamente.
+- Alterações adicionais de integrações, recursos R2 e demais pendências aguardam pedido específico. Ao encerrar, resumir mudança, motivo, verificação e pendências de forma curta.
