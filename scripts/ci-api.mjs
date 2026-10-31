@@ -21,20 +21,38 @@ export async function requestJson(
     !["api.github.com", "api.cloudflare.com"].includes(service)
   )
     throw new ReleaseError("Destino de API não autorizado.");
-  const response = await request(url, {
-    method,
-    redirect: "error",
-    signal: AbortSignal.timeout(30000),
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(service === "api.github.com"
-        ? { "X-GitHub-Api-Version": "2022-11-28" }
-        : {}),
-    },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
+  const send = () =>
+    request(url, {
+      method,
+      redirect: "error",
+      signal: AbortSignal.timeout(30000),
+      headers: {
+        // Avoid reusing a connection left idle while the synchronous build runs.
+        Connection: "close",
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(service === "api.github.com"
+          ? { "X-GitHub-Api-Version": "2022-11-28" }
+          : {}),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+  let response;
+  try {
+    response = await send();
+  } catch (cause) {
+    // Only GET is retried, once, for an identified closed/reset socket.
+    // POST (D1 query or tag creation), upload and all other failures propagate.
+    if (
+      method !== "GET" ||
+      !(cause instanceof TypeError) ||
+      !(cause.cause instanceof Error) ||
+      !["UND_ERR_SOCKET", "ECONNRESET"].includes(cause.cause.code)
+    )
+      throw cause;
+    response = await send();
+  }
   if (response.status === 404 && optional404) return null;
   if (!response.ok)
     throw new ReleaseError(

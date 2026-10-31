@@ -32,6 +32,8 @@ Depois de configurar o workflow pela primeira vez, o responsável pode exigir o 
 6. Enviar o pacote já conferido pelo Wrangler instalado no lockfile, com tag/mensagem. Autenticação via token; o perfil OAuth local é usado apenas no caminho manual sem token. `GITHUB_TOKEN` não é repassado ao processo Wrangler.
 7. Consultar os metadados ativos: uma versão com 100% do tráfego, tag esperada e marcador do commit. Registrar IDs e então criar a tag Git no SHA publicado. Preservar relatório e resumo, inclusive se a criação da tag falhar.
 
+As chamadas de API do CI enviam `Connection: close`, para não reaproveitar uma conexão que ficou ociosa durante a compilação síncrona. Somente GET pode ter uma segunda tentativa, limitada a uma, quando o próprio fetch lança TypeError com causa UND_ERR_SOCKET ou ECONNRESET. Cada tentativa tem timeout novo de 30 segundos e preserva host, credencial e bloqueio de redirecionamento. Falhas HTTP, JSON/contrato inválido, outros erros e a segunda falha propagam sem nova tentativa. POST não é repetido, inclusive consulta D1 e criação de tag; upload Wrangler também não é repetido automaticamente. Essa recuperação pertence apenas aos scripts de CI, sem alterar a política HTTP do aplicativo.
+
 As publicações usam um grupo de concorrência com `cancel-in-progress: false` e `queue: max`; uma execução não interrompe upload em andamento. A checagem da ponta da `main` descarta commits superados antes do envio, evitando que uma execução antiga substitua a nova. Não se promete publicar todos os commits intermediários. Não executar deploy manual simultâneo: mudanças externas ao workflow não participam dessa fila.
 
 ## Falhas e retomada
@@ -54,3 +56,5 @@ Para repetir após aplicar manualmente migrações autorizadas ou corrigir permi
 - [Cloudflare: consulta D1 e permissões aceitas](https://developers.cloudflare.com/api/resources/d1/subresources/database/methods/query/)
 - [Cloudflare: deployments ativos](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/methods/list/)
 - [GitHub: concorrência e fila](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
+
+Referência do problema de socket/reuso no cliente do Node: [Undici #3492](https://github.com/nodejs/undici/issues/3492). O relatório do projeto confirma socket encerrado, não a causa física exata do encerramento.
