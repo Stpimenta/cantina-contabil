@@ -2,6 +2,12 @@
 
 Revisado em **31/10/2026**. Ler [AGENTS.md](../AGENTS.md) e os documentos donos antes de alterar. Este arquivo descreve o estado atual, não autoriza iniciar backlog, servidores ou publicação.
 
+## Estado Git local e padrão atualizado (31/10/2026)
+
+Trabalho de feat/deploy-github-actions integrado por fast-forward à main local, incluindo a atualização documental dos padrões. Main selecionada para retomada; próximos desenvolvimentos devem criar sua própria branch feat/fix em inglês. Nenhum push ou merge remoto foi executado pelo agente nesta etapa.
+
+Próximas branches, commits e títulos/descrições de PR serão em inglês, mantendo feat/fix e autoria do responsável, conforme AGENTS.md e CI.md. A entrega de deploy atual foi aceita como exceção; histórico e branch existentes preservados. Alteração apenas documental, sem novo build/teste, migração ou publicação. O texto de erro do validador que ainda menciona português fica para a próxima manutenção; ele valida prefixo/formato, não idioma.
+
 ## Código local — deploy por GitHub Actions (31/10/2026)
 
 Branch **feat/deploy-github-actions**, criada da main remota ed422a7, com workflow em `.github/workflows/deploy.yml`. Projeto/lockfile **0.6.4 local**, ainda não publicado. Contrato aprovado em [CI.md](CI.md): versão escolhida no PR, título feat/fix como mensagem Cloudflare, validação no PR/main, build isolado, consulta de nomes de migrações, deploy após merge na main e tag Git imutável somente após confirmar tag/commit e 100% do tráfego. Scripts compartilhados preservam publicação manual; CI usa token em vez do perfil OAuth local. Regra feat/fix e autoria do responsável registradas em AGENTS.md. Nenhum arquivo src/ foi alterado.

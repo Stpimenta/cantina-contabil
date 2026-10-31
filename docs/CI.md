@@ -5,10 +5,12 @@ Fluxo autorizado em 31/10/2026. Implementação local em `.github/workflows/depl
 ## Decisões aprovadas
 
 - Cada PR destinado à `main` informa uma versão nova, escolhida no próprio PR alterando `package.json`, `package-lock.json` e a versão raiz dentro de `packages` no lockfile. O agente prepara esses arquivos; o responsável revisa e faz merge. Versão estável `X.Y.Z`, sem prefixo `v` no pacote; deve ser maior que a anterior, inclusive em PRs somente de documentação/testes.
-- Branches `feat/<descricao-curta>` para melhorias e `fix/<descricao-curta>` para correções; commits e títulos de PR usam `feat: descrição` ou `fix: descrição`, em português. Escopo opcional, como `fix(caixas): corrigir saldo`. A versão não é calculada pelo prefixo. Uma mudança incompatível exige escolher explicitamente a versão e descrever seu impacto no PR.
+- Branches `feat/<short-description>` para melhorias e `fix/<short-description>` para correções; nomes de branches, commits e títulos/descrições de PR são em inglês. Commits e títulos usam `feat: short description` ou `fix: short description`, com escopo opcional, como `fix(cash-boxes): correct balance calculation`. Regra atualizada em 31/10/2026; a entrega de deploy já preparada foi aceita como exceção, sem reescrever seu histórico. A versão não é calculada pelo prefixo. Uma mudança incompatível exige escolher explicitamente a versão e descrever seu impacto no PR.
 - Após merge na `main`, o Actions valida o commit e publica automaticamente o Worker existente. Não há aprovação manual adicional no ambiente; o merge é a autorização deste fluxo. Push direto sem um PR associado não publica. Squash merge é recomendado, mas merge commit também funciona: o SHA precisa corresponder ao `merge_commit_sha` do PR.
-- A tag Git e a tag da versão Cloudflare usam `vX.Y.Z`. A mensagem Cloudflare vem do título do PR, acrescida do número do PR e do commit completo; títulos longos são reduzidos por bytes sem cortar caracteres. Tags Git são imutáveis e criadas somente depois da confirmação da versão com 100% do tráfego.
+- A tag Git e a tag da versão Cloudflare usam `vX.Y.Z`. A mensagem Cloudflare acompanha o idioma inglês do título do PR e vem desse título, acrescida do número do PR e do commit completo; títulos longos são reduzidos por bytes sem cortar caracteres. Tags Git são imutáveis e criadas somente depois da confirmação da versão com 100% do tráfego.
 - Nenhuma migração, criação de recurso, mudança de domínio ou rollback de banco faz parte da automação. Aplicação de migrações de produção continua manual, mediante autorização explícita.
+
+O validador verifica o prefixo feat/fix e uma linha de texto; não identifica automaticamente o idioma. A mensagem de erro do código desta entrega ainda menciona português, preservada na exceção aceita; corrigir esse texto na próxima manutenção, sem tratar isso como regra atual.
 
 ## Configuração no GitHub e Cloudflare
 
