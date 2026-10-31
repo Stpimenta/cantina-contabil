@@ -2,11 +2,21 @@
 
 Revisado em **31/10/2026**. Ler [AGENTS.md](../AGENTS.md) e os documentos donos antes de alterar. Este arquivo descreve o estado atual, não autoriza iniciar backlog, servidores ou publicação.
 
-## Diagnóstico da primeira execução remota — correção local (31/10/2026)
+## Falha de conexão confirmada e correção local (31/10/2026)
+
+Novo relatório fornecido pelo responsável: commit **855cd9d04dbd325a9f2f9789eb5e40287992982a**, tag pretendida v0.6.5, PR #3; `phase: recheck-main`, `API_TRANSPORT_FAILED / UND_ERR_SOCKET`, `uploadAttempted: false`. A chamada de leitura ao GitHub após o build encontrou uma conexão encerrada. Não é erro de título, build, saldo ou migração, nem evidência de falta de permissão. O motivo físico do encerramento não é comprovado pelo código de erro; reuso de socket ocioso é compatível com esse padrão.
+
+Branch atual **fix/deployment-api-connections**, baseada na main remota 855cd9d. **0.6.6 somente local**: chamadas de API do CI sem reuso persistente (Connection: close) e uma única segunda tentativa de GET para UND_ERR_SOCKET/ECONNRESET, com novo timeout. Sem retry de POST, SQL, tag ou upload, sem relaxar nenhuma guarda de versão/main/migrações e sem nova dependência. Demais erros preservam diagnóstico e propagação existentes. Contrato consolidado em CI.md.
+
+**Verificação da correção:** 136 testes unitários aprovados (incluindo recuperação após recheck-main e limites de retry); tipos, sintaxe, formatação e build completo Cloudflare/TypeScript com dry-run/inspeção aprovados na cópia isolada. Integração financeira não repetida, pois não foi alterada. Sem servidor/app, navegador ou upload real.
+
+**Ambientes:** nenhum deploy, re-run ou alteração de recurso remoto pelo agente. Migrações locais/produção não aplicadas. Última produção confirmada permanece **v0.6.3**; os relatórios de v0.6.4/v0.6.5 mostram tentativas sem envio iniciado e os mesmos IDs anteriores, sem nova conferência global da produção. O responsável fará push/PR/merge e a nova execução real confirmará a correção no runner. Sem mudança de token necessária pelo erro apresentado.
+
+## Diagnóstico anterior e base da correção (31/10/2026)
 
 Execução GitHub **41219267824**, commit **35a4e894de82bf5228688ea9ec9994f86000785c** do PR #2: 158 testes/tipos aprovados; build OpenNext, inspeção do pacote e dry-run aprovados; job de publicação falhou depois do build. Artefato fornecido pelo responsável confirma `uploadAttempted: false`, `status: failed` e versão/deployment anteriores **59ffc4c2-247e-4ee4-99d9-bd52a99c08fc / 27a09605-57e2-4c7f-98b1-dc3d1d0c8609**. Essa execução não iniciou o envio; o erro original ficou oculto e a etapa exata da reconferência não foi registrada. Não atribuir a causa a token, Node/Ubuntu, JSON ou conexão sem evidência. Duas leituras públicas ao GitHub antes/depois de bloqueio síncrono não reproduziram falha; isso não resolve o incidente.
 
-Correção na branch **fix/deployment-failure-diagnostics**, baseada na main remota 35a4e89, preservando por cherry-pick o padrão Git em inglês já aprovado. **0.6.5 apenas local**: registrar phase/código técnico seguro nos logs, resumo e relatório; preservar resultado incerto, exceções e política sem retry de escrita/rollback automático. Texto do validador agora orienta inglês. Não houve alteração de src/, migrações ou dependências. A correção melhora a identificação de falhas; a causa do incidente original continua não comprovada.
+A correção de diagnóstico de **fix/deployment-failure-diagnostics**, baseada na main remota 35a4e89 e preservando o padrão Git em inglês, foi integrada no PR #3 como **0.6.5**: registrar phase/código técnico seguro nos logs, resumo e relatório; preservar resultado incerto, exceções e política sem retry de escrita/rollback automático. Texto do validador agora orienta inglês. Não houve alteração de src/, migrações ou dependências. Essa base permitiu identificar o UND_ERR_SOCKET no recheck-main da execução seguinte, descrito acima; a causa física do encerramento continua não comprovada.
 
 **Verificação da correção:** 123 testes unitários aprovados, incluindo os novos diagnósticos; integração financeira não foi repetida, pois não foi alterada. Tipos, sintaxe, formatação e build completo Cloudflare/TypeScript com dry-run/inspeção de pacote aprovados em cópia isolada por `npm run deploy -- --build-only`. Nenhum upload real.
 
@@ -14,13 +24,13 @@ As consultas iniciais de produção e migrações passaram antes do build da exe
 
 ## Estado Git local e padrão atualizado (31/10/2026)
 
-Antes do incidente, feat/deploy-github-actions foi integrado por fast-forward à main local com os padrões documentais. A correção atual está na branch fix/deployment-failure-diagnostics, descrita acima. Novos desenvolvimentos usam branch própria feat/fix em inglês. O agente não executou push nem merge remoto.
+Antes do incidente, feat/deploy-github-actions foi integrado por fast-forward à main local com os padrões documentais. A branch fix/deployment-failure-diagnostics entregou os diagnósticos; a correção atual está em fix/deployment-api-connections, descrita acima. Novos desenvolvimentos usam branch própria feat/fix em inglês. O agente não executou push nem merge remoto.
 
 Próximas branches, commits e títulos/descrições de PR serão em inglês, mantendo feat/fix e autoria do responsável, conforme AGENTS.md e CI.md. A entrega de deploy atual foi aceita como exceção; histórico e branch existentes preservados. Alteração apenas documental, sem novo build/teste, migração ou publicação. O texto de erro do validador foi atualizado na correção local descrita acima; a validação identifica prefixo/formato, não idioma.
 
 ## Base do workflow entregue em 31/10/2026
 
-Branch **feat/deploy-github-actions**, criada da main remota ed422a7, com workflow em `.github/workflows/deploy.yml`. Essa base foi entregue como **0.6.4** e chegou ao Actions, onde falhou sem iniciar upload; código local atual é **0.6.5**, conforme a correção acima. Contrato aprovado em [CI.md](CI.md): versão escolhida no PR, título feat/fix como mensagem Cloudflare, validação no PR/main, build isolado, consulta de nomes de migrações, deploy após merge na main e tag Git imutável somente após confirmar tag/commit e 100% do tráfego. Scripts compartilhados preservam publicação manual; CI usa token em vez do perfil OAuth local. Regra feat/fix e autoria do responsável registradas em AGENTS.md. Nenhum arquivo src/ foi alterado.
+Branch **feat/deploy-github-actions**, criada da main remota ed422a7, com workflow em `.github/workflows/deploy.yml`. Essa base foi entregue como **0.6.4** e chegou ao Actions, onde falhou sem iniciar upload; código local atual é **0.6.6**, conforme a correção acima. Contrato aprovado em [CI.md](CI.md): versão escolhida no PR, título feat/fix como mensagem Cloudflare, validação no PR/main, build isolado, consulta de nomes de migrações, deploy após merge na main e tag Git imutável somente após confirmar tag/commit e 100% do tráfego. Scripts compartilhados preservam publicação manual; CI usa token em vez do perfil OAuth local. Regra feat/fix e autoria do responsável registradas em AGENTS.md. Nenhum arquivo src/ foi alterado.
 
 **Verificação local:** **158 testes aprovados** em sete arquivos (110 unitários, incluindo 35 cenários novos de publicação/API/envio, e 48 de integração). Tipos, sintaxe dos scripts, YAML/estrutura do workflow, SHAs das actions oficiais, formatação, build completo Cloudflare/TypeScript, dry-run e inspeção de pacote aprovados. Build executado por `npm run deploy -- --build-only` em cópia temporária; nenhum upload. Simulações de publicação usam APIs e envio controlados, sem rede de produção. Não houve servidor Next, navegador ou screenshot.
 
@@ -44,7 +54,7 @@ Suíte autorizada e implementada conforme [TESTING.md](TESTING.md): **123 testes
 | ---------------- | ------------------------------------------------------------------------------------------------------- |
 | Produção         | **v0.6.3**, Cloudflare `59ffc4c2-247e-4ee4-99d9-bd52a99c08fc`, 100% de tráfego confirmado na publicação |
 | Endereço         | https://cantina-contabil.devibpv3.workers.dev                                                           |
-| Projeto/lockfile | **0.6.5 local**, diagnóstico corrigido; última produção confirmada 0.6.3                                |
+| Projeto/lockfile | **0.6.6 local**, recuperação de conexão no CI; última produção confirmada 0.6.3                         |
 | D1 remoto        | Migrações até **0022**, nenhuma pendente na conferência remota de 28/10/2026                            |
 | D1 local         | Migrações até **0022**, com backup e preservação de dados conferidos                                    |
 | Comprovantes     | R2 privado `cantina-contabil-receipts`, binding RECEIPTS; r2.dev desativado. Local emulado, separado    |
@@ -73,7 +83,7 @@ Publicações e pontos de recuperação anteriores: [RELEASES.md](RELEASES.md). 
 
 ## Código local, migrações e produção
 
-Projeto/lockfile 0.6.5 local para a correção de diagnóstico descrita acima. Última publicação 0.6.3: Insumos acompanha Dinheiro/Pix como informação discreta, sem mudar o cálculo. Publicado com build isolado Cloudflare/TypeScript e dry-run aprovados; revisão estática de composição, sem teste funcional/navegador. Tag v0.6.3, versão 59ffc4c2-247e-4ee4-99d9-bd52a99c08fc, deployment 27a09605-57e2-4c7f-98b1-dc3d1d0c8609 e 100% do tráfego confirmados. Após a publicação, foram adicionados localmente a suíte de testes e o workflow descritos no início deste documento, sem alterar o comportamento da aplicação nem publicar novamente. D1 local permanece documentado até 0022, sem novas migrações locais nesta conversa; D1 remoto consultado em leitura e sem pendências. Estado local e arquivos de desenvolvimento não foram enviados à produção.
+Projeto/lockfile 0.6.6 local para a correção de conexão descrita acima. Última publicação 0.6.3: Insumos acompanha Dinheiro/Pix como informação discreta, sem mudar o cálculo. Publicado com build isolado Cloudflare/TypeScript e dry-run aprovados; revisão estática de composição, sem teste funcional/navegador. Tag v0.6.3, versão 59ffc4c2-247e-4ee4-99d9-bd52a99c08fc, deployment 27a09605-57e2-4c7f-98b1-dc3d1d0c8609 e 100% do tráfego confirmados. Após a publicação, foram adicionados localmente a suíte de testes e o workflow descritos no início deste documento, sem alterar o comportamento da aplicação nem publicar novamente. D1 local permanece documentado até 0022, sem novas migrações locais nesta conversa; D1 remoto consultado em leitura e sem pendências. Estado local e arquivos de desenvolvimento não foram enviados à produção.
 
 O pacote novo não inclui os valores privados locais conhecidos, nem arquivos de ambiente; origens de desenvolvimento não alteram produção. Artefatos locais antigos podem conter variáveis locais geradas pelo OpenNext e continuam privados/ignorados; não apagá-los enquanto em uso. A chave de produção vem dos Secrets do Worker. Não afirmar ausência de todo segredo desconhecido no código apenas por essa verificação.
 

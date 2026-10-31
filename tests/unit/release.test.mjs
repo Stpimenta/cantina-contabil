@@ -357,3 +357,43 @@ describe("safe failure diagnostics", () => {
     },
   );
 });
+
+it("completes deployment once when the main recheck recovers from a closed socket", async () => {
+  const h = setup();
+  const closedSocket = new TypeError("synthetic closed connection", {
+    cause: Object.assign(new Error("synthetic socket"), {
+      code: "UND_ERR_SOCKET",
+    }),
+  });
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json({ sha }))
+    .mockRejectedValueOnce(closedSocket)
+    .mockResolvedValueOnce(Response.json({ sha }));
+  h.github.head.mockImplementation(
+    async () =>
+      (
+        await requestJson(
+          "https://api.github.com/repos/synthetic/project/git/ref/heads/main",
+          "synthetic-token",
+          z.object({ sha: z.string() }),
+          {},
+          request,
+        )
+      ).sha,
+  );
+  h.cloudflare.active
+    .mockResolvedValueOnce(live())
+    .mockResolvedValueOnce(live())
+    .mockResolvedValueOnce(confirmed());
+  await publishRelease(h);
+  expect(h.record).toMatchObject({
+    status: "deployed",
+    phase: "complete",
+    uploadAttempted: true,
+  });
+  expect(request).toHaveBeenCalledTimes(3);
+  expect(h.upload).toHaveBeenCalledOnce();
+  expect(h.github.createTag).toHaveBeenCalledOnce();
+  expect(h.cleanup).toHaveBeenCalledOnce();
+});
