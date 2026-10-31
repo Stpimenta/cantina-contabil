@@ -1,0 +1,45 @@
+# Dependências e arquivos gerados
+node_modules/
+/.next/
+/.open-next/
+/out/
+/dist/
+/build/
+*.tsbuildinfo
+
+# Estado local e caches das ferramentas
+/.wrangler/
+/.cache/
+/.turbo/
+/.npm/
+
+# Configurações locais do ambiente e credenciais
+/.aws/
+/.codex/
+/.agents/
+.env*
+.dev.vars*
+!.env.example
+*.pem
+*.key
+
+# Evidências temporárias e relatórios automáticos
+/premium-audit.json
+/coverage/
+/test-results/
+/playwright-report/
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# Arquivos locais do sistema e dos editores
+.DS_Store
+Thumbs.db
+Desktop.ini
+/.idea/
+/.vscode/*
+!/.vscode/launch.json

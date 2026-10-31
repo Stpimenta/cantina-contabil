@@ -1,0 +1,8 @@
+.reference {
+  -webkit-user-select: all;
+  user-select: all;
+  font-size: var(--font-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-4);
+  overflow-wrap: anywhere;
+}

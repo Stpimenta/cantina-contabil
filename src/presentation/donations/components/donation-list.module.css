@@ -1,0 +1,34 @@
+.content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-4);
+}
+
+.amount {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+}
+
+.metadata {
+  grid-column: 1;
+  min-width: 0;
+}
+
+@media (max-width: 599px) {
+  .row {
+    flex-wrap: nowrap;
+    gap: var(--space-3);
+  }
+
+  .content {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+
+  .amount {
+    grid-column: 1;
+    grid-row: auto;
+    font-size: var(--font-sm);
+  }
+}

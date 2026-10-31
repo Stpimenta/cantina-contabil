@@ -1,0 +1,370 @@
+/* Padrões globais: tema, tokens, base acessível e utilitários compartilhados.
+   Estilos privados ficam no .module.css da tela ou componente.
+   Layout/navegação: abaixo de 48rem (768px).
+   Botões com mobileIcon: compactos apenas abaixo de 37.5rem (600px). */
+
+:root {
+  color-scheme: light;
+  /* Tema e cores semânticas */
+  --color-primary: #a9432e;
+  --color-primary-hover: #8f3523;
+  --color-secondary: #c58b65;
+  --color-background: #faf7f2;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3e4d5;
+  --color-text: #35312d;
+  --color-text-muted: #72685f;
+  --color-on-primary: #ffffff;
+  --color-border: #e7ddd3;
+  --color-success: #287347;
+  --color-warning: #b38312;
+  --color-danger: #a42e2e;
+  --color-danger-hover: #822323;
+  --color-focus: #a9432e;
+  --color-backdrop: rgb(35 29 24 / 35%);
+  --color-scroll-thumb: #b2a293;
+  --color-scroll-hover: #8f7c6a;
+  --color-scroll-track: #faf7f2;
+  /* Tipografia: família, tamanhos, pesos e alturas de linha */
+  --font-body: "Manrope", system-ui, sans-serif;
+  --font-xs: 0.75rem;
+  --font-sm: 0.875rem;
+  --font-base: 1rem;
+  --font-lg: 1.125rem;
+  --font-xl: 1.5rem;
+  --font-title: 2rem;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --line-body: 1.6;
+  --line-heading: 1.25;
+  /* Escala única de espaçamento: 4, 8, 12, 16, 24, 32 e 48px */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  /* Dimensões aprovadas de controles e áreas da aplicação */
+  --control-height: 2.75rem;
+  --control-height-large: 3.25rem;
+  --action-width-wide: 15rem;
+  --icon-size: 1.25rem;
+  --header-height: 4.5rem;
+  --sidebar-width: 15rem;
+  --popover-width: 15rem;
+  --auth-width: 24rem;
+  --modal-width: 30rem;
+  --drawer-width: 18rem;
+  --content-width: 48rem;
+  --modal-width-wide: 52rem;
+  --modal-width-form: 56rem;
+  --modal-width-form-compact: 44rem;
+  --modal-height-wide: 48rem;
+  --search-width: var(--content-width);
+  --select-list-height: 18rem;
+  /* Bordas, raios, elevação e foco */
+  --border-width: 1px;
+  --radius-control: 0.5rem;
+  --radius-pill: 999px;
+  --radius-panel: 0.75rem;
+  --shadow-overlay: 0 12px 48px rgb(35 29 24 / 12%);
+  --focus-width: 2px;
+  --focus-offset: 3px;
+  /* Camadas: base < cabeçalho < popover < modal */
+  --z-base: 0;
+  --z-header: 100;
+  --z-popover: 200;
+  --z-modal: 300;
+  /* Camadas internas do diálogo, relativas ao seu próprio contexto. */
+  --z-modal-content: 0;
+  --z-modal-chrome: 1;
+  /* Estados compartilhados */
+  --opacity-disabled: 0.6;
+  /* Movimento compartilhado */
+  --duration-fast: 120ms;
+  --duration-page: 180ms;
+  --duration-brand: 1000ms;
+}
+
+/* Modais um pouco mais largos em notebooks e computadores. */
+@media (min-width: 64rem) {
+  :root {
+    --modal-width: 33rem;
+  }
+}
+
+/* Base do documento e scrollbar para todas as superfícies */
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scroll-thumb) var(--color-scroll-track);
+}
+*::-webkit-scrollbar {
+  width: var(--space-2);
+  height: var(--space-1);
+}
+*::-webkit-scrollbar-track {
+  background: var(--color-scroll-track);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-scroll-thumb);
+  border-radius: var(--radius-control);
+}
+*::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:active {
+  background: var(--color-scroll-hover);
+}
+html {
+  scrollbar-gutter: stable;
+}
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--font-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--line-body);
+}
+h1,
+h2,
+p,
+dl,
+dd {
+  margin: 0;
+}
+h1,
+h2 {
+  line-height: var(--line-heading);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+h1 {
+  font-size: var(--font-title);
+}
+h2 {
+  font-size: var(--font-lg);
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button,
+input,
+textarea {
+  font: inherit;
+}
+button,
+a,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+button:enabled,
+a {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+button,
+input,
+a {
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast);
+}
+:focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--focus-offset);
+}
+textarea,
+.resize-none {
+  resize: none;
+}
+/* Acessibilidade e utilitários reutilizáveis */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.muted {
+  color: var(--color-text-muted);
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.stack-small {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.wide-action {
+  width: min(100%, var(--action-width-wide));
+}
+.full-width {
+  width: 100%;
+}
+.centered-page {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+}
+/* Composição compartilhada de cabeçalhos e paginação */
+.spread-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+.action-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+/* Padrão compartilhado de listas de registros */
+.record-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.record-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding-block: var(--space-6);
+  border-bottom: var(--border-width) solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+.record-row-centered {
+  align-items: center;
+}
+.record-row > .stack-small {
+  flex: 1;
+  min-width: 0;
+}
+.record-title {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+a.record-title,
+a .record-title {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: var(--space-1);
+}
+a.record-title:hover,
+a:hover .record-title,
+.text-link:hover {
+  color: var(--color-primary-hover);
+}
+.record-meta {
+  font-size: var(--font-sm);
+}
+button.text-link {
+  align-self: flex-start;
+  min-height: var(--control-height);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: start;
+}
+.text-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: var(--space-1);
+}
+.preserve-lines {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* Padrão compartilhado de pares rótulo/valor */
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.details dt {
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+.details dd {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 47.999rem) {
+  .record-meta {
+    flex-basis: 100%;
+  }
+  h1 {
+    font-size: var(--font-xl);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (forced-colors: active) {
+  * {
+    scrollbar-color: auto;
+  }
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
+/* Apresentação monetária compartilhada por caixas e doações */
+.balance-value {
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.centered-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+/* Formulários: campos relacionados em duas colunas apenas no notebook/PC. */
+.form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+.form-grid > * {
+  min-width: 0;
+}
+.form-full {
+  grid-column: 1 / -1;
+}
+@media (min-width: 64rem) {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,31 @@
+.root {
+  width: 100%;
+  max-width: var(--search-width);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.form {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+}
+.form:focus-within {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--focus-offset);
+}
+.form > div {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 47.999rem) {
+  .root {
+    flex-wrap: wrap;
+  }
+  .form {
+    flex-basis: 100%;
+  }
+}

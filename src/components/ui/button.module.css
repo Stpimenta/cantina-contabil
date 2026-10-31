@@ -1,0 +1,145 @@
+.root {
+  min-height: var(--control-height);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--line-heading);
+  text-align: center;
+}
+.primary {
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+}
+.primary:hover:enabled {
+  background: var(--color-primary-hover);
+}
+.primary:active:enabled {
+  background: var(--color-primary-hover);
+}
+.neutral {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+.neutral:hover:enabled,
+.neutral:active:enabled {
+  background: var(--color-background);
+}
+.ghost {
+  background: transparent;
+  color: var(--color-text);
+}
+.ghost:hover:enabled,
+.ghost:active:enabled {
+  background: var(--color-background);
+}
+.root:disabled {
+  opacity: var(--opacity-disabled);
+}
+.root[aria-busy="true"] {
+  cursor: wait;
+}
+.iconOnly {
+  width: var(--control-height);
+  height: var(--control-height);
+  padding: 0;
+  flex-shrink: 0;
+}
+.danger {
+  color: var(--color-on-primary);
+  background: var(--color-danger);
+}
+.danger:hover:enabled,
+.danger:active:enabled {
+  background: var(--color-danger-hover);
+}
+.root[aria-disabled="true"] {
+  opacity: var(--opacity-disabled);
+}
+.large {
+  min-height: var(--control-height-large);
+  padding-inline: var(--space-6);
+  font-size: var(--font-base);
+}
+
+.search {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  border-start-end-radius: var(--radius-pill);
+  border-end-end-radius: var(--radius-pill);
+}
+
+.mobileIcon {
+  display: none;
+}
+.desktopContent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+@media (max-width: 37.499rem) {
+  .mobileCompact {
+    width: var(--control-height);
+    height: var(--control-height);
+    padding: 0;
+    gap: 0;
+    flex-shrink: 0;
+  }
+  .mobileCompact .desktopContent {
+    display: none;
+  }
+  .mobileCompact .mobileIcon {
+    display: inline-flex;
+  }
+}
+
+.root[role="combobox"] {
+  font-weight: var(--weight-regular);
+}
+.root[role="combobox"][aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+.root[role="option"][aria-selected="true"] {
+  background: var(--color-background);
+  color: var(--color-primary);
+}
+.root[role="option"][data-active="true"] {
+  outline: var(--border-width) solid var(--color-primary);
+  outline-offset: calc(-1 * var(--border-width));
+}
+
+/* SearchForm provides the complete pill-shaped focus ring. */
+.search:focus-visible {
+  outline: none;
+}
+
+@media (max-width: 37.499rem) {
+  .compactOnMobile {
+    min-height: var(--control-height);
+    padding: var(--space-2);
+    font-size: var(--font-sm);
+  }
+}
+
+/* Direct edit/delete actions also compact on tablets; other actions keep 600px. */
+@media (max-width: 63.999rem) {
+  .tabletCompact {
+    width: var(--control-height);
+    height: var(--control-height);
+    padding: 0;
+    gap: 0;
+    flex-shrink: 0;
+  }
+  .tabletCompact .desktopContent {
+    display: none;
+  }
+  .tabletCompact .mobileIcon {
+    display: inline-flex;
+  }
+}

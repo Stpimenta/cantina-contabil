@@ -1,0 +1,30 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--control-height), 1fr));
+  gap: var(--space-3);
+}
+
+@media (max-width: 599px) {
+  .categories {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    min-width: 0;
+    gap: var(--space-2);
+    padding: var(--space-1);
+  }
+
+  .categories > button {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .option {
+    width: 100%;
+    height: var(--control-height-large);
+  }
+}

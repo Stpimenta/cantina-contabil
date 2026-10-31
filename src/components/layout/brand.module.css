@@ -1,0 +1,70 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--color-text);
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+}
+.logo {
+  display: block;
+  width: var(--space-8);
+  height: var(--space-8);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.wordmark {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-1);
+  min-width: 0;
+  line-height: var(--line-heading);
+}
+.wordmark > span {
+  white-space: nowrap;
+}
+.secondary {
+  color: var(--color-primary);
+}
+@media (max-width: 37.499rem) {
+  .root {
+    font-size: var(--font-sm);
+  }
+  .logo {
+    width: var(--space-6);
+    height: var(--space-6);
+  }
+}
+
+.login {
+  gap: var(--space-3);
+  font-size: var(--font-xl);
+}
+.login .logo {
+  width: calc(var(--space-8) * 2);
+  height: calc(var(--space-8) * 2);
+}
+.login .wordmark {
+  flex-wrap: nowrap;
+  clip-path: inset(0);
+  animation: write-brand var(--duration-brand) steps(19, end) both;
+}
+@keyframes write-brand {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+@media (max-width: 37.499rem) {
+  .login {
+    gap: var(--space-2);
+    font-size: var(--font-lg);
+  }
+  .login .logo {
+    width: var(--control-height-large);
+    height: var(--control-height-large);
+  }
+}

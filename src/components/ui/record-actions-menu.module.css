@@ -1,0 +1,44 @@
+.root {
+  position: relative;
+}
+
+.popup {
+  position: fixed;
+  position-area: bottom span-left;
+  position-try-fallbacks: flip-block, flip-inline;
+  inset: auto;
+  margin: var(--space-1) 0 0;
+  width: max-content;
+  max-width: calc(100vw - var(--space-8));
+  padding: var(--space-1);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-overlay);
+  z-index: var(--z-popover);
+}
+
+.popup:popover-open,
+.fallback:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+
+.fallback {
+  position: absolute;
+  top: 100%;
+  inset-inline-end: 0;
+}
+
+.optionContent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  text-align: start;
+}
+
+.optionContent > svg {
+  flex-shrink: 0;
+}

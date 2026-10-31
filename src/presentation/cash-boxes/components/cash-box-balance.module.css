@@ -1,0 +1,12 @@
+.root {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  column-gap: var(--space-6);
+  row-gap: var(--space-3);
+}
+
+.prominent {
+  font-size: var(--font-title);
+  line-height: var(--line-heading);
+}

@@ -1,0 +1,19 @@
+.content {
+  flex: 1 1 16rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.reason {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+}
+@media (max-width: 599px) {
+  .reason {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+}

@@ -1,0 +1,10 @@
+.feedback {
+  display: grid;
+}
+.feedback > span {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+.feedback > span[data-visible="true"] {
+  visibility: visible;
+}

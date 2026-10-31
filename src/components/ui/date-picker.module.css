@@ -1,0 +1,46 @@
+.viewport {
+  overflow-x: auto;
+  overscroll-behavior: contain;
+}
+.calendar {
+  width: max-content;
+  margin-inline: auto;
+}
+.month {
+  display: grid;
+  grid-template-columns: var(--control-height) 1fr var(--control-height);
+  row-gap: var(--space-3);
+}
+.caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.captionLabel {
+  font-weight: var(--weight-semibold);
+  text-transform: capitalize;
+}
+.grid {
+  grid-column: 1 / -1;
+  border-collapse: collapse;
+}
+.weekday {
+  height: var(--control-height);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+}
+.day {
+  padding: 0;
+  text-align: center;
+}
+.today {
+  text-decoration: underline;
+  text-underline-offset: var(--space-1);
+}
+.chevron {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  fill: currentColor;
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cantina-contabil",
+  "account_id": "124b682fc7e89619750a3d6e2e801ed0",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-25",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "cantina-contabil",
+    },
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cantina-contabil",
+      "database_id": "bc15236f-580b-4e7b-9507-f290bfad21fd",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    "AUTH_API_URL": "https://gestpvapi.ibpalavraviva.com.br",
+    "APP_ENV": "production",
+  },
+  "r2_buckets": [
+    {
+      "binding": "RECEIPTS",
+      "bucket_name": "cantina-contabil-receipts",
+    },
+  ],
+}

@@ -1,0 +1,14 @@
+.panel {
+  width: 100%;
+  max-width: var(--auth-width);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-block: var(--space-8);
+}
+.panel h1 {
+  font-size: var(--font-xl);
+}
+.panel :global(.muted) {
+  font-size: var(--font-sm);
+}

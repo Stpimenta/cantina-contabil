@@ -1,0 +1,39 @@
+.root {
+  padding-bottom: var(--space-6);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+.identity {
+  flex: 1;
+  min-width: 0;
+}
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.title h1 {
+  min-width: 0;
+}
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+@media (max-width: 47.999rem) {
+  .root.compact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .root.compact > :first-child {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 37.499rem) {
+  .desktopDescription {
+    display: none;
+  }
+}

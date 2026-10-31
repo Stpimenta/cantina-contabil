@@ -1,0 +1,14 @@
+.preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100dvh - var(--header-height) * 3);
+  object-fit: contain;
+}

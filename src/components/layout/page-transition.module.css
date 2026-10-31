@@ -1,0 +1,12 @@
+.root {
+  animation: page-enter var(--duration-page) ease-out;
+}
+
+@keyframes page-enter {
+  from {
+    transform: translateY(var(--space-2));
+  }
+  to {
+    transform: translateY(0);
+  }
+}

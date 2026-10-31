@@ -1,0 +1,110 @@
+.root {
+  position: fixed;
+  inset: 0;
+  width: min(var(--modal-width), calc(100% - var(--space-8)));
+  max-width: none;
+  max-height: calc(100dvh - var(--space-8));
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-panel);
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+  overflow: hidden;
+  z-index: var(--z-modal);
+}
+.root[open] {
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 64rem) {
+  .wide {
+    width: min(var(--modal-width-wide), calc(100% - var(--space-8)));
+  }
+  .formCompact {
+    width: min(var(--modal-width-form-compact), calc(100% - var(--space-8)));
+  }
+  .form {
+    width: min(var(--modal-width-form), calc(100% - var(--space-8)));
+  }
+  .wide {
+    height: min(var(--modal-height-wide), calc(100dvh - var(--space-8)));
+  }
+  .wide .body {
+    flex: 1;
+  }
+}
+.root::backdrop {
+  background: var(--color-backdrop);
+}
+.header {
+  position: relative;
+  z-index: var(--z-modal-chrome);
+  background: var(--color-surface);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  flex-shrink: 0;
+}
+.body {
+  position: relative;
+  z-index: var(--z-modal-content);
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+  padding: 0 var(--space-6) var(--space-6);
+  overflow: auto;
+  min-height: 0;
+  overflow-wrap: anywhere;
+}
+.footer {
+  position: relative;
+  z-index: var(--z-modal-chrome);
+  background: var(--color-surface);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  flex-shrink: 0;
+}
+.navigation {
+  inset: 0 auto 0 0;
+  margin: 0;
+  width: min(var(--drawer-width), calc(100% - var(--space-8)));
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  transform: translateX(-100%);
+  transition:
+    transform var(--duration-fast) ease,
+    display var(--duration-fast) allow-discrete,
+    overlay var(--duration-fast) allow-discrete;
+}
+/* Alinha visualmente o ícone à margem do conteúdo, mantendo o alvo de 44px. */
+.navigation .header {
+  padding-inline-end: var(--space-3);
+}
+.navigation[open] {
+  transform: translateX(0);
+}
+.navigation::backdrop {
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) ease,
+    display var(--duration-fast) allow-discrete,
+    overlay var(--duration-fast) allow-discrete;
+}
+.navigation[open]::backdrop {
+  opacity: 1;
+}
+@starting-style {
+  .navigation[open] {
+    transform: translateX(-100%);
+  }
+  .navigation[open]::backdrop {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,21 @@
+.content {
+  flex: 1 1 16rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+}
+
+@media (max-width: 599px) {
+  .note {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+}

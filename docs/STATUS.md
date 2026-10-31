@@ -1,0 +1,84 @@
+# Retomada — Ministério Contábil
+
+Revisado em **28/10/2026**. Ler [AGENTS.md](../AGENTS.md) e os documentos donos antes de alterar. Este arquivo descreve o estado atual, não autoriza iniciar backlog, servidores ou publicação.
+
+## Planejamento local — testes (30/10/2026)
+
+Projeto simples de testes unitários e integração registrado em [TESTING.md](TESTING.md), com foco em saldos, entradas/saídas, concorrência, histórico, acesso e comprovantes. Documento de proposta, sem suíte implementada ou dependências instaladas; escolha de executor e emulação isolada aguarda aprovação do responsável. Nenhum código de aplicação alterado, nenhuma migração local aplicada e nenhuma mudança em produção. As verificações funcionais atuais continuam com o responsável até consolidar o novo contrato de execução.
+
+## Produção e trabalho local
+
+| Item             | Estado confirmado                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------- |
+| Produção         | **v0.6.3**, Cloudflare `59ffc4c2-247e-4ee4-99d9-bd52a99c08fc`, 100% de tráfego confirmado na publicação |
+| Endereço         | https://cantina-contabil.devibpv3.workers.dev                                                           |
+| Projeto/lockfile | 0.6.3; Insumos discretos junto de Dinheiro/Pix publicados                                               |
+| D1 remoto        | Migrações até **0022**, nenhuma pendente na conferência remota de 28/10/2026                            |
+| D1 local         | Migrações até **0022**, com backup e preservação de dados conferidos                                    |
+| Comprovantes     | R2 privado `cantina-contabil-receipts`, binding RECEIPTS; r2.dev desativado. Local emulado, separado    |
+
+Publicações e pontos de recuperação anteriores: [RELEASES.md](RELEASES.md). Ambiente, migrações e procedimento de deploy: [LOCAL.md](LOCAL.md).
+
+### O que já está publicado
+
+- Nome Ministério Contábil, login externo, sessão interna assinada de até 2 horas, Meus dados e logout. Expiração detectada em operação/comprovante redireciona para /login.
+- Layout persistente, navegação lateral/drawer, breadcrumbs e transição sutil sem atraso artificial ou conteúdo escondido.
+- Caixas, doações recebidas, eventos/produtos/pedidos, insumos e Movimentações. Paginação de 15; saldos real/pendente e histórico com autoria/snapshots.
+- Pedidos em página própria, filtro Todos/Pendentes/Pagos, busca por pessoa, A–Z antes da paginação, único valor ajustável inclusive zero, Pix inicial e pagamento dinheiro/Pix/misto. Observação truncada apenas na lista. Todos os pedidos ativos contam nas unidades vendidas; apenas pagos entram na composição Dinheiro/Pix.
+- Insumos: compras de qualquer caixa com saldo suficiente/débito imediato ou doação Pendente/Recebido sem efeito financeiro; descrição opcional, nome opcional do doador, ícones, até 5 comprovantes de 5 MB. Detalhes/edição/exclusão lógica e arquivos privados preservados no histórico.
+- Movimentações: registrar/consultar/editar/excluir entradas/saídas, com caixa, valor positivo, data e justificativa obrigatória. Bloqueio de saldo negativo, inclusive ao reduzir/excluir entrada utilizada, e histórico nos caixas afetados.
+- Busca compartilhada automática após 350 ms, preservando filtros/digitação; contorno da busca corrigido. Pedidos/Insumos/Histórico cabem em três colunas no celular, com texto e alvo mínimo de 44px.
+
+## Base funcional — v0.6.0
+
+- Home final: resumo Real/Pendente e quatro blocos — Doações, Movimentações, gráfico Saldo por caixa e Próximos eventos. Sem listas de últimas movimentações/pedidos pendentes ou novas fórmulas financeiras.
+- Padrões visuais refinados com o responsável: cabeçalhos/menu discretos, subtítulos explicativos ocultos no celular, doações resumidas com detalhes em modal, ações dos insumos à direita e organização financeira do evento no celular. Desktop preservado conforme contrato.
+- Login/logout sem ErrorModal indevido de redirect; exclusão bloqueada de caixa fecha a confirmação ao dispensar o erro. Filtro/reverter na mesma linha.
+- Backend com Zod para contratos GestPV/sessão; sem catches genéricos de HTTP/JSON/R2 e consultas D1. Nove catches específicos para constraints e token/cookie malformados. Logger protege payload em SyntaxError. Injeção manual por composition.ts consolidada no contrato; sem container novo.
+- Desenvolvimento acessível por localhost e IP da rede na porta 5174; Worker/debug em loopback. Configuração de desenvolvimento retorna novo objeto, sem mutar configuração congelada.
+- Deploy em cópia temporária privada sem .env/credenciais/estado local. Build completo, TypeScript, verificação do pacote e dry-run aprovados; envio validado por tag/descrição/bindings e 100% do tráfego. Nenhuma migração aplicada, nenhuma alteração de dados ou novo recurso remoto. SESSION_SECRET existente preservado e confirmado apenas pelo nome.
+- README apresenta origem no GestPV, finalidade, capacidades atuais, visão futura, Cloudflare/Miniflare e acesso. Contratos atuais em AGENTS/ARCHITECTURE/DESIGN/UX-CONTRACT/LOCAL; histórico em RELEASES.
+
+## Código local, migrações e produção
+
+Projeto/lockfile 0.6.3. Insumos acompanha Dinheiro/Pix como informação discreta, sem mudar o cálculo. Publicado com build isolado Cloudflare/TypeScript e dry-run aprovados; revisão estática de composição, sem teste funcional/navegador. Tag v0.6.3, versão 59ffc4c2-247e-4ee4-99d9-bd52a99c08fc, deployment 27a09605-57e2-4c7f-98b1-dc3d1d0c8609 e 100% do tráfego confirmados. Sem alterações locais posteriores neste bloco. D1 local permanece documentado até 0022, sem novas migrações locais nesta conversa; D1 remoto consultado em leitura e sem pendências. Estado local e arquivos de desenvolvimento não foram enviados à produção.
+
+O pacote novo não inclui os valores privados locais conhecidos, nem arquivos de ambiente; origens de desenvolvimento não alteram produção. Artefatos locais antigos podem conter variáveis locais geradas pelo OpenNext e continuam privados/ignorados; não apagá-los enquanto em uso. A chave de produção vem dos Secrets do Worker. Não afirmar ausência de todo segredo desconhecido no código apenas por essa verificação.
+
+## Insumos publicados — v0.6.2
+
+Cards de insumos abrem o modal existente de detalhes por clique/toque ou teclado; link do caixa e ações continuam independentes. Situação financeira do evento exibe Insumos: soma das compras ativas daquele evento, pagas por qualquer caixa; doações e excluídos não entram, ausência de compras resulta em R$ 0,00. Real/Pendente permanecem iguais, sem cálculo de lucro. Publicado por solicitação explícita, tag v0.6.2, versão ca2048ae-41ae-4bb0-bb53-610c0529604d e deployment 9af21f5f-5ae2-487a-93e2-b53a1d4fb705, 100% do tráfego confirmado. Sem migração. Build isolado completo Cloudflare/TypeScript e dry-run aprovados, com inspeção do pacote. Revisão estática de JSX/CSS; sem navegador ou teste funcional, conforme contrato.
+
+## Marca publicada — v0.6.1
+
+Logo MC (opção 1) aprovado e publicado no Brand de login/cabeçalho, favicon e Apple icon. Login com marca ampliada (64px/52px) e revelação de texto por 1s, respeitando movimento reduzido; header compacto preservado. Original em logos/, assets leves em public/brand. Build isolado completo/TypeScript, dry-run e inspeção de pacote aprovados. Sem migração ou teste funcional/navegador pelo agente. Versão a9d5e6fd-a2e9-4628-8430-f7e95cf645a6, deployment 3d5cb6c0-4d83-421e-a68f-d657cf79ad5d, tag v0.6.1 e 100% de tráfego confirmados.
+
+**Domínios pendentes:** Wrangler reativou workers.dev/prévias porque as opções não estão no config; consulta antes do término confirmou ambos desativados. Restauração rejeitada pela revisão automática por falta de confirmação do alcance; não executada. Pergunta ao responsável pendente para desligar ambos ou somente prévias; não alterar sem resposta. Domínios personalizados não foram modificados.
+
+## Padrões que não devem regredir
+
+- Donos: [arquitetura](ARCHITECTURE.md), [design](DESIGN.md), [UX](UX-CONTRACT.md). Backend por funcionalidade, Drizzle na infraestrutura e Zod nos inputs; use cases validam independentemente das Actions. executeOperation/handleFailure/logger, useServerAction e ErrorModal compartilhados.
+- Minimalismo com hierarquia/agrupamento. Cards em insumos, blocos suaves nos produtos do pedido e painéis aprovados na Home; outras listas mantêm separadores. Sem novo tema ou conversão de outras telas por iniciativa própria.
+- Button é dono dos ícones: padrão mobileIcon abaixo de 600px; **ações diretas Editar/Excluir abaixo de 1024px** via iconBreakpoint=tablet; layout/drawer em 768px. Form-grid com duas colunas a partir de 1024px; campos relacionados, nome/textos longos em linha própria. Insumos usa formCompact.
+- MoneyField/DateField e máscaras centrais; tokens e z-index globais. Busca automática só no SearchForm compartilhado. Dados completos permanecem na edição/detalhes/histórico quando o resumo trunca.
+- Real/Pendente somente, sem pagamento parcial nem valor recebido separado. Não transformar a correção entre caixas de insumos/movimentações/doações em transferência bancária automática. Regras de saldo negativo são por operação aprovada, não uma autorização para alterar silenciosamente pedidos antigos.
+
+## Visão futura, sem autorização de implementação
+
+README apresenta a motivação de organizar finanças dos ministérios/eventos da igreja e a intenção de evoluir para pagamentos integrados, fluxo de comandas e endereços/rotas para entregas. São direções de produto, sem contrato de funcionamento, arquitetura ou implementação aprovados. Não iniciar essas funcionalidades por esta documentação.
+
+## Pendências reais
+
+- **Segurança:** validação da assinatura do JWT externo ainda pendente, aceita temporariamente; sessão HMAC e GET de perfil não resolvem essa pendência. Detalhes em ARCHITECTURE.md.
+- **Resultado do evento:** lucro não foi solicitado e não é calculado. O indicador Insumos soma somente compras ativas, conforme contrato abaixo.
+- **Verificação funcional:** com o responsável, incluindo doações editáveis, comprovantes de movimentações e alterações responsivas. Build não comprova navegação, Android, qualidade visual ou carga de uploads.
+- **Armazenamento:** reconciliação de objetos R2 sem vínculo após falha D1 continua pendente; não apagar arquivos de resultado incerto ou históricos automaticamente.
+- Anexos gerais de doações, cobrança online, filas/WS, API própria/OpenAPI, transferências pareadas e GitHub continuam fora deste bloco.
+
+## Verificações e limites para retomar
+
+Build completo Cloudflare, incluindo TypeScript, aprovado na cópia isolada da v0.6.0, junto do dry-run e inspeção de arquivos/valores privados conhecidos no pacote final. A antiga falha de --showConfig foi diagnosticada como EPERM da execução restrita da ferramenta, não falha do projeto. Sintaxe e formatação dos scripts/documentos conferidas. Sem navegador/servidor ou teste funcional executado pelo agente; responsável revisou imagens e orientou os refinamentos. Conferência funcional/visual final continua com o responsável.
+
+Publicação v0.6.0 concluída: versão 3a4be970-94d5-4dd9-a220-59e3bd737e26, deployment 51a72a5e-5b10-4b8b-bcd6-dd5a305518f5, 100% de tráfego. D1 sem migrações pendentes; nenhum dado migrado nesta entrega. Histórico e recuperação anterior permanecem em RELEASES.md.
+
+O responsável mantém npm run dev no próprio terminal. Não encerrar/recriar sua instância, apagar .wrangler/state nem sobrescrever .next/.open-next em uso. Para build completo enquanto o ambiente estiver aberto, usar npm run deploy -- --build-only, que não publica. Novos deploys, migrações remotas e alterações de recursos exigem novo pedido explícito. Não exportar dados de produção para arquivo local por conveniência.

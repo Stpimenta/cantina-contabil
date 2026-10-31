@@ -1,0 +1,49 @@
+.selection,
+.optionContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-width: 0;
+  font-weight: var(--weight-regular);
+  text-align: start;
+}
+.value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.optionContent {
+  overflow-wrap: anywhere;
+}
+.list {
+  position: fixed;
+  position-area: bottom;
+  position-try-fallbacks: flip-block;
+  inset: auto;
+  margin: var(--space-1) 0 0;
+  width: anchor-size(width);
+  max-width: calc(100vw - var(--space-8));
+  max-height: min(var(--select-list-height), calc(100dvh - var(--space-8)));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-1);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+  z-index: var(--z-popover);
+}
+.list:popover-open,
+.fallback:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+.fallback {
+  position: static;
+  width: 100%;
+  margin: 0;
+}
