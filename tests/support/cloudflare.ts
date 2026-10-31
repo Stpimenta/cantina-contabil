@@ -5,6 +5,7 @@ export function setTestBucket(value: R2Bucket | undefined) {
   bucket = value;
 }
 export function getCloudflareContext() {
-  if (!bucket) throw new Error("Ambiente descartável de testes não inicializado");
+  if (!bucket)
+    throw new Error("Ambiente descartável de testes não inicializado");
   return { env: { RECEIPTS: bucket } };
 }

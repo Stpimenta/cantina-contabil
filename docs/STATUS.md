@@ -1,10 +1,16 @@
 # Retomada — Ministério Contábil
 
-Revisado em **28/10/2026**. Ler [AGENTS.md](../AGENTS.md) e os documentos donos antes de alterar. Este arquivo descreve o estado atual, não autoriza iniciar backlog, servidores ou publicação.
+Revisado em **30/10/2026**. Ler [AGENTS.md](../AGENTS.md) e os documentos donos antes de alterar. Este arquivo descreve o estado atual, não autoriza iniciar backlog, servidores ou publicação.
 
-## Planejamento local — testes (30/10/2026)
+## Código local — testes (30/10/2026)
 
-Projeto simples de testes unitários e integração registrado em [TESTING.md](TESTING.md), com foco em saldos, entradas/saídas, concorrência, histórico, acesso e comprovantes. Documento de proposta, sem suíte implementada ou dependências instaladas; escolha de executor e emulação isolada aguarda aprovação do responsável. Nenhum código de aplicação alterado, nenhuma migração local aplicada e nenhuma mudança em produção. As verificações funcionais atuais continuam com o responsável até consolidar o novo contrato de execução.
+Suíte autorizada e implementada conforme [TESTING.md](TESTING.md): **123 testes aprovados**, sendo **75 unitários e 48 de integração**, em cinco arquivos. Vitest 5.0.5 e Miniflare 5.20261019.2-beta fixados no package/lockfile; esta versão do Miniflare já era utilizada pelo Wrangler. Casos de uso/repositories reais, migrações SQL reais e D1/R2 descartáveis com dados sintéticos. Cobertura: dinheiro/datas/inputs, saldos e operações financeiras, catálogo/snapshots, repetição, concorrência/guardas D1, vínculos/exclusão, Home, sessão/login/perfil e comprovantes privados. Propriedades enviadas aos componentes cliente pelas páginas de insumos/movimentações verificadas sem navegador.
+
+**Verificação:** `npm run test:unit` aprovado; integração executada e depois suíte completa `npm test` aprovada (123 testes, cerca de 52 segundos). `npm run typecheck` aprovado, incluindo os testes. Build completo Cloudflare/TypeScript, dry-run e inspeção de pacote aprovados por `npm run deploy -- --build-only`, em cópia temporária isolada; nenhum envio. Formatação dos arquivos alterados conferida. Configuração Vitest não carrega `.env`; o emulador usa loopback/portas aleatórias, encerra ao finalizar e remove somente seu diretório descartável.
+
+**Separação de ambientes:** nenhum arquivo de aplicação em src/ alterado; alterações locais somente na suíte, configuração/dependências de desenvolvimento e documentação. Nenhuma migração aplicada ao D1 de desenvolvimento ou remoto; as migrações foram executadas apenas nos bancos descartáveis. Produção permanece v0.6.3, sem novo deploy, versão ou consulta remota neste bloco. Testes funcionais da interface continuam com o responsável; não houve servidor Next, navegador ou screenshots.
+
+**Dependências:** `npm audit` identificou oito avisos (cinco altos/três moderados) na cadeia de OpenNext/glob/minimatch e Miniflare/undici/Wrangler. Vitest não apareceu entre os pacotes sinalizados. Miniflare já existia de forma transitiva e agora é dependência direta de testes na mesma versão. Não foi executado audit fix, downgrade ou atualização da stack; correção desses avisos exige avaliação separada, sem tratar a instalação da suíte como revisão completa de segurança.
 
 ## Produção e trabalho local
 
@@ -41,7 +47,7 @@ Publicações e pontos de recuperação anteriores: [RELEASES.md](RELEASES.md). 
 
 ## Código local, migrações e produção
 
-Projeto/lockfile 0.6.3. Insumos acompanha Dinheiro/Pix como informação discreta, sem mudar o cálculo. Publicado com build isolado Cloudflare/TypeScript e dry-run aprovados; revisão estática de composição, sem teste funcional/navegador. Tag v0.6.3, versão 59ffc4c2-247e-4ee4-99d9-bd52a99c08fc, deployment 27a09605-57e2-4c7f-98b1-dc3d1d0c8609 e 100% do tráfego confirmados. Sem alterações locais posteriores neste bloco. D1 local permanece documentado até 0022, sem novas migrações locais nesta conversa; D1 remoto consultado em leitura e sem pendências. Estado local e arquivos de desenvolvimento não foram enviados à produção.
+Projeto/lockfile 0.6.3. Insumos acompanha Dinheiro/Pix como informação discreta, sem mudar o cálculo. Publicado com build isolado Cloudflare/TypeScript e dry-run aprovados; revisão estática de composição, sem teste funcional/navegador. Tag v0.6.3, versão 59ffc4c2-247e-4ee4-99d9-bd52a99c08fc, deployment 27a09605-57e2-4c7f-98b1-dc3d1d0c8609 e 100% do tráfego confirmados. Após a publicação, foi adicionada localmente a suíte de testes descrita no início deste documento, sem alterar o comportamento da aplicação nem publicar novamente. D1 local permanece documentado até 0022, sem novas migrações locais nesta conversa; D1 remoto consultado em leitura e sem pendências. Estado local e arquivos de desenvolvimento não foram enviados à produção.
 
 O pacote novo não inclui os valores privados locais conhecidos, nem arquivos de ambiente; origens de desenvolvimento não alteram produção. Artefatos locais antigos podem conter variáveis locais geradas pelo OpenNext e continuam privados/ignorados; não apagá-los enquanto em uso. A chave de produção vem dos Secrets do Worker. Não afirmar ausência de todo segredo desconhecido no código apenas por essa verificação.
 
