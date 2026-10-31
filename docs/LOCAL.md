@@ -1,6 +1,6 @@
 # Desenvolvimento local e publicação
 
-Revisado em 30/10/2026. Estado corrente em [STATUS.md](STATUS.md); histórico de entregas e recuperação em [RELEASES.md](RELEASES.md).
+Revisado em 31/10/2026. Estado corrente em [STATUS.md](STATUS.md); histórico de entregas e recuperação em [RELEASES.md](RELEASES.md).
 
 Requisito: Node.js 22.17 ou posterior compatível, npm e dependências do lockfile (`npm ci`). Miniflare/workerd já vêm com o Wrangler instalado no projeto; não há instalação global ou assinatura adicional para rodar localmente.
 
@@ -113,13 +113,15 @@ Em 28/10/2026, a execução restrita da ferramenta causou `Could not parse outpu
 
 OpenNext lê arquivos .env presentes durante a compilação e pode embutir suas variáveis no Worker. O .gitignore não interfere nisso. deploy.mjs usa deploy-build.mjs para copiar apenas código/configurações necessárias e dependências instaladas para uma pasta privada temporária, sem .env, credenciais, banco local ou builds existentes. Dependências são copiadas independentemente, sem symlink para o projeto; nenhum npm ci adicional ou instalação é feito nessa etapa. Ambiente do processo de compilação contém somente variáveis de sistema necessárias, não os segredos do shell.
 
-O script exige next-env.mjs vazio para production/development/test, bloqueia arquivos de ambiente/chaves privadas e procura os valores sensíveis conhecidos do .env/shell nos artefatos .open-next e no bundle final de um dry-run Wrangler. Esses checks não substituem revisão de segredos desconhecidos inseridos no código. Só após aprovação envia o mesmo pacote, usando os Secrets já configurados no Worker e o perfil de publicação. CANTINA_SECRETS_FILE, se explicitamente configurado, é resolvido fora da cópia e passado somente ao envio; nunca ao build. Pasta temporária é removida ao terminar ou falhar; arquivos e processos locais não são encerrados/modificados. Nenhuma migração é aplicada.
+O script exige next-env.mjs vazio para production/development/test, bloqueia arquivos de ambiente/chaves privadas e procura os valores sensíveis conhecidos do .env/shell nos artefatos .open-next e no bundle final de um dry-run Wrangler. Esses checks não substituem revisão de segredos desconhecidos inseridos no código. Só após aprovação envia o mesmo pacote, usando os Secrets já configurados no Worker. O envio compartilhado em deploy-worker.mjs usa token quando fornecido; sem token, mantém o perfil local cantina-contabil. CANTINA_SECRETS_FILE, se explicitamente configurado, é resolvido fora da cópia e passado somente ao envio; nunca ao build. Pasta temporária é removida ao terminar ou falhar; arquivos e processos locais não são encerrados/modificados. Nenhuma migração é aplicada.
 
 Para compilar/verificar sem publicar: `npm run deploy -- --build-only`. Esse caminho permite o build completo sem disputar .next/.open-next com o ambiente local aberto. O fluxo de desenvolvimento permanece usando .env e recursos emulados.
 
-## Publicação, somente quando solicitada
+## Publicação automática e publicação manual
 
-Implementar ou corrigir não autoriza publicar. A autorização anterior de deploy automático foi revogada. Acesso à conta e retomada de chat também não autorizam migração remota, deploy ou alteração de recursos.
+Em 31/10/2026 foi autorizado o deploy automático via GitHub Actions após merge de PR na main, com testes/tipos aprovados e demais guardas de [CI.md](CI.md). Ambiente GitHub cloudflare-workers, token de publicação e leitura D1, versão escolhida no PR, mensagem pelo título e tag após confirmação remota. O responsável fará o envio/merge do workflow; sua implementação local não confirma ativação remota. O Actions consulta nomes de migrações, sem aplicar SQL de migração.
+
+Implementar ou corrigir não autoriza deploy manual pelo agente. Acesso à conta e retomada de chat não autorizam migração remota ou alteração de recursos. O procedimento manual abaixo continua disponível somente com solicitação explícita.
 
 Quando houver novo pedido explícito:
 
@@ -136,6 +138,8 @@ npm run deploy -- vX.Y.Z "Descrição curta da entrega"
 Alternativa equivalente: npm run deploy -- --tag vX.Y.Z --message "Descrição curta da entrega". Os valores são exemplos; uma revisão documental não autoriza executar esses passos.
 
 Última produção confirmada: v0.6.3, versão 59ffc4c2-247e-4ee4-99d9-bd52a99c08fc, com 100% do tráfego. Ponto D1 anterior às migrações 0021/0022: 00000031-00000000-00005112-e8571e9def2c99e11980b4aef3b2aadb. Demais versões/bookmarks permanecem em RELEASES.md.
+
+Workflow, configuração do GitHub e recuperação de falhas: [CI.md](CI.md).
 
 ## Referências da configuração
 

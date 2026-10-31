@@ -1,8 +1,18 @@
 # Retomada — Ministério Contábil
 
-Revisado em **30/10/2026**. Ler [AGENTS.md](../AGENTS.md) e os documentos donos antes de alterar. Este arquivo descreve o estado atual, não autoriza iniciar backlog, servidores ou publicação.
+Revisado em **31/10/2026**. Ler [AGENTS.md](../AGENTS.md) e os documentos donos antes de alterar. Este arquivo descreve o estado atual, não autoriza iniciar backlog, servidores ou publicação.
 
-## Código local — testes (30/10/2026)
+## Código local — deploy por GitHub Actions (31/10/2026)
+
+Branch **feat/deploy-github-actions**, criada da main remota ed422a7, com workflow em `.github/workflows/deploy.yml`. Projeto/lockfile **0.6.4 local**, ainda não publicado. Contrato aprovado em [CI.md](CI.md): versão escolhida no PR, título feat/fix como mensagem Cloudflare, validação no PR/main, build isolado, consulta de nomes de migrações, deploy após merge na main e tag Git imutável somente após confirmar tag/commit e 100% do tráfego. Scripts compartilhados preservam publicação manual; CI usa token em vez do perfil OAuth local. Regra feat/fix e autoria do responsável registradas em AGENTS.md. Nenhum arquivo src/ foi alterado.
+
+**Verificação local:** **158 testes aprovados** em sete arquivos (110 unitários, incluindo 35 cenários novos de publicação/API/envio, e 48 de integração). Tipos, sintaxe dos scripts, YAML/estrutura do workflow, SHAs das actions oficiais, formatação, build completo Cloudflare/TypeScript, dry-run e inspeção de pacote aprovados. Build executado por `npm run deploy -- --build-only` em cópia temporária; nenhum upload. Simulações de publicação usam APIs e envio controlados, sem rede de produção. Não houve servidor Next, navegador ou screenshot.
+
+**GitHub:** responsável confirmou por imagens ambiente cloudflare-workers, secret CLOUDFLARE_API_TOKEN e restrição à main. O agente conseguiu leitura do remoto, mas a simulação de push falhou sem credenciais; responsável fará push, PR e merge. Workflow ainda não foi executado no GitHub. Antes do merge, acrescentar **D1 Read** ao token para a checagem de migrações; Workers Editor sozinho não permite consultar D1. Sem essa permissão o fluxo bloqueia antes de publicar. Proteção da main pelo check Testes, tipos e versão pode ser configurada após ele aparecer.
+
+**Produção e migrações:** última produção confirmada continua **v0.6.3**. Nenhuma migração nova, aplicação no D1 de desenvolvimento/remoto, alteração de recursos, consulta Cloudflare ou deploy real neste bloco. Testes usam bancos descartáveis. Nomes de migrações, autenticação, formatos de metadados e comportamento do workflow remoto aguardam a primeira execução real; conferência local não comprova essas condições. Migrações remotas continuam manuais com autorização explícita. Uma falha de envio/confirmacão exige conferir o relatório/estado remoto, sem repetir upload ou rollback cegamente.
+
+## Base de testes entregue em 30/10/2026
 
 Suíte autorizada e implementada conforme [TESTING.md](TESTING.md): **123 testes aprovados**, sendo **75 unitários e 48 de integração**, em cinco arquivos. Vitest 5.0.5 e Miniflare 5.20261019.2-beta fixados no package/lockfile; esta versão do Miniflare já era utilizada pelo Wrangler. Casos de uso/repositories reais, migrações SQL reais e D1/R2 descartáveis com dados sintéticos. Cobertura: dinheiro/datas/inputs, saldos e operações financeiras, catálogo/snapshots, repetição, concorrência/guardas D1, vínculos/exclusão, Home, sessão/login/perfil e comprovantes privados. Propriedades enviadas aos componentes cliente pelas páginas de insumos/movimentações verificadas sem navegador.
 
@@ -18,7 +28,7 @@ Suíte autorizada e implementada conforme [TESTING.md](TESTING.md): **123 testes
 | ---------------- | ------------------------------------------------------------------------------------------------------- |
 | Produção         | **v0.6.3**, Cloudflare `59ffc4c2-247e-4ee4-99d9-bd52a99c08fc`, 100% de tráfego confirmado na publicação |
 | Endereço         | https://cantina-contabil.devibpv3.workers.dev                                                           |
-| Projeto/lockfile | 0.6.3; Insumos discretos junto de Dinheiro/Pix publicados                                               |
+| Projeto/lockfile | **0.6.4 local**, workflow preparado; produção permanece 0.6.3                                           |
 | D1 remoto        | Migrações até **0022**, nenhuma pendente na conferência remota de 28/10/2026                            |
 | D1 local         | Migrações até **0022**, com backup e preservação de dados conferidos                                    |
 | Comprovantes     | R2 privado `cantina-contabil-receipts`, binding RECEIPTS; r2.dev desativado. Local emulado, separado    |
@@ -47,7 +57,7 @@ Publicações e pontos de recuperação anteriores: [RELEASES.md](RELEASES.md). 
 
 ## Código local, migrações e produção
 
-Projeto/lockfile 0.6.3. Insumos acompanha Dinheiro/Pix como informação discreta, sem mudar o cálculo. Publicado com build isolado Cloudflare/TypeScript e dry-run aprovados; revisão estática de composição, sem teste funcional/navegador. Tag v0.6.3, versão 59ffc4c2-247e-4ee4-99d9-bd52a99c08fc, deployment 27a09605-57e2-4c7f-98b1-dc3d1d0c8609 e 100% do tráfego confirmados. Após a publicação, foi adicionada localmente a suíte de testes descrita no início deste documento, sem alterar o comportamento da aplicação nem publicar novamente. D1 local permanece documentado até 0022, sem novas migrações locais nesta conversa; D1 remoto consultado em leitura e sem pendências. Estado local e arquivos de desenvolvimento não foram enviados à produção.
+Projeto/lockfile 0.6.4 local para o workflow descrito acima. Última publicação 0.6.3: Insumos acompanha Dinheiro/Pix como informação discreta, sem mudar o cálculo. Publicado com build isolado Cloudflare/TypeScript e dry-run aprovados; revisão estática de composição, sem teste funcional/navegador. Tag v0.6.3, versão 59ffc4c2-247e-4ee4-99d9-bd52a99c08fc, deployment 27a09605-57e2-4c7f-98b1-dc3d1d0c8609 e 100% do tráfego confirmados. Após a publicação, foram adicionados localmente a suíte de testes e o workflow descritos no início deste documento, sem alterar o comportamento da aplicação nem publicar novamente. D1 local permanece documentado até 0022, sem novas migrações locais nesta conversa; D1 remoto consultado em leitura e sem pendências. Estado local e arquivos de desenvolvimento não foram enviados à produção.
 
 O pacote novo não inclui os valores privados locais conhecidos, nem arquivos de ambiente; origens de desenvolvimento não alteram produção. Artefatos locais antigos podem conter variáveis locais geradas pelo OpenNext e continuam privados/ignorados; não apagá-los enquanto em uso. A chave de produção vem dos Secrets do Worker. Não afirmar ausência de todo segredo desconhecido no código apenas por essa verificação.
 

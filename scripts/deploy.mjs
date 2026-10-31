@@ -1,8 +1,7 @@
-import { spawnSync } from "node:child_process";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
-import { join, resolve } from "node:path";
 import { prepareDeployment } from "./deploy-build.mjs";
+import { deployPrepared } from "./deploy-worker.mjs";
 
 const projectRoot = fileURLToPath(new URL("../", import.meta.url));
 let parsed;
@@ -40,31 +39,8 @@ try {
   if (parsed.values["build-only"]) {
     exitCode = 0;
   } else {
-    const args = [
-      "--no-install",
-      "wrangler",
-      "deploy",
-      "--config",
-      join(prepared.workspace, "wrangler.jsonc"),
-      "--profile",
-      "cantina-contabil",
-      "--tag",
-      tag,
-      "--message",
-      message,
-    ];
-    if (process.env.CANTINA_SECRETS_FILE)
-      args.push(
-        "--secrets-file",
-        resolve(projectRoot, process.env.CANTINA_SECRETS_FILE),
-      );
-    const result = spawnSync("npx", args, {
-      cwd: prepared.workspace,
-      stdio: "inherit",
-      env: { ...process.env, OPEN_NEXT_DEPLOY: "true" },
-    });
-    if (result.error) throw result.error;
-    exitCode = result.status ?? 1;
+    deployPrepared(prepared.workspace, tag, message);
+    exitCode = 0;
   }
 } catch (error) {
   console.error(error.message);

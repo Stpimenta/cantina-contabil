@@ -1,0 +1,83 @@
+name: Validar e publicar na Cloudflare
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  WRANGLER_SEND_METRICS: "false"
+
+jobs:
+  validate:
+    name: Testes, tipos e versão
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Obter código
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Preparar Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22.17.0"
+          cache: npm
+      - run: npm ci
+      - name: Conferir versão e título do PR
+        run: node scripts/ci-release.mjs validate
+      - run: npm test
+      - run: npm run typecheck
+      - name: Verificar build e pacote no PR, sem publicar
+        if: github.event_name == 'pull_request'
+        run: npm run deploy -- --build-only
+
+  deploy:
+    name: Publicar versão aprovada
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: cloudflare-workers
+    permissions:
+      contents: write
+      pull-requests: read
+    concurrency:
+      group: cantina-contabil-production
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - name: Obter o mesmo commit validado
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Preparar Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22.17.0"
+          cache: npm
+      - run: npm ci
+      - name: Conferir migrações, compilar, publicar e confirmar tag
+        run: node scripts/ci-release.mjs deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Preservar relatório, inclusive após falha de confirmação ou tag
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: cantina-deployment
+          path: ${{ runner.temp }}/cantina-deployment.json
+          if-no-files-found: ignore
+          retention-days: 30
