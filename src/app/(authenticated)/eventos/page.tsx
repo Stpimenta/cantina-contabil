@@ -1,3 +1,4 @@
+import { SectionFeedback } from "@/components/ui/section-feedback";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createAuth } from "@/server/auth/composition";
@@ -67,6 +68,11 @@ export default async function EventsPage({
             query={result.value.list.query}
             label="Buscar evento por nome"
           />
+          {result.value.list.items.length === 0 && (
+            <SectionFeedback area="eventos">
+              Nenhum evento encontrado.
+            </SectionFeedback>
+          )}
           {result.value.list.items.length > 0 && (
             <ul className="record-list" aria-label="Eventos">
               {result.value.list.items.map((event) => (

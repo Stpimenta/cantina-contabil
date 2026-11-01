@@ -1,4 +1,5 @@
 "use client";
+import { SectionFeedback } from "@/components/ui/section-feedback";
 import styles from "./order-list.module.css";
 import { deleteOrderAction } from "@/server/events/actions/delete-order.action";
 import { useServerAction } from "@/shared/hooks/use-server-action";
@@ -50,6 +51,11 @@ export function OrderList({
         }
       />
       {search}
+      {orders.length === 0 && (
+        <SectionFeedback area="pedidos">
+          Nenhum pedido encontrado.
+        </SectionFeedback>
+      )}
       <ul className="record-list" aria-label="Pedidos do evento">
         {orders.map((order) => (
           <li key={order.id} className="record-row">

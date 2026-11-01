@@ -1,3 +1,4 @@
+import { SectionFeedback } from "@/components/ui/section-feedback";
 import styles from "./page.module.css";
 import Link from "next/link";
 import { CashBoxBalance } from "@/presentation/cash-boxes/components/cash-box-balance";
@@ -61,6 +62,11 @@ export default async function CashBoxesPage({
             query={result.value.query}
             label="Buscar caixa por nome"
           />
+          {result.value.items.length === 0 && (
+            <SectionFeedback area="caixas">
+              Nenhum caixa encontrado.
+            </SectionFeedback>
+          )}
           {result.value.items.length > 0 && (
             <ul className="record-list" aria-label="Caixas">
               {result.value.items.map((box) => (

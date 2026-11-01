@@ -30,7 +30,7 @@ omitted:
 
 # Design — contrato atual
 
-Consolidado em 28/10/2026. Estado de publicação em STATUS.md; o contrato descreve os padrões atuais e não autoriza novas mudanças. [UX-CONTRACT.md](UX-CONTRACT.md) define o comportamento e [ARCHITECTURE.md](ARCHITECTURE.md) as regras técnicas. Não tratar o histórico de ajustes como catálogo de alternativas.
+Consolidado em 01/11/2026. Estado de publicação em STATUS.md; o contrato descreve os padrões atuais e não autoriza novas mudanças. [UX-CONTRACT.md](UX-CONTRACT.md) define o comportamento e [ARCHITECTURE.md](ARCHITECTURE.md) as regras técnicas. Não tratar o histórico de ajustes como catálogo de alternativas.
 
 ## Direção
 
@@ -73,6 +73,7 @@ Antes de encerrar alterações visuais, ler JSX/CSS e conferir os cenários abai
 - Dentro do Modal, corpo rolável usa --z-modal-content e cabeçalho/rodapé usam --z-modal-chrome, definidos em globals.css e relativos ao contexto do diálogo. Cabeçalho/rodapé têm fundo --color-surface; rodapé reserva --space-4 acima das ações para não encostar nos controles recortados pela rolagem. Não criar z-index local numérico ou sobrescrita por formulário.
 
 - Scrollbar horizontal usa altura global --space-1, mantendo trilho/cores compartilhados; sem barras próprias por tela.
+- Modal compartilhado abre com foco programático no título, sem contorno no título nem destaque automático no X. O X mantém alvo de 44px e foco visível ao navegar por teclado; confirmações preservam o foco explícito em Cancelar.
 - Modal compartilhado distingue clique intencional no fundo de seleção/arraste: início e fim fora do painel, sem seleção de texto. Mover o mouse ou copiar não fecha nem solicita descarte.
 
 ## Responsividade e ícones
@@ -94,20 +95,22 @@ Limites distintos por responsabilidade, sem generalizar um breakpoint para todos
 
 ## Donos canônicos
 
-| Capacidade    | Dono                                                 | Contrato visual                                                                                                                                                      |
-| ------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Botões        | components/ui/button.tsx + button.module.css         | primary/neutral/ghost/danger; standard/large; iconOnly; mobileIcon/iconBreakpoint; compactOnMobile; shape search. Links de ação usam buttonClassName.                |
-| Campos        | field.tsx, textarea-field.tsx + field.module.css     | Label, valor, erro e foco; DateField e MoneyField reutilizam essa base.                                                                                              |
-| Seletores     | select-field.tsx + select-field.module.css           | Lista suspensa própria, não select/option HTML.                                                                                                                      |
-| Modais        | components/modals/modal.tsx + modal.module.css       | Uma base para título, fechar, corpo e rodapé; cada finalidade tem componente próprio.                                                                                |
-| Busca         | search-form.tsx + search-form.module.css             | Campo arredondado e lupa integrada em terracota; limpar busca no campo.                                                                                              |
-| Filtros       | filter-form.tsx, DonationFiltersModal e OrderFilters | Histórico automático com reverter; filtros de doações/pedidos com aplicação explícita.                                                                               |
-| Listas        | record-list/record-row/record-title globais          | Listas de caixas/doações/eventos/pedidos/movimentações com separadores; insumos segue composição própria abaixo. record-row-centered alinha nome do caixa com saldo. |
-| Menu de ações | components/ui/record-actions-menu.tsx + module       | Três pontos com Detalhes opcional, Editar/Excluir, teclado/foco e top layer compartilhados.                                                                          |
-| Paginação     | pagination.tsx + pagination.module.css               | Anterior/Próxima, página e contagem; quebra no celular.                                                                                                              |
-| Saldo         | CashBoxBalance e balance-value                       | Real e pendente, inclusive zero, em caixas/eventos; variante prominent nos detalhes.                                                                                 |
-| Notificações  | ToastProvider                                        | Um toast por vez, superior direito e compacto, sem sombra.                                                                                                           |
-| Layout        | AppShell, Navigation, Brand, PageHeader              | CSS privado de cada dono; AppShell persistente. Brand usa Ministério Contábil; identificadores técnicos e URL permanecem preservados.                                |
+| Capacidade    | Dono                                                                                     | Contrato visual                                                                                                                                                      |
+| ------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Botões        | components/ui/button.tsx + button.module.css                                             | primary/neutral/ghost/danger; standard/large; iconOnly; mobileIcon/iconBreakpoint; compactOnMobile; shape search. Links de ação usam buttonClassName.                |
+| Campos        | field.tsx, textarea-field.tsx + field.module.css                                         | Label, valor, erro e foco; DateField e MoneyField reutilizam essa base.                                                                                              |
+| Seletores     | select-field.tsx + select-field.module.css                                               | Lista suspensa própria, não select/option HTML.                                                                                                                      |
+| Modais        | components/modals/modal.tsx + modal.module.css                                           | Uma base para título, fechar, corpo e rodapé; cada finalidade tem componente próprio.                                                                                |
+| Busca         | search-form.tsx + search-form.module.css                                                 | Campo arredondado e lupa integrada em terracota; limpar busca no campo.                                                                                              |
+| Filtros       | filter-form.tsx, DonationFiltersModal e OrderFilters                                     | Histórico automático com reverter; filtros de doações/pedidos com aplicação explícita.                                                                               |
+| Listas        | record-list/record-row/record-title globais                                              | Listas de caixas/doações/eventos/pedidos/movimentações com separadores; insumos segue composição própria abaixo. record-row-centered alinha nome do caixa com saldo. |
+| Menu de ações | components/ui/record-actions-menu.tsx + module                                           | Três pontos com Detalhes opcional, Editar/Excluir, teclado/foco e top layer compartilhados.                                                                          |
+| Paginação     | pagination.tsx + pagination.module.css                                                   | Anterior/Próxima, página e contagem; quebra no celular.                                                                                                              |
+| Saldo         | CashBoxBalance e balance-value                                                           | Real e pendente, inclusive zero, em caixas/eventos; variante prominent nos detalhes.                                                                                 |
+| Notificações  | ToastProvider                                                                            | Um toast por vez, superior direito e compacto, sem sombra.                                                                                                           |
+| Skeleton      | components/ui/skeleton.tsx + skeleton.module.css; RouteLoading/loading.tsx; HomeOverview | Estrutura final visível, apenas dados pendentes substituídos; mínimo central de 300ms em PageTransition.                                                             |
+| Vazio         | SectionFeedback + SectionIllustration; public/illustrations/empty-states/*.svg           | Cena SVG autoral do setor e frase curta, centralizadas; nunca reutilizar como indicador de espera.                                                                   |
+| Layout        | AppShell, Navigation, Brand, PageHeader                                                  | CSS privado de cada dono; AppShell persistente. Brand usa Ministério Contábil; identificadores técnicos e URL permanecem preservados.                                |
 
 ## Identificação discreta das seções
 
@@ -119,7 +122,7 @@ Composição aprovada após revisão: saldo Real como foco em faixa de fundo sua
 
 Celular: sequência saldo, acessos a Doações/Movimentações, gráfico e eventos; sem rolagem horizontal. Acessos lado a lado a partir de 600px; painéis de gráfico/eventos em duas colunas somente a partir de 1024px. Nome/valor podem ocupar linhas diferentes, dinheiro permanece inteiro; valores totais muito longos usam fonte menor. Colunas minmax(0, 1fr), nomes quebráveis, ações de 44px, leitura/foco na ordem do DOM.
 
-Barras SVG nativas usam tokens e dimensões de atributos, sem biblioteca ou estilos inline. Valores são escritos por extenso ao lado de cada nome/link, SVG decorativo aria-hidden; barra usa proporção ao maior saldo absoluto e, se houver negativo, eixo central com negativo à esquerda. Zero mantém valor visível e barra de largura zero; não inventar mínimo visual nem percentual de crescimento. Cada barra leva ao caixa. Links de cabeçalho levam às áreas completas. Vazios mantêm 0 resultados.
+Barras SVG nativas usam tokens e dimensões de atributos, sem biblioteca ou estilos inline. Valores são escritos por extenso ao lado de cada nome/link, SVG decorativo aria-hidden; barra usa proporção ao maior saldo absoluto e, se houver negativo, eixo central com negativo à esquerda. Zero mantém valor visível e barra de largura zero; não inventar mínimo visual nem percentual de crescimento. Cada barra leva ao caixa. Links de cabeçalho levam às áreas completas. Vazios seguem o padrão de ilustração personalizada e frase da seção Carregamento e estados vazios.
 
 ## Marca
 
@@ -147,7 +150,7 @@ Menu do usuário: popover compacto à direita, separado do cabeçalho por space-
 - Histórico: categoria aplica ao escolher; reverter ghost iconOnly volta a Tudo e permanece à direita do seletor na mesma linha, inclusive no celular; campo flexível com min-width: 0 reserva o alvo de 44px da ação. Não usar X de fechar nem voltar ao botão Filtrar.
 - Descrição no resumo de Caixas tem truncamento visual por largura disponível: uma linha abaixo de 600px e até duas a partir disso, com reticências; dado original e texto completo no detalhe permanecem. Geometria no page.module.css da listagem, sem cortar nome ou saldos.
 - Caixas/Eventos: linha inteira é Link e o título mantém aparência de navegação. Doações: corpo estático; nome do caixa usa botão textual sublinhado terracota para abrir detalhes em modal, sem navegar ao caixa. Títulos navegáveis e botões text-link recebem o destaque compartilhado de link. Ações de Doações ficam no menu próprio.
-- Vazio mostra só 0 resultados. Falha não se apresenta como lista vazia.
+- Vazio usa a ilustração personalizada da área e frase do padrão compartilhado; não repetir 0 resultados no rodapé. Falha não se apresenta como lista vazia.
 
 ## Detalhes e histórico
 
@@ -180,12 +183,28 @@ Menu do usuário: popover compacto à direita, separado do cabeçalho por space-
 - Detalhe do evento exibe Dinheiro e Pix em linha secundária discreta após o resumo financeiro, com quebra natural no celular. Somam somente as parcelas dos pedidos pagos ativos, incluindo pagamento misto; pendentes/excluídos ficam fora. São composição do Real, sem somar novamente ao saldo ou descontar insumos por meio de pagamento. Agregação em centavos no repository com precisão segura; sem novos campos persistidos ou migração.
 - Ações Pedidos/Insumos/Histórico do detalhe do evento ficam em três colunas iguais abaixo de 600px, com gap space-2. Usam compactOnMobile do Button compartilhado (também em links), texto font-sm, padding space-2 e altura mínima de 44px; mantêm rótulos completos e alinhamento central, sem cortar Histórico. A partir de 600px preservam tamanho large e espaçamento anteriores. Não sobrescrever controles na página nem aplicar a todos os botões automaticamente.
 
+## Carregamento e estados vazios
+
+### Skeleton durante o carregamento
+
+Padrão aprovado para as páginas autenticadas; reutilizar os donos abaixo em novas telas e correções, sem criar um loader particular por setor.
+
+- Carregamento de rotas autenticadas usa loading.tsx e RouteLoading com estrutura específica de cada tela. Não mostrar ilustração, bolinha, spinner ou frase visível de espera. Preservar ícones normais do PageHeader e dos controles; o aviso de carregamento fica somente em sr-only/role=status e a região usa aria-busy. Skeleton compartilhado cobre nomes, valores, contagens, datas e linhas ainda desconhecidas, sem inventar zeros. Cabeçalho, busca/filtros e ações são posicionados como na tela final; controles que dependem dos dados ficam desabilitados apenas nesse estado inicial. SearchForm possui disabled para reutilizar sua geometria sem executar busca no fallback; buscas/filtros já montados na mesma rota preservam texto/interação pelo fluxo atual. Detalhes reutilizam breadcrumbs e CSS de saldos/financeiro/informações dos donos. Listas conservam separadores; cards somente em insumos.
+- Na Home, HomeOverview sem data reutiliza o próprio JSX/CSS da apresentação final: Saldo real/Pendente, contagem de caixas, atalhos de Doações/Movimentações, painéis Saldo por caixa/Próximos eventos. Somente dados e linhas pendentes viram Skeleton; links estáticos continuam disponíveis. Não mostrar resultados vazios enquanto data está indefinida. Mesmos breakpoints do dono (atalhos em duas colunas a partir de 600px e resumo/painéis a partir de 1024px), sem recriar grids no loader. O comprimento de nomes longos ou quantidade de registros pode ajustar a altura final; não declarar ausência absoluta de saltos.
+
+### Ilustração quando não há registros
+
+- Ausência de registros usa SectionFeedback com ilustrações autorais de pequenas cenas em arquivos SVG separados em public/illustrations/empty-states/, selecionadas por SectionIllustration; não reutilizar os ícones de navegação como desenhos de vazio. A coleção usa somente a paleta existente, traço terracota e superfícies claras: casa, caixa aberta/moeda, mão com envelope/coração, livro-caixa/bandeja, calendário/bandeirola, comandas/bloco de pedidos, sacola/embalagem/folhas e documentos/relógio. Cada arquivo tem viewBox 180×128 e aparece com largura de 144px (space-12 × 3), altura proporcional, sem animação, sem foco e sem referências externas. Grupo centralizado, com frase específica (Nenhum caixa/evento/pedido/insumo encontrado; Nenhuma doação/movimentação encontrada; Nenhum registro no histórico; Nenhum evento próximo na Home). Não usar skeleton, aria-busy ou anúncio de carregamento no estado vazio. Preservar filtros/busca/cadastro e composição dos registros existentes. Pagination não exibe rodapé redundante de 0 resultados; só renderiza para total positivo. A composição usa flex com quebra: ilustração limitada à largura disponível e texto flexível, sem mínimo de altura nem largura por tela; em celular estreito a frase pode quebrar, sem overflow. SVG é decorativo, sem foco, e sem novos controles.
+
+### Navegação e duração mínima
+
+- Navegação entre páginas autenticadas usa PageTransition: somente deslocamento vertical sutil de 8px em --duration-page (180ms), com conteúdo visível desde o primeiro frame da sua entrada após o carregamento, sem fade a partir de opacidade zero. Antes dos dados finais, PageTransition mantém RouteLoading por no mínimo 300ms (0,3 segundo) a partir da montagem da rota no navegador, inclusive no acesso inicial, em todos os ambientes, por decisão de avaliação do responsável em 01/11/2026. A espera ocorre junto do carregamento real: se os dados demorarem mais, o loading.tsx permanece até resolver. Não reiniciar o mínimo em busca/filtros/paginação na mesma rota; cancelar timer ao sair. A duração controla apenas o movimento depois de o conteúdo chegar; não se soma artificialmente à resposta do Worker. Apenas o conteúdo anima; cabeçalho e lateral ficam estáveis. A chave é o pathname: busca, paginação, abertura de histórico e atualizações na mesma rota não repetem a animação nem remontam formulários. Movimento reduzido desativa animações/transições globalmente.
+
 ## Feedback e movimento
 
 - Sucesso usa ToastProvider, nunca texto avulso no cabeçalho/URL. Canto superior direito, largura pelo conteúdo até 384px, fonte pequena, sem sombra, borda lateral semântica.
 - success verde (--color-success), warning amarelo (--color-warning), critical vermelho (--color-danger). Uma mensagem por vez; 3s, pausa por foco/ponteiro e fechamento manual.
 - Entrada/saída com opacidade e deslocamento de 8px em --duration-fast (120ms). Fechamento manual também anima. Respeitar reduced-motion.
-- Navegação entre páginas autenticadas usa PageTransition: somente deslocamento vertical sutil de 8px em --duration-page (180ms), com conteúdo visível desde o primeiro frame, sem fade a partir de opacidade zero, espera mínima ou atraso para trocar de rota. A duração controla apenas o movimento depois de o conteúdo chegar; não se soma artificialmente à resposta do Worker. Apenas o conteúdo anima; cabeçalho e lateral ficam estáveis. A chave é o pathname: busca, paginação, abertura de histórico e atualizações na mesma rota não repetem a animação nem remontam formulários. Movimento reduzido desativa animações/transições globalmente.
 - Validação de campos não abre modal: usar error de Field/MoneyField/DateField/SelectField/TextareaField. FieldError compartilha a mesma aparência para erro específico de grupo (por exemplo, lista sem produtos), logo abaixo do controle/grupo e com vínculo acessível. Não mostrar resumos genéricos acima de listas ou duplicar erros de linhas no grupo. Erros atualizam ao editar após a tentativa de envio. Demais falhas continuam no ErrorModal.
 - Mensagem de validação dos produtos não deve mencionar o limite de 100 produtos; manter a orientação sobre nome, ícone e preço válidos, sem repetição.
 - Erros gerais continuam em ErrorModal; referência selecionável e CopyButton para copiar mensagem/referência. PageFailure/fallback têm os seus contextos, sem padrões visuais paralelos.

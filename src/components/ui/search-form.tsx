@@ -24,6 +24,7 @@ export function SearchForm({
   filters = {},
   actions,
   scroll = true,
+  disabled = false,
 }: {
   action: string;
   query: string;
@@ -31,6 +32,7 @@ export function SearchForm({
   filters?: Record<string, string>;
   actions?: ReactNode;
   scroll?: boolean;
+  disabled?: boolean;
 }) {
   const [value, setValue] = useState(query);
   const [pending, startTransition] = useTransition();
@@ -56,7 +58,7 @@ export function SearchForm({
   const search = useCallback(
     (q: string, automatic = false) => {
       if (timer.current) clearTimeout(timer.current);
-      if (pending || composing || q === query) return;
+      if (disabled || pending || composing || q === query) return;
       const params = new URLSearchParams(JSON.parse(filterKey));
       if (q) params.set("q", q);
       else params.delete("q");
@@ -68,10 +70,10 @@ export function SearchForm({
         }),
       );
     },
-    [pending, composing, query, filterKey, action, router, scroll],
+    [disabled, pending, composing, query, filterKey, action, router, scroll],
   );
   useEffect(() => {
-    if (pending || composing || value.trim() === query) return;
+    if (disabled || pending || composing || value.trim() === query) return;
     timer.current = setTimeout(
       () => search(value.trim(), true),
       value ? 350 : 0,
@@ -79,7 +81,7 @@ export function SearchForm({
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [value, query, pending, composing, search]);
+  }, [disabled, value, query, pending, composing, search]);
   return (
     <div className={styles.root}>
       <form
@@ -98,6 +100,7 @@ export function SearchForm({
           hideLabel
           appearance="search"
           type="search"
+          disabled={disabled}
           onCompositionStart={() => setComposing(true)}
           onCompositionEnd={() => setComposing(false)}
           placeholder={label}
@@ -107,6 +110,7 @@ export function SearchForm({
           trailing={
             value ? (
               <Button
+                disabled={disabled}
                 type="button"
                 variant="ghost"
                 iconOnly
@@ -125,6 +129,7 @@ export function SearchForm({
           }
         />
         <Button
+          disabled={disabled}
           type="submit"
           variant="primary"
           shape="search"

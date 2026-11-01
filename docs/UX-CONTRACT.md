@@ -9,7 +9,7 @@ Consolidado em 28/10/2026. Inclui decisões implementadas localmente; STATUS.md 
 - Sem sessão válida, páginas protegidas levam a /login. Falha SESSION_EXPIRED/unauthenticated recebida com a tela já aberta também redireciona automaticamente a /login, pelo tratamento central do ErrorModal, sem exibir modal nem pedir descarte. Credenciais recusadas ou LOGIN_SESSION_EXPIRED durante tentativa de login continuam como erros de autenticação na própria tela. Login válido com perfil carregado leva à Home; login já autenticado também leva à Home. Somente root/admin/tesouraria.
 - Falha na consulta do perfil impede concluir o login. Campos inválidos mostram erros abaixo dos campos e revalidam ao editar após a tentativa de envio. Credenciais recusadas e demais falhas usam ErrorModal; e-mail permanece, senha é limpa após falha de autenticação/servidor, não por validação de campo.
 - Cabeçalho/menu vivem no layout autenticado, preservados entre Home, Caixas, Doações, Eventos e Movimentações. Menu do usuário à direita: Meus dados e Sair.
-- Troca de página tem somente movimento discreto do conteúdo (180ms), mantendo cabeçalho/lateral estáveis e conteúdo visível desde o primeiro frame. Não ocultar a página para executar fade, aguardar animação de saída ou impor duração mínima à navegação. Busca/paginação/refresh na mesma rota não repetem a entrada. Respeitar preferência de movimento reduzido e não adicionar espera artificial.
+- Troca de página mantém cabeçalho/lateral estáveis, skeleton na estrutura da área e mínimo compartilhado de 300ms, conforme Carregamento de rotas. Dados resolvidos entram com movimento discreto de 180ms, sem fade ou espera por animação de saída. Busca/paginação/refresh na mesma rota não reiniciam o mínimo nem a animação. Respeitar movimento reduzido.
 - Meus dados mostra nome, e-mail, nascimento, telefone com país e perfil. Ausentes mostram Não informado; não expor CPF/RG/endereço ou objeto completo do provedor.
 - Redirecionamentos de login/logout são sinais de navegação preservados pelo useServerAction, sem modal de conexão durante a troca de página; falhas reais mantêm o tratamento existente.
 - Logout remove a sessão e volta ao login. Falha mantém contexto e apresenta erro. Sem retries automáticos ou bypass local.
@@ -21,7 +21,7 @@ Consolidado em 28/10/2026. Inclui decisões implementadas localmente; STATUS.md 
 - Gráfico de barras compara saldo real de todos os caixas ativos, ordenados por criação/ID decrescentes; nome e valor são legíveis sem depender do desenho/cor. Cada item abre o caixa. Não é evolução temporal ou receita do período.
 - Próximos eventos: até cinco não excluídos com data civil a partir de hoje, inclusive, em America/Sao_Paulo, por data/nome/ID crescentes. Linha leva ao evento; seta abre /eventos. Não filtrar por saldo ou presença de pedidos.
 - Home mantém apenas resumo financeiro e quatro blocos: Doações, Movimentações, Saldo por caixa e Próximos eventos. Listas de movimentações recentes e de pedidos pendentes ficam fora da Home.
-- Blocos de acesso levam a /doacoes e /movimentacoes, sem formulários ou gravações na Home. Falha na consulta usa PageFailure; nunca mostrar zero como substituto de erro. Valores zero são exibidos normalmente e listas vazias mostram 0 resultados.
+- Blocos de acesso levam a /doacoes e /movimentacoes, sem formulários ou gravações na Home. Falha na consulta usa PageFailure; nunca mostrar zero como substituto de erro. Valores zero são exibidos normalmente depois de resolver a consulta; áreas vazias usam ilustração personalizada e frase, conforme Resultados vazios.
 - Sem lucro do evento, saldo previsto, variações percentuais, notificações ou dados fictícios. Preview de cinco itens não muda paginação de 15 nas áreas completas. Composição responsiva em DESIGN.md.
 
 ## Ações e erros compartilhados
@@ -98,7 +98,7 @@ Consolidado em 28/10/2026. Inclui decisões implementadas localmente; STATUS.md 
 - Doações tem botão Filtros com texto e contagem quando ativo. Abre DonationFiltersModal com Caixa/Ano atuais. Cancelar/Escape/fechar descartam escolhas não aplicadas; Aplicar filtros navega e fecha ao concluir. Durante navegação, desabilitar campos/aplicar/fechar.
 - Aplicar busca preserva Caixa/Ano; aplicar filtros preserva q. Paginação preserva os três. Limpar busca remove só q; Todos os caixas/Todos os anos removem os respectivos filtros.
 - Não há seta externa de limpar filtros em Doações: foi revertida pelo responsável. Não reintroduzir. A busca voltou ao limite de 768px; no celular ocupa a primeira linha e Filtros fica abaixo.
-- Sem registros, mostrar somente 0 resultados, sem bloco explicativo redundante.
+- Sem registros, inclusive após busca/filtros, usar SectionFeedback com ilustração personalizada da área e frase curta, conforme Resultados vazios. Preservar os controles; não repetir 0 resultados no rodapé.
 
 ## Seletores padronizados
 
@@ -168,3 +168,13 @@ Consolidado em 28/10/2026. Inclui decisões implementadas localmente; STATUS.md 
 - Comprovantes opcionais em entrada/saída: FileUploadField compartilhado, clique ou arraste, até 5 imagens JPEG/PNG/WebP/PDF de 5 MB cada. Edição carrega salvos abaixo do upload, permite acrescentar e remover por X; nomes truncam, tamanho permanece legível e tudo fica bloqueado durante envio. Cancelar não grava remoções. Detalhes lista os anexos atuais para abrir imagens no modal do app/baixar PDF. Listagem resumida não ganha informação ou card adicional; histórico mostra contagem, mantendo referências privadas no servidor.
 
 Na situação financeira do evento, Insumos acompanha Dinheiro/Pix como informação discreta e mostra o total de compras ativas vinculadas ao evento, independentemente do caixa pagador. Doações materiais e registros excluídos ficam fora; sem compras, R$ 0,00. Não calcular lucro nem descontar esse indicador de Real/Pendente.
+
+## Carregamento de rotas
+
+Navegações entre páginas autenticadas usam os limites loading.tsx do Next: mostram a estrutura real da área com skeleton nos dados enquanto eles chegam, sem ilustração ou mensagem de espera visível, preservando a interação com o layout/menu. RouteLoading é o dono compartilhado, conforme [DESIGN.md — Carregamento e estados vazios](DESIGN.md#carregamento-e-estados-vazios). Não garante carregamento instantâneo antes de obter o fallback nem cobre a verificação inicial de sessão do layout. Falhas continuam no PageFailure/error existente; o skeleton termina quando o segmento resolve, inclusive sem resultados. Busca, filtros e paginação na mesma rota conservam o fluxo atual, sem remontagem adicional por timers. Por aprovação do responsável em 01/11/2026, o carregamento fica visível por no mínimo 300ms (0,3 segundo) desde a montagem de cada pathname no navegador (incluindo acesso inicial), em todos os ambientes, para avaliação posterior. O tempo corre junto do carregamento real; o conteúdo só aparece depois do mínimo e da resolução dos dados. O timer é cancelado ao sair e não reinicia em mudanças somente de query.
+
+## Resultados vazios
+
+Padrão visual em [DESIGN.md — Carregamento e estados vazios](DESIGN.md#carregamento-e-estados-vazios).
+
+Listas de caixas, doações, movimentações, eventos, pedidos e insumos, históricos e seções de caixas/próximos eventos da Home mostram SectionFeedback com desenho da área e frase de ausência quando o array renderizado está vazio. Ilustrações são exclusivas dos resultados vazios. Carregamento usa skeleton e anúncio somente para leitor de tela, sem desenho ou frase visível. Sem ações novas, sem ocultar busca/filtros/cadastro e sem confundir ausência de resultados com falha de consulta. Paginação com total zero não mostra rodapé duplicado.

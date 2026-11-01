@@ -6,7 +6,13 @@ import { Brand } from "@/components/layout/brand";
 
 export const metadata = { title: "Entrar" };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  if ("gmail" in query || "senha" in query) redirect("/login");
   if (await createAuth().getSession.execute()) redirect("/");
   return (
     <main className="centered-page">

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 128" fill="none" stroke="#A9432E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path fill="#F3E4D5" stroke="none" d="M32 96C10 66 37 31 69 39c24 6 38-24 66-2 27 22 25 61 0 70-29 11-85 9-103-11Z"/>
+  <!-- Moeda de face vertical, com espessura uniforme na borda direita. -->
+  <ellipse cx="93" cy="28" rx="12" ry="14" fill="#F3E4D5"/>
+  <ellipse cx="90" cy="28" rx="12" ry="14" fill="#FFFFFF"/>
+  <path d="M94 21h-6a3.5 3.5 0 0 0 0 7h4a3.5 3.5 0 0 1 0 7h-6M90 18v20"/>
+  <!-- Abas traseiras e abertura: mesmas diagonais dos dois lados. -->
+  <path fill="#FAF7F2" d="m48 66 42-18-12-18-42 18Z"/>
+  <path fill="#FAF7F2" d="m90 48 42 18 12-18-42-18Z"/>
+  <path fill="#F3E4D5" d="m48 66 42-18 42 18-42 18Z"/>
+  <!-- Faces laterais verticais, com bases paralelas à borda superior. -->
+  <path fill="#FFFFFF" d="m48 66 42 18v29L48 95Z"/>
+  <path fill="#FAF7F2" d="m90 84 42-18v29l-42 18Z"/>
+  <!-- Abas dianteiras compartilham as mesmas arestas da abertura. -->
+  <path fill="#FFFFFF" d="m48 66 42 18-15 12-42-18Z"/>
+  <path fill="#FFFFFF" d="m90 84 42-18 15 12-42 18Z"/>
+  <path d="m59 93 12 5m-12-1 7 3M30 114h120"/>
+</svg>

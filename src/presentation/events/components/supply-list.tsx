@@ -1,4 +1,5 @@
 "use client";
+import { SectionFeedback } from "@/components/ui/section-feedback";
 import { deleteSupplyAction } from "@/server/events/actions/delete-supply.action";
 import { ConfirmationModal } from "@/components/modals/confirmation-modal";
 import { SupplyActionsMenu } from "./supply-actions-menu";
@@ -64,6 +65,11 @@ export function SupplyList({
           </Button>
         }
       />
+      {supplies.length === 0 && (
+        <SectionFeedback area="insumos">
+          Nenhum insumo encontrado.
+        </SectionFeedback>
+      )}
       <ul className={styles.list} aria-label="Insumos do evento">
         {supplies.map((supply) => (
           <li key={supply.id} className={styles.card}>

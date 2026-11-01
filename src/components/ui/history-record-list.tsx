@@ -1,4 +1,5 @@
 "use client";
+import { SectionFeedback } from "./section-feedback";
 import { Button } from "./button";
 import { Icon } from "./icon";
 import styles from "./history-record-list.module.css";
@@ -13,6 +14,12 @@ export function HistoryRecordList({
   onDetails: (id: string) => void;
   disabled?: boolean;
 }) {
+  if (entries.length === 0)
+    return (
+      <SectionFeedback area="historico">
+        Nenhum registro no histórico.
+      </SectionFeedback>
+    );
   return (
     <ul className="record-list" aria-label={label}>
       {entries.map((entry) => (

@@ -108,3 +108,8 @@
     opacity: 0;
   }
 }
+
+/* O título recebe o foco inicial sem destacar o X; controles mantêm foco visível. */
+.title:focus {
+  outline: none;
+}

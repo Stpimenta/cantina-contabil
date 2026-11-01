@@ -1,4 +1,5 @@
 "use client";
+import { SectionFeedback } from "@/components/ui/section-feedback";
 import styles from "./donation-list.module.css";
 import { Modal } from "@/components/modals/modal";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,11 @@ export function DonationList({
   });
   return (
     <>
+      {items.length === 0 && (
+        <SectionFeedback area="doacoes">
+          Nenhuma doação encontrada.
+        </SectionFeedback>
+      )}
       {items.length > 0 && (
         <ul className="record-list" aria-label="Doações">
           {items.map((donation) => (

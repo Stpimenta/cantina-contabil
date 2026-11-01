@@ -1,0 +1,25 @@
+.root {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding-block: var(--space-6);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  text-align: center;
+}
+.root p {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.illustration {
+  width: calc(var(--space-12) * 3);
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 180 / 128;
+  object-fit: contain;
+  flex-shrink: 0;
+  color: var(--color-primary);
+}

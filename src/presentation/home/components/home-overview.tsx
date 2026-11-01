@@ -1,3 +1,5 @@
+import { Skeleton } from "@/components/ui/skeleton";
+import { SectionFeedback } from "@/components/ui/section-feedback";
 import Link from "next/link";
 import type { GetHomeUseCase } from "@/server/home/use-cases/get-home.use-case";
 import { formatCurrency } from "@/shared/formatting/currency";
@@ -7,13 +9,13 @@ import styles from "./home-overview.module.css";
 
 type Overview = Awaited<ReturnType<GetHomeUseCase["execute"]>>;
 
-export function HomeOverview({ data }: { data: Overview }) {
-  const maximum = data.boxes.reduce((max, box) => {
+export function HomeOverview({ data }: { data?: Overview }) {
+  const maximum = (data?.boxes ?? []).reduce((max, box) => {
     const amount = BigInt(box.balanceCents);
     const absolute = amount < 0n ? -amount : amount;
     return absolute > max ? absolute : max;
   }, 0n);
-  const signed = data.boxes.some((box) => box.balanceCents < 0);
+  const signed = (data?.boxes ?? []).some((box) => box.balanceCents < 0);
   return (
     <div className={styles.dashboard}>
       <section
@@ -24,20 +26,26 @@ export function HomeOverview({ data }: { data: Overview }) {
           <p className={styles.eyebrow}>Saldo real</p>
           <p
             className={styles.total}
-            data-long={formatCurrency(data.realCents).length > 22 || undefined}
+            data-long={
+              (data && formatCurrency(data.realCents).length > 22) || undefined
+            }
           >
-            {formatCurrency(data.realCents)}
+            {data ? formatCurrency(data.realCents) : <Skeleton shape="total" />}
           </p>
           <Link className={styles.summaryLink} href="/caixas">
-            {data.boxCount}{" "}
-            {data.boxCount === 1 ? "caixa ativo" : "caixas ativos"}
+            {data ? data.boxCount : <Skeleton shape="count" />}{" "}
+            {data?.boxCount === 1 ? "caixa ativo" : "caixas ativos"}
             <Icon name="arrow" />
           </Link>
         </div>
         <div className={styles.pendingBalance}>
           <p className={styles.eyebrow}>Pendente</p>
           <p className={styles.pendingValue}>
-            {formatCurrency(data.pendingCents)}
+            {data ? (
+              formatCurrency(data.pendingCents)
+            ) : (
+              <Skeleton shape="amount" />
+            )}
           </p>
           <p className="muted record-meta">Pedidos ainda não pagos</p>
         </div>
@@ -79,8 +87,12 @@ export function HomeOverview({ data }: { data: Overview }) {
               <Icon name="arrow" />
             </Link>
           </div>
-          {data.boxes.length === 0 ? (
-            <p className="muted">0 resultados</p>
+          {!data ? (
+            <HomePlaceholderRows chart />
+          ) : data.boxes.length === 0 ? (
+            <SectionFeedback area="caixas">
+              Nenhum caixa encontrado.
+            </SectionFeedback>
           ) : (
             <ul
               className={styles.chart}
@@ -159,8 +171,12 @@ export function HomeOverview({ data }: { data: Overview }) {
               <Icon name="arrow" />
             </Link>
           </div>
-          {data.upcoming.length === 0 ? (
-            <p className="muted">0 resultados</p>
+          {!data ? (
+            <HomePlaceholderRows />
+          ) : data.upcoming.length === 0 ? (
+            <SectionFeedback area="eventos">
+              Nenhum evento próximo.
+            </SectionFeedback>
           ) : (
             <ul className={styles.records}>
               {data.upcoming.map((event) => (
@@ -184,5 +200,30 @@ export function HomeOverview({ data }: { data: Overview }) {
         </section>
       </div>
     </div>
+  );
+}
+
+function HomePlaceholderRows({ chart = false }: { chart?: boolean }) {
+  return (
+    <ul className={chart ? styles.chart : styles.records} aria-hidden="true">
+      {[0, 1, 2].map((key) => (
+        <li key={key} className={chart ? styles.chartLink : styles.eventLink}>
+          {chart ? (
+            <>
+              <div className={styles.chartLabel}>
+                <Skeleton shape="short" />
+                <Skeleton shape="amount" />
+              </div>
+              <Skeleton shape="bar" />
+            </>
+          ) : (
+            <div className={styles.eventContent}>
+              <Skeleton />
+              <Skeleton shape="short" />
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }

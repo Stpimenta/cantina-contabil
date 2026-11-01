@@ -4,7 +4,7 @@ import { presentBusinessFailure } from "@/presentation/errors/present-business-f
 
 import fieldStyles from "@/components/ui/field.module.css";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { loginAction } from "@/server/auth/actions/login.action";
 import { useServerAction } from "@/shared/hooks/use-server-action";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { Icon } from "@/components/ui/icon";
 import { ErrorModal } from "@/components/modals/error-modal";
 
 export function LoginForm() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   const [showPassword, setShowPassword] = useState(false);
   const [revision, setRevision] = useState(0);
   const form = useRef<HTMLFormElement>(null);
@@ -39,6 +41,7 @@ export function LoginForm() {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!ready) return;
     const data = new FormData(event.currentTarget);
     execute(() => loginAction(data));
   }
@@ -47,6 +50,8 @@ export function LoginForm() {
     <>
       <form
         ref={form}
+        method="post"
+        action="/login"
         className="stack"
         onSubmit={submit}
         onInput={() => setRevision((current) => current + 1)}
@@ -92,7 +97,12 @@ export function LoginForm() {
             </Button>
           }
         />
-        <Button type="submit" className="full-width" busy={pending}>
+        <Button
+          type="submit"
+          className="full-width"
+          busy={pending}
+          disabled={!ready}
+        >
           {pending ? "Entrando…" : "Entrar"}
           <Icon name="arrow" />
         </Button>

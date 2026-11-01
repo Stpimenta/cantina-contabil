@@ -80,6 +80,10 @@ Use cases não dependem de Next/HTTP/Cloudflare. A interface usa Server Actions,
 - Consultas preservam truncamento/normalização da busca, limite de ano e página inválida voltando a 1; categoria inválida do histórico volta a all. Identificadores de caixas mantêm o valor original e ausência é tratada pelo use case. Sem remover HTML/caracteres indiscriminadamente nem alterar silenciosamente textos.
 - Formulário de doação reutiliza o mesmo schema para feedback local; a validação no servidor é obrigatória. Os demais formulários financeiros também reutilizam seus validadores puros pelo useServerAction. Regras que exigem banco, autorização, concorrência e idempotência continuam nos use cases/repositories e nas proteções do D1.
 
+## Proteção do formulário de login
+
+LoginForm declara method=post e action=/login, além de impedir o submit nativo no manipulador. O envio permanece bloqueado até a hidratação; depois usa useServerAction/loginAction com as validações e erros atuais. Sem JavaScript, o botão permanece desabilitado; o fallback nativo nunca usa GET. A página redireciona URLs com parâmetros gmail/senha para /login limpo, antes de consultar a sessão, sem consumir nem registrar esses valores. Essa limpeza não remove registros anteriores do histórico ou de infraestrutura; credenciais já expostas precisam ser substituídas pelo responsável.
+
 ## Contratos de integração e sessão
 
 Schemas Zod de respostas do GestPV ficam na infraestrutura de cada dono: user-profile.schema.ts e login-response.schema.ts. safeParse verifica estrutura/tipos/limites sem registrar mensagens ou objetos brutos do Zod. Repository verifica também identidade (ID do perfil igual ao solicitado), HTTP e status de login com if e falhas técnicas apropriadas. Preservar as regras existentes: nome não vazio após trim e até 200 caracteres, email string até 254 (sem impor novo formato); nascimento/telefone opcionais mantêm normalização anterior. Login status=false continua INVALID_CREDENTIALS mesmo sem token, status=true exige token string não vazio. 401, timeout de 12s e redirect manual preservados.
