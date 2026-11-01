@@ -8,16 +8,17 @@ Estado de retomada em docs/STATUS.md: distinguir sempre código local, migraçã
 
 Antes de alterar, consultar os documentos relevantes. Eles descrevem o estado atual; releases antigos não substituem os contratos atuais.
 
-| Documento                               | Quando ler                                                                          |
-| --------------------------------------- | ----------------------------------------------------------------------------------- |
-| [STATUS.md](docs/STATUS.md)             | Ao iniciar ou retomar em outro chat: estado, pendências e limites do próximo bloco. |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Backend, autenticação, dados, erros, logs e integrações.                            |
-| [DESIGN.md](docs/DESIGN.md)             | Qualquer alteração visual: tema, tokens, componentes e responsividade.              |
-| [UX-CONTRACT.md](docs/UX-CONTRACT.md)   | Fluxos, interação, filtros, paginação, feedback e acessibilidade.                   |
-| [CI.md](docs/CI.md)                     | Workflow GitHub Actions, versão/tag, permissões, migrações e retomada de falhas.    |
-| [TESTING.md](docs/TESTING.md)           | Testes unitários/integração: cobertura, isolamento e limites.                       |
-| [LOCAL.md](docs/LOCAL.md)               | Inicialização, Miniflare, D1 local, debug e publicação.                             |
-| [RELEASES.md](docs/RELEASES.md)         | Histórico de publicações; não confundir trabalho local com produção.                |
+| Documento                               | Quando ler                                                                                                   |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| [STATUS.md](docs/STATUS.md)             | Ao iniciar ou retomar em outro chat: estado, pendências e limites do próximo bloco.                          |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Backend, autenticação, dados, erros, logs e integrações.                                                     |
+| [DESIGN.md](docs/DESIGN.md)             | Qualquer alteração visual: tema, tokens, componentes e responsividade.                                       |
+| [UX-CONTRACT.md](docs/UX-CONTRACT.md)   | Fluxos, interação, filtros, paginação, feedback e acessibilidade.                                            |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md)     | Antes de preparar entrega/commit para envio, PR, atualização da main ou recuperação de falhas de versão/Git. |
+| [CI.md](docs/CI.md)                     | Workflow GitHub Actions, versão/tag, permissões, migrações e retomada de falhas.                             |
+| [TESTING.md](docs/TESTING.md)           | Testes unitários/integração: cobertura, isolamento e limites.                                                |
+| [LOCAL.md](docs/LOCAL.md)               | Inicialização, Miniflare, D1 local, debug e publicação.                                                      |
+| [RELEASES.md](docs/RELEASES.md)         | Histórico de publicações; não confundir trabalho local com produção.                                         |
 
 [README.md](README.md) é a entrada mínima para pessoas: finalidade, acesso, como iniciar e links úteis. Arquitetura, padrões, backlog, diagnóstico e detalhes do ambiente pertencem aos documentos donos em docs/; não expandir o README com esses contratos. Manter contratos em docs/, AGENTS e README na raiz. Não recriar verification/.
 
@@ -33,8 +34,8 @@ Antes de alterar, consultar os documentos relevantes. Eles descrevem o estado at
 
 - Novas melhorias usam branch `feat/<short-description>`; correções usam `fix/<short-description>`, sempre em inglês, em minúsculas e com hífens. Criar a partir da main remota atualizada, preservando alterações existentes. Não trabalhar diretamente na main.
 - Commits e títulos/descrições de PR são em inglês e seguem `feat: short description` ou `fix: short description`, com escopo opcional (`fix(cash-boxes): correct balance calculation`). A entrega de deploy já preparada foi aceita como exceção; não renomear branches nem reescrever commits existentes para aplicar essa regra retroativamente. Usar a identidade Git do responsável; nunca Codex como autor, committer ou coautor. Se não houver identidade válida configurada, pedir a informação, sem inventar.
-- Versão é escolhida no PR e sincronizada em package.json/package-lock.json; não calcular automaticamente por feat/fix. Tags `vX.Y.Z` pertencem ao commit publicado e não podem ser movidas. Contrato completo em docs/CI.md.
-- Push, abertura de PR e merge dependem de pedido do responsável; preparar branch/commit não autoriza envio. Neste bloco o responsável fará o push e o merge.
+- Antes do commit de entrega, obter do responsável a nova versão e sincronizar package.json, versão raiz do lockfile e packages[""].version. Validar com validatePackageVersion contra origin/main atualizada. Não fornecer comando de push nem declarar branch pronta com versão pendente ou igual à main, inclusive em documentação/testes; não calcular por feat/fix. Tags vX.Y.Z são imutáveis. Procedimento obrigatório em [DEPLOYMENT.md](docs/DEPLOYMENT.md); contrato técnico em [CI.md](docs/CI.md).
+- Push, abertura de PR e merge dependem de pedido do responsável; preparar branch/commit não autoriza envio. Não criar merges locais sucessivos na main para contornar pull divergente: conferir status/histórico, preservar alterações e seguir DEPLOYMENT.md. Atualização normal usa fast-forward; operação interrompida exige diagnóstico antes de outra troca/pull.
 
 ## Preferências visuais e revisão antes de entregar
 
@@ -46,7 +47,7 @@ Antes de alterar, consultar os documentos relevantes. Eles descrevem o estado at
 - Identidade discreta preserva tema e composição aprovados: menu ativo sem bloco preenchido, PageHeader com uma única divisão visual e ícones/contexto conforme DESIGN.md. Não adicionar cores por seção, densidades diferentes ou variações do padrão aprovado de estados vazios sem decisão; a proposta inicial continua apenas referência.
 - Menu do usuário mantém popover compacto flutuante à direita, nome e ações em coluna; identidade apenas no nome terracota e separador fino. Não reintroduzir iniciais, painel colado ao cabeçalho ou faixa de largura total no celular, rejeitados nesta revisão.
 - Abaixo de 600px, insumos agrupam conteúdo à esquerda e ações em coluna à direita; doações mantêm lista com valor abaixo do nome e somente menu à direita. Evitar comprimir textos por reservar coluna ao dinheiro; preservar controles de 44px e desktop. Histórico mantém reverter ao lado do seletor. Detalhes em DESIGN.md.
-- Carregamento e resultados vazios são padrões aprovados em [DESIGN.md](docs/DESIGN.md#carregamento-e-estados-vazios) e [UX-CONTRACT.md](docs/UX-CONTRACT.md#carregamento-de-rotas). Carregamento usa loading.tsx/RouteLoading e Skeleton nos locais reais dos dados; reutilizar estrutura/CSS da tela, mantendo títulos, busca/filtros e ações nas posições finais. Sem ilustração, spinner, bolinha, frase visível de espera ou saldo zero fictício. Home reutiliza HomeOverview sem data, com skeleton só no que depende dos dados; não criar um dashboard paralelo. Menu/estrutura persistem; controles dependentes dos dados ficam desabilitados apenas no fallback inicial, sem bloquear a busca já montada na mesma rota. Anúncio de espera somente acessível e região aria-busy. Mínimo único de 300ms no PageTransition por pathname, em todos os ambientes; sem timers por tela nem reinício ao buscar/filtrar/paginar na mesma rota.
+- Carregamento e resultados vazios são padrões aprovados em [DESIGN.md](docs/DESIGN.md#carregamento-e-estados-vazios) e [UX-CONTRACT.md](docs/UX-CONTRACT.md#carregamento-de-rotas). Carregamento usa loading.tsx/RouteLoading e Skeleton nos locais reais dos dados; reutilizar estrutura/CSS da tela, mantendo títulos, busca/filtros e ações nas posições finais. Sem ilustração, spinner, bolinha, frase visível de espera ou saldo zero fictício. Home reutiliza HomeOverview sem data, com skeleton só no que depende dos dados; não criar um dashboard paralelo. Menu/estrutura persistem; controles dependentes dos dados ficam desabilitados apenas no fallback inicial, sem bloquear a busca já montada na mesma rota. Anúncio de espera somente acessível e região aria-busy. Mínimo único de 300ms no PageTransition por pathname, em todos os ambientes; conteúdo aparece diretamente após o skeleton, sem animação de entrada/deslocamento/fade; sem timers por tela nem reinício ao buscar/filtrar/paginar na mesma rota.
 - Resultado vazio usa SectionFeedback + SectionIllustration com pequena cena SVG autoral específica do setor em public/illustrations/empty-states/, não ícone pronto, símbolo de menu ampliado ou desenho inline improvisado. Reutilizar arquivos existentes e proporção/paleta/composição compartilhadas; não mostrar skeleton ou estado ocupado depois de confirmar a ausência. Preservar busca/filtros/cadastro, usar frase curta da área e não duplicar 0 resultados na paginação. Ausência, carregamento e falha são estados distintos; erros mantêm PageFailure/ErrorModal conforme o contexto. Novas áreas seguem esse contrato; composição ou linguagem visual diferente exige decisão explícita.
 - Uma correção mobile deve preservar a composição desktop aprovada e vice-versa. Ajustar a causa no dono, registrar a regra atual e substituir instruções antigas; não acumular remendos ou exceções implícitas.
 

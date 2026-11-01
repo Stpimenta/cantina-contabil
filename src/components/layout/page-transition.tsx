@@ -7,7 +7,6 @@ import {
   loadingAreaForPath,
   type LoadingArea,
 } from "./route-loading";
-import styles from "./page-transition.module.css";
 
 // Mínimo aprovado para avaliação em todos os ambientes.
 const MINIMUM_LOADING_MS = 300;
@@ -26,7 +25,7 @@ function PageContent({
   }, []);
 
   if (!ready) return <RouteLoading area={area} />;
-  return <div className={styles.root}>{children}</div>;
+  return <div>{children}</div>;
 }
 
 export function PageTransition({ children }: { children: ReactNode }) {
