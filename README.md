@@ -43,7 +43,7 @@ Aguarde o ambiente ficar pronto e abra [localhost:5174](http://localhost:5174). 
 
 O login precisa de internet e de uma conta autorizada, conforme a seção abaixo. Não é necessário publicar na Cloudflare para desenvolver localmente.
 
-[Ambiente local e debug](docs/LOCAL.md) · [Arquitetura](docs/ARCHITECTURE.md) · [Testes automatizados](docs/TESTING.md) · [Publicação com GitHub Actions](docs/CI.md) · [Estado e pendências](docs/STATUS.md) · [Orientações para agentes](AGENTS.md)
+[Ambiente local e debug](docs/LOCAL.md) · [Arquitetura](docs/ARCHITECTURE.md) · [Testes automatizados](docs/TESTING.md) · [Preparar entrega e publicação](docs/DEPLOYMENT.md) · [GitHub Actions](docs/CI.md) · [Estado e pendências](docs/STATUS.md) · [Orientações para agentes](AGENTS.md)
 
 ## Autenticação e permissões
 

@@ -4,6 +4,8 @@ Revisado em 31/10/2026. Estado corrente em [STATUS.md](STATUS.md); histórico de
 
 Requisito: Node.js 22.17 ou posterior compatível, npm e dependências do lockfile (`npm ci`). Miniflare/workerd já vêm com o Wrangler instalado no projeto; não há instalação global ou assinatura adicional para rodar localmente.
 
+Preparação de entrega, versão e atualização da main seguem [DEPLOYMENT.md](DEPLOYMENT.md); não resolver divergências locais por merges sucessivos sem diagnóstico.
+
 ## Uso diário
 
 ```bash
