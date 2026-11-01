@@ -67,6 +67,12 @@ O emulador precisa de processos e sockets locais em portas aleatórias de loopba
 
 Arquivos donos da cobertura:
 
+- `tests/unit/home-loading.test.ts`: Home pendente mantém estrutura sem valores fictícios; zero e resultados vazios só aparecem após os dados.
+
+- `tests/unit/dev-origins.test.ts`: origens de loopback/rede no desenvolvimento, sem wildcard ou inclusão em produção; inicialização Cloudflare simulada.
+
+- `tests/unit/login-form.test.ts`: HTML inicial do login exige POST para caminho limpo e bloqueia envio antes da hidratação; URLs com campos de credenciais redirecionam antes da sessão, sem credenciais reais.
+
 - `tests/unit/rules.test.ts`: dinheiro, datas, inputs e regras de pedidos/insumos.
 - `tests/unit/ci-api.test.mjs`: recuperação limitada de GET com socket encerrado, timeout por tentativa e ausência de retry para escritas/erros não reconhecidos.
 - `tests/unit/release-error.test.mjs`: classificação técnica controlada e ausência de conteúdo privado nos diagnósticos.

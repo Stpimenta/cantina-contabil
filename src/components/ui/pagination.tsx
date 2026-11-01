@@ -38,6 +38,7 @@ export function Pagination({
     if (next > 1) params.set(pageKey, String(next));
     return `${basePath}${params.size ? `?${params}` : ""}`;
   };
+  if (total === 0) return null;
   return (
     <nav className={`spread-row ${styles.root}`} aria-label="Paginação">
       <p className="muted">

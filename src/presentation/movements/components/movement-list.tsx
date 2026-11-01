@@ -1,4 +1,5 @@
 "use client";
+import { SectionFeedback } from "@/components/ui/section-feedback";
 import { ReceiptLink } from "@/components/ui/receipt-link";
 import Link from "next/link";
 import { useState } from "react";
@@ -62,6 +63,11 @@ export function MovementList({
           </Button>
         }
       />
+      {items.length === 0 && (
+        <SectionFeedback area="movimentacoes">
+          Nenhuma movimentação encontrada.
+        </SectionFeedback>
+      )}
       <ul className="record-list" aria-label="Movimentações dos caixas">
         {items.map((item) => (
           <li className="record-row" key={item.id}>

@@ -1,0 +1,40 @@
+.root {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  border-radius: var(--radius-control);
+  background: var(--color-border);
+}
+.text {
+  width: 70%;
+  height: var(--space-4);
+}
+.short {
+  width: 45%;
+  height: var(--space-3);
+}
+.title {
+  width: var(--action-width-wide);
+  height: var(--space-8);
+}
+.amount {
+  width: calc(var(--space-12) * 2);
+  height: var(--space-6);
+}
+.total {
+  width: var(--action-width-wide);
+  height: var(--space-8);
+}
+.control {
+  width: var(--control-height);
+  height: var(--control-height);
+}
+.bar {
+  width: 100%;
+  height: var(--space-2);
+}
+
+.count {
+  width: 2ch;
+  height: var(--space-4);
+}

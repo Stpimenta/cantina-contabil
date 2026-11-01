@@ -29,10 +29,14 @@ const nextConfig: NextConfig = {
 
 export default async function configure(phase: string) {
   if (phase === PHASE_DEVELOPMENT_SERVER) {
-    const allowedDevOrigins = Object.values(networkInterfaces())
-      .flatMap((addresses) => addresses ?? [])
-      .filter((address) => address.family === "IPv4" && !address.internal)
-      .map((address) => address.address);
+    const allowedDevOrigins = [
+      "localhost",
+      "127.0.0.1",
+      ...Object.values(networkInterfaces())
+        .flatMap((addresses) => addresses ?? [])
+        .filter((address) => address.family === "IPv4" && !address.internal)
+        .map((address) => address.address),
+    ];
     await initOpenNextCloudflareForDev({
       configPath: resolve("wrangler.local.jsonc"),
       persist: { path: resolve(".wrangler/state/v3") },

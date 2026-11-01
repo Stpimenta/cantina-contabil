@@ -29,6 +29,7 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const backdropPress = useRef(false);
   function outside(dialog: HTMLDialogElement, x: number, y: number) {
     const rect = dialog.getBoundingClientRect();
@@ -40,6 +41,7 @@ export function Modal({
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     dialog.showModal();
+    titleRef.current?.focus({ preventScroll: true });
     document.body.style.overflow = "hidden";
     return () => {
       dialog.close();
@@ -84,7 +86,9 @@ export function Modal({
       }}
     >
       <div className={styles.header}>
-        <h2 id={titleId}>{title}</h2>
+        <h2 id={titleId} ref={titleRef} tabIndex={-1} className={styles.title}>
+          {title}
+        </h2>
         <Button
           type="button"
           variant="ghost"

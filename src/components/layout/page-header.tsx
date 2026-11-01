@@ -9,9 +9,9 @@ export function PageHeader({
   actions,
   compactActionsOnMobile = false,
 }: {
-  title: string;
+  title: ReactNode;
   icon?: ComponentProps<typeof Icon>["name"];
-  description?: string;
+  description?: ReactNode;
   hideDescriptionOnMobile?: boolean;
   actions?: ReactNode;
   compactActionsOnMobile?: boolean;
