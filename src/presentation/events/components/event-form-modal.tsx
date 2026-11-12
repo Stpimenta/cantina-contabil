@@ -44,6 +44,7 @@ export function EventFormModal({
     name: event?.name ?? "",
     description: event?.description ?? "",
     occursOn: event?.occursOn ?? today,
+    deliveryEnabled: event?.deliveryEnabled ?? false,
     products:
       event?.products.map((p) => ({
         id: p.id,
@@ -129,7 +130,7 @@ export function EventFormModal({
   return (
     <>
       <Modal
-        size="form"
+        size="formCompact"
         open
         title={event ? "Editar evento" : "Novo evento"}
         onClose={close}
@@ -166,19 +167,21 @@ export function EventFormModal({
                 error={fields?.name}
               />
             </div>
-            <SelectField
-              id={`${id}-box`}
-              label="Caixa"
-              value={input.cashBoxId}
-              onValueChange={(v) => change("cashBoxId", v)}
-              options={[
-                { value: "", label: "Selecione um caixa" },
-                ...cashBoxes.map((b) => ({ value: b.id, label: b.name })),
-              ]}
-              required
-              disabled={pending || !!event}
-              error={fields?.cashBoxId}
-            />
+            <div className="form-full">
+              <SelectField
+                id={`${id}-box`}
+                label="Caixa"
+                value={input.cashBoxId}
+                onValueChange={(v) => change("cashBoxId", v)}
+                options={[
+                  { value: "", label: "Selecione um caixa" },
+                  ...cashBoxes.map((b) => ({ value: b.id, label: b.name })),
+                ]}
+                required
+                disabled={pending || !!event}
+                error={fields?.cashBoxId}
+              />
+            </div>
             <DateField
               id={`${id}-date`}
               name="occursOn"
@@ -188,6 +191,17 @@ export function EventFormModal({
               required
               disabled={pending}
               error={fields?.occursOn}
+            />
+            <SelectField
+              id={`${id}-delivery-enabled`}
+              label="Modalidade"
+              value={input.deliveryEnabled ? "yes" : "no"}
+              onValueChange={(v) => change("deliveryEnabled", v === "yes")}
+              disabled={pending}
+              options={[
+                { value: "no", label: "Padrão" },
+                { value: "yes", label: "Entregas" },
+              ]}
             />
             <div className="form-full">
               <TextareaField
@@ -202,7 +216,7 @@ export function EventFormModal({
             </div>
           </div>
           <section className="stack-small" aria-labelledby={`${id}-products`}>
-            <h2 id={`${id}-products`}>Produtos</h2>
+            <h2 id={`${id}-products`}>Produtos (opcional)</h2>
             <ul
               className="record-list"
               aria-describedby={groupError ? `${id}-products-error` : undefined}
@@ -266,27 +280,31 @@ export function EventFormModal({
                 </li>
               ))}
             </ul>
-            <Button
-              aria-describedby={groupError ? `${id}-products-error` : undefined}
-              id={`${id}-products-add`}
-              type="button"
-              variant="neutral"
-              disabled={pending || input.products.length >= 100}
-              onClick={() =>
-                change("products", [
-                  ...input.products,
-                  {
-                    id: crypto.randomUUID(),
-                    name: "",
-                    icon: "meal",
-                    price: "",
-                  },
-                ])
-              }
-            >
-              <Icon name="plus" />
-              Adicionar produto
-            </Button>
+            <div className="inline">
+              <Button
+                aria-describedby={
+                  groupError ? `${id}-products-error` : undefined
+                }
+                id={`${id}-products-add`}
+                type="button"
+                variant="neutral"
+                disabled={pending || input.products.length >= 100}
+                onClick={() =>
+                  change("products", [
+                    ...input.products,
+                    {
+                      id: crypto.randomUUID(),
+                      name: "",
+                      icon: "meal",
+                      price: "",
+                    },
+                  ])
+                }
+              >
+                <Icon name="plus" />
+                Adicionar produto
+              </Button>
+            </div>
             <FieldError id={`${id}-products-error`} error={groupError} />
           </section>
           <span className="sr-only" role="status">

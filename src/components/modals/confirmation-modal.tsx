@@ -3,6 +3,8 @@ import { useRef, useEffect } from "react";
 import { Modal } from "./modal";
 import { Button } from "../ui/button";
 
+export const deletionConfirmationMessage = "O histórico será preservado.";
+
 export function ConfirmationModal({
   title,
   message,

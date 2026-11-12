@@ -14,13 +14,15 @@ export class ListOrdersUseCase {
     checkAccess(session);
     const id = parseInput(validateEventId(idInput));
     const data = parseInput(validateOrderQuery(input));
-    if (!(await this.events.find(id))) return eventMissing();
+    const event = await this.events.find(id);
+    if (!event) return eventMissing();
     return this.events.listOrders(
       id,
       data.query,
       data.page,
       DEFAULT_PAGE_SIZE,
       data.status,
+      event.deliveryEnabled ? data.fulfillment : "all",
     );
   }
 }

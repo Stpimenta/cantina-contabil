@@ -4,12 +4,21 @@
   gap: var(--space-6);
 }
 .summary {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-6);
   padding: var(--space-6);
   border-radius: var(--radius-panel);
   background: var(--color-surface-muted);
+}
+.summaryToggle {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-2);
+}
+.summary .eyebrow {
+  padding-inline-end: calc(var(--control-height) + var(--space-2));
 }
 .mainBalance,
 .pendingBalance {

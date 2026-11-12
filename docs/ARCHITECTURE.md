@@ -1,6 +1,6 @@
 # Arquitetura e padrões aprovados
 
-Contrato atual consolidado em 31/10/2026. Histórico de versões em [RELEASES.md](RELEASES.md); contexto de retomada em [STATUS.md](STATUS.md). Uma pendência não autoriza implementação.
+Contrato atual atualizado em 11/11/2026. Histórico de versões em [RELEASES.md](RELEASES.md); contexto de retomada em [STATUS.md](STATUS.md). Uma pendência não autoriza implementação.
 
 ## Stack e limites atuais
 
@@ -21,6 +21,7 @@ src/
   server/
     auth/                    # cada funcionalidade possui apenas as camadas necessárias
     users/
+    addresses/               # consulta postal, sem persistência própria
     cash-boxes/
     events/
     movements/
@@ -92,11 +93,23 @@ session-payload.schema.ts valida a estrutura assinada do cookie; datas/limite de
 
 ## Máscaras de entrada compartilhadas
 
-- shared/masks/input-masks.ts é o dono das funções puras maskMoneyInput, formatMoneyInput e maskBrazilianDate. Não criar máscaras próprias em páginas, formulários ou use cases; novos formatos precisam ampliar os donos compartilhados conforme decisão aprovada.
+- shared/masks/input-masks.ts é o dono das funções puras maskMoneyInput, formatMoneyInput, maskBrazilianDate, maskBrazilianPostalCode e maskBrazilianPhone. Não criar máscaras próprias em páginas, formulários ou use cases; novos formatos precisam ampliar os donos compartilhados conforme decisão aprovada.
 - Todo campo editável de dinheiro usa components/ui/money-field.tsx, inclusive preço de produto, valor do pedido, parcela em dinheiro e doação. Esse componente reutiliza Field e centraliza digitação/colagem, bloqueio de letras/overflow, máscara por centavos e posicionamento do cursor. Exibição pt-BR com duas casas; o valor emitido/FormData é decimal sem separador de milhar.
 - Datas usam components/ui/date-field.tsx e a máscara central dd/mm/aaaa; conversão/validação de calendário permanece em shared/dates/date-only.ts e o valor enviado é ISO.
 - Parsing monetário e schemas ficam em shared/validation/money-input.ts e inputs/ da funcionalidade. A máscara não altera limites/regras: doação permanece estritamente positiva, pedidos/produtos permitem zero conforme os contratos. Dados vindos de outras entradas continuam sujeitos à validação no servidor.
 - Valores somente para leitura usam formatCurrency/formatDateOnly/formatDateTime; não aplicar máscara de edição em saldos ou histórico.
+
+## Consulta de endereço por CEP
+
+Aprovada em 11/11/2026. `server/addresses/` é a funcionalidade compartilhada, independente de Eventos e sem persistência própria: action → LookupPostalCodeUseCase → PostalAddressRepository → ViaCepPostalAddressRepository. Models representam o endereço postal e o catálogo de UFs; a composição injeta o adaptador HTTP. Não há nova camada de services, rota REST, tabela, dependência ou variável de ambiente.
+
+O caso de uso verifica sessão/perfil pelo checkAccess e valida CEP com Zod antes de consultar. A entrada aceita oito dígitos com hífen opcional, normaliza para oito dígitos e retorna falhas técnicas por propriedade. Eventos reutiliza o schema de CEP e o catálogo de UFs, preservando o endereço opcional, os formatos já aceitos e a normalização anterior do telefone.
+
+O adaptador usa exclusivamente HTTPS no host fixo do [ViaCEP](https://viacep.com.br/), GET sem credenciais, redirect manual, sem cache persistente/retry e timeout de cinco segundos. Schema Zod na infraestrutura valida a resposta; depois verifica a correspondência do CEP solicitado. CEP inexistente retorna null, distinto de falha HTTP/contrato ou erro de rede/timeout. Endereços postais genéricos podem ter rua/bairro vazios. Somente CEP, rua, bairro, cidade e UF retornam à apresentação; não importar complemento do serviço como complemento do destinatário. Resposta externa, CEP e dados pessoais não são adicionados aos logs; erros usam executeOperation/handleFailure/logger e ErrorModal existentes, sem capturas genéricas intermediárias.
+
+`presentation/addresses/components/postal-code-field.tsx` integra a consulta ao campo compartilhado. Só consulta um CEP completo editado pelo usuário; abrir edição não faz busca nem sobrescreve endereço existente. Troca/limpeza de CEP, troca para Retirada, saída da etapa, gravação ou fechamento desmontam a consulta e descartam seus resultados/erros tardios pelo useServerAction. A mesclagem confere novamente o CEP e preserva campos alterados durante a consulta, além de número, Sem número, complemento e referência. Consultar não salva o pedido nem confirma uma rota/entrega no Maps.
+
+`components/ui/brazilian-masked-field.tsx` reutiliza Field e as funções puras centrais para CEP/telefone nacional com DDD, incluindo digitação, colagem, exclusão e cursor. A apresentação usa máscara; Zod continua validando formato, DDD e demais regras no servidor. Não criar máscaras locais ou misturar consulta HTTP com as funções puras de máscara.
 
 ## Exceções tipadas e executor central
 
@@ -182,7 +195,7 @@ Sem retry, log técnico no navegador ou referência fictícia. Login limpa senha
 
 - Funcionalidade em server/events/, com actions, inputs Zod, use cases independentes, models separados, contratos de repository, implementação Drizzle e composition. Não criar services/controllers/DTOs obrigatórios.
 - O preço do produto é editado com MoneyField: máscara por centavos e exibição pt-BR, emitindo string decimal canônica sem agrupamento. Letras/overflow não atualizam o estado; o servidor mantém moneyInputSchema, sem aceitar strings arbitrárias ou confiar na máscara.
-- Evento pertence a um caixa, com nome obrigatório até 100, descrição opcional até 500, data civil e 1 a 100 produtos. Produto tem UUID estável, nome até 100, ícone do catálogo permitido e preço em centavos, inclusive zero. Edições preservam as versões anteriores do catálogo.
+- Evento pertence a um caixa, com nome obrigatório até 100, descrição opcional até 500, data civil e 0 a 100 produtos; o catálogo pode ser preenchido depois na edição. Produto tem UUID estável, nome até 100, ícone do catálogo permitido e preço em centavos, inclusive zero. Edições preservam as versões anteriores do catálogo.
 - O vínculo ao caixa permanece no cadastro original: editar evento altera nome/descrição/data/produtos, sem transferência entre caixas. Exclusão lógica de evento é permitida somente sem pedidos, com confirmação, autoria/data e histórico preservados no caixa; o registro deixa a lista e não abre mais no detalhe. Bloqueio no use case e trigger atômica impedem corrida com criação de pedidos. Caixa com evento vinculado continua sem permitir exclusão, preservando o acesso ao histórico.
 - Tabelas: events, event_products, event_orders, event_order_items, event_order_payments e event_audit. Schemas Drizzle por tabela; migrações SQL versionadas por alteração, podendo coordenar vários objetos. As migrações anteriores não foram alteradas.
 
@@ -209,6 +222,36 @@ Sem retry, log técnico no navegador ou referência fictícia. Login limpa senha
 - Edição verifica a versão lida e faz UPDATE condicionado à versão. O formulário de pedido também informa a versão do catálogo: alteração concorrente de produtos exige atualizar o contexto, sem converter um preço desatualizado em desconto silencioso. Trigger confere novamente essa versão e a origem dos preços.
 - Dinheiro usa BigInt para conversão/cálculo e inteiros seguros para persistência; schema/limites protegem valores e subtotal. Triggers impedem ultrapassar precisão agregada no real (doações + pedidos pagos) e no pendente por caixa, inclusive quando uma doação é inserida após pedidos.
 - Saldos são calculados dos registros atuais, sem sobrescrever saldo diretamente, sem terceiro saldo teórico/previsto e sem duplicação em donations ou na auditoria. Compras de insumos geram saída imediata no caixa escolhido; movimentações manuais cobrem entradas/saídas gerais; estoque, anexos fora dos insumos e integrações de cobrança permanecem futuros.
+
+## Entregas e retiradas de pedidos
+
+Contrato aprovado em 01/11/2026. Evento usa `deliveryEnabled` (inicialmente falso); habilitar também é permitido na edição. Eventos comuns mantêm seu fluxo. Pedidos já cadastrados permanecem sem modalidade até serem editados; pedidos novos/editados de evento habilitado exigem escolha explícita Entrega/Retirada. Sem modalidade automática ou atualização em massa.
+
+`EventOrder` guarda fulfillmentMode (delivery/pickup/null), endereço estruturado opcional, contactPhone opcional e fulfilled. Conclusão/desfazer são alterações do pedido pelo UpdateOrderUseCase ou pela atualização rápida UpdateOrderStatusUseCase, com versão, idempotência e snapshots/autoria no histórico existente. Entregue/Retirado não dependem de Pago/Pendente e não modificam valores, parcelas ou itens por si. Trocar modalidade na interface inicia a nova modalidade como não concluída; salvar Retirada retira o endereço atual, preservando o anterior nos snapshots.
+
+Endereço pode ficar inteiro vazio. Se qualquer parte for informada, exigir rua, número ou Sem número, bairro, cidade e UF brasileira. CEP opcional com oito dígitos, com ou sem hífen; complemento e referência opcionais. Limites: rua/bairro/cidade/complemento 100, número 20, referência 500. Telefone brasileiro opcional com DDD válido e 10 dígitos (fixo) ou 11 (celular); aceita pontuação na entrada e persiste somente dígitos. Zod em order-delivery.input.ts/save-order.input.ts valida no servidor e no navegador; erros técnicos são traduzidos na apresentação.
+
+Migração 0023_event_deliveries.sql adiciona delivery_enabled em events com padrão falso e novas triggers sem reescrever payloads, versões, registros ou auditorias anteriores. Schema Drizzle acompanha a coluna; modalidade/endereço/contato/conclusão ampliam o payload canônico de pedidos, já usado para snapshots atômicos. Leituras de payload legado fornecem null/vazio/false para os campos ausentes. O use case verifica a existência de pedidos com dados antes de desativar; triggers repetem atomicamente o bloqueio de modalidade incompatível com o evento e de desativação quando qualquer pedido preservado (inclusive excluído) contém dados de entrega/retirada, protegendo corridas entre cadastro e edição do evento.
+
+Conferir no Google Maps gera somente link HTTPS de busca com rua/número/bairro/cidade/UF/CEP/Brasil, sem telefone, complemento ou referência. Nenhuma API, chave, cobrança, validação automática, coordenada, rastreio ou chamada externa no salvamento. Abrir o link é conferência manual, não confirmação de endereço existente. Seleção de conjuntos, compartilhamento com entregadores e organização de rotas permanecem futuros.
+
+## Pedido em etapas e pagamento rápido
+
+Aprovado em 03/11/2026. Eventos com entregas usam cadastro/edição em três etapas: Pedido (pessoa, itens, observação), Entrega ou retirada (modalidade, situação, contato e endereço opcional) e Pagamento (valor, Pago/Pendente e parcelas). Sem entregas, permanece o formulário simples. Navegação entre etapas não grava; um único create/update continua validando todos os dados no servidor e preservando a versão otimista. Os grupos Zod details/fulfillment/payment são os mesmos tanto para validar cada etapa quanto para validar a entrada completa, sem valores fictícios ou regras duplicadas na tela.
+
+UpdateOrderStatusUseCase substitui a operação exclusiva de pagamento, conforme aprovação de 11/11/2026. A entrada validateUpdateOrderStatus aceita requestId e alterações opcionais independentes: payment (forma e parcela em dinheiro para receber o valor integral atual de um pedido pendente) e fulfilled (concluir/desfazer entrega ou retirada). Exige ao menos uma alteração solicitada; uma situação já igual à atual não gera nova versão/auditoria. Omissão preserva os valores atuais, sem campos fictícios. Quando ambas são solicitadas, valida e grava tudo na mesma operação atômica, sem sucesso parcial.
+
+O valor vem do pedido atual, nunca do cliente. Pix/Dinheiro usam integralmente esse valor; misto informa dinheiro e calcula o restante como Pix; zero continua permitido. O fluxo rápido não refaz nem desfaz pagamento já confirmado e preserva suas parcelas ao atualizar entrega. Conclusão exige evento habilitado e modalidade previamente definida; legado sem modalidade continua podendo receber pagamento, mas define Entrega/Retirada pela edição completa. Não muda pessoa, total, itens/snapshots, observação, modalidade, endereço ou contato. Reutiliza a versão atual do evento na gravação e mantém sessão/perfil, vínculo, versão otimista, UUID/fingerprint, histórico e recálculo existentes. Conflitos ou recebimento repetido fora da mesma requisição não gravam novamente. Sem pagamento parcial, transferência ou cobrança externa. Nenhuma nova migração é necessária para a ampliação; 0024 continua vigente.
+
+Migração 0024_legacy_order_payment.sql substitui somente a trigger de atualização de entregas: registros legados sem modalidade podem manter seus dados de entrega intactos ao registrar pagamento, sem exigir cadastro retroativo. Novos pedidos em eventos habilitados continuam exigindo modalidade, e a edição completa continua exigindo a escolha no use case. Não reescreve registros/auditorias e preserva demais guardas. Sem nova tabela, coluna, dependência ou serviço.
+
+## Filtro de entrega ou retirada dos pedidos
+
+Aprovado em 11/11/2026. validateOrderQuery mantém status de pagamento e acrescenta fulfillment (all/pending, padrão e inválidos normalizados para all). ListOrdersUseCase aplica o filtro de transporte somente quando o evento habilita entregas. D1EventRepository compartilha a mesma condição para contagem e listagem paginada: não excluído, evento, nome, pagamento e, quando solicitado, fulfilled falso ou ausente no payload. Legados sem modalidade ainda não concluídos entram nessa seleção; concluídos e excluídos ficam fora. Mantém ordenação/paginação, não altera saldos ou registros e não exige nova migração. Página preserva ambos os filtros em SearchForm/Pagination e normaliza transporte para all em eventos comuns.
+
+## Modalidade Cantina — proposta suspensa
+
+O responsável interrompeu expressamente a implementação em 11/11/2026. O seletor do evento continua somente Padrão/Entregas, sobre o booleano deliveryEnabled; nenhuma terceira modalidade, enum, migração ou regra de Cantina foi criada. A proposta de começar com o comportamento da Padrão ficou apenas como referência para um planejamento futuro, sem decisão sobre persistência, diferenças ou autorização de implementar. O diagrama do banco também foi adiado. Não confundir essa proposta com o escopo da branch de entregas.
 
 ## API futura
 
@@ -331,3 +374,9 @@ server/home/composition.ts monta GetHomeUseCase com os contratos de caixas e eve
 EventRepository.upcoming recebe a data interna de São Paulo e consulta somente id/nome/data de até cinco eventos ativos de hoje em diante, por data/nome/ID crescentes. Data é gerada no servidor, sem parâmetros do navegador. Ambos os repositories usam seus adaptadores Drizzle e deixam falhas inesperadas propagarem; fronteira da página usa executeOperation/PageFailure. Sem nova tabela, migração, dependência ou mudança das fórmulas financeiras.
 
 Gráfico nativo calcula apenas proporções com BigInt antes de converter coordenadas, sem alterar valores financeiros. A Home não consulta movimentações recentes nem pendências por evento; consultas e métodos exclusivos dessas prévias foram removidos após simplificação aprovada. Doações/Movimentações são apenas links de navegação.
+
+## Visibilidade visual dos saldos
+
+BalanceVisibilityProvider em components/ui/balance-visibility.tsx mantém um estado React iniciado em false no AppShell, externamente ao PageTransition. BalanceVisibilityToggle e BalanceAmount consomem o contexto sem duplicar estado por página. A navegação preserva a escolha enquanto o shell existe; novo carregamento/sessão reinicia oculto. Sem dependência, cookie, localStorage, alteração de sessão, consultas, payloads ou cálculos financeiros.
+
+Home usa BalanceAmount para resumo Real/Pendente e textos do gráfico; barras permanecem iguais. CashBoxBalance aceita concealable apenas na lista/detalhe de caixas; seu uso em eventos permanece visível. Valores ocultos não são renderizados no texto/aria/title, inclusive no HTML inicial; a política de autorização e os dados enviados à interface permanecem iguais.

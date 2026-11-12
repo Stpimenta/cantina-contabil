@@ -114,6 +114,11 @@ export function useServerAction(options: ActionOptions) {
     fields,
     showError,
     closeError,
+    resetValidation: () => {
+      validating.current = false;
+      setFields({});
+      setError(null);
+    },
     isPending: () => running.current || pending,
   };
 }

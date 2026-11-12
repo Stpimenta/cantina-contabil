@@ -66,7 +66,7 @@ export default async function EventsPage({
           <SearchForm
             action="/eventos"
             query={result.value.list.query}
-            label="Buscar evento por nome"
+            label="Buscar pelo nome"
           />
           {result.value.list.items.length === 0 && (
             <SectionFeedback area="eventos">

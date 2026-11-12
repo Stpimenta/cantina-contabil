@@ -1,9 +1,14 @@
+import type { OrderAddress } from "./order-address.model";
 import type { OrderItem } from "./order-item.model";
 export interface EventOrder {
   id: string;
   eventId: string;
   customerName: string;
   note: string;
+  fulfillmentMode: "delivery" | "pickup" | null;
+  address: OrderAddress | null;
+  contactPhone: string;
+  fulfilled: boolean;
   items: OrderItem[];
   totalCents: number;
   paid: boolean;

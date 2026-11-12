@@ -9,6 +9,13 @@ export const eventMissing = () =>
 export const eventChanged = () =>
   throwBusinessError({ code: "EVENT_CHANGED", category: "conflict" });
 export function checkEventWrite(outcome: EventWriteOutcome) {
+  if (outcome === "delivery_locked")
+    throwBusinessError({ code: "EVENT_DELIVERY_LOCKED", category: "conflict" });
+  if (outcome === "delivery_disabled")
+    throwBusinessError({
+      code: "EVENT_DELIVERY_DISABLED",
+      category: "conflict",
+    });
   if (outcome === "has_supplies")
     throwBusinessError({ code: "EVENT_HAS_SUPPLIES", category: "conflict" });
   if (outcome === "has_orders")
@@ -25,6 +32,7 @@ export function eventFields(data: EventData) {
     name: data.name,
     description: data.description,
     occursOn: data.occursOn,
+    deliveryEnabled: data.deliveryEnabled,
     products: data.products.map(({ price, ...p }) => ({
       ...p,
       priceCents: price,
@@ -36,6 +44,23 @@ export function orderFields(
   event: Event,
   current?: EventOrder,
 ) {
+  if (event.deliveryEnabled && !data.fulfillmentMode)
+    throwBusinessError({
+      code: "INVALID_ORDER_INPUT",
+      category: "validation",
+      issues: { fulfillmentMode: "INVALID_FULFILLMENT_MODE" },
+    });
+  if (
+    !event.deliveryEnabled &&
+    (data.fulfillmentMode ||
+      data.address ||
+      data.contactPhone ||
+      data.fulfilled)
+  )
+    throwBusinessError({
+      code: "EVENT_DELIVERY_DISABLED",
+      category: "conflict",
+    });
   const items = data.items.map(({ productId, quantity }) => {
     const product =
       current?.items.find((p) => p.id === productId) ??
@@ -62,6 +87,10 @@ export function orderFields(
   return {
     customerName: data.customerName,
     note: data.note,
+    fulfillmentMode: data.fulfillmentMode,
+    address: data.address,
+    contactPhone: data.contactPhone,
+    fulfilled: data.fulfilled,
     items,
     totalCents: data.total,
     paid: data.paid,

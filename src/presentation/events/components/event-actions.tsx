@@ -1,7 +1,10 @@
 "use client";
 import { deleteEventAction } from "@/server/events/actions/delete-event.action";
 import { useServerAction } from "@/shared/hooks/use-server-action";
-import { ConfirmationModal } from "@/components/modals/confirmation-modal";
+import {
+  ConfirmationModal,
+  deletionConfirmationMessage,
+} from "@/components/modals/confirmation-modal";
 import { ErrorModal } from "@/components/modals/error-modal";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -56,7 +59,7 @@ export function EventActions({
       {event && confirmDelete && (
         <ConfirmationModal
           title="Excluir evento?"
-          message={`Excluir o evento “${event.name}”? O histórico será preservado. Eventos com pedidos não podem ser excluídos.`}
+          message={deletionConfirmationMessage}
           confirmLabel="Excluir evento"
           busy={pending}
           onCancel={() => {

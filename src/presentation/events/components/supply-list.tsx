@@ -1,7 +1,10 @@
 "use client";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import { deleteSupplyAction } from "@/server/events/actions/delete-supply.action";
-import { ConfirmationModal } from "@/components/modals/confirmation-modal";
+import {
+  ConfirmationModal,
+  deletionConfirmationMessage,
+} from "@/components/modals/confirmation-modal";
 import { SupplyActionsMenu } from "./supply-actions-menu";
 import { SupplyDetailsModal } from "./supply-details-modal";
 import Link from "next/link";
@@ -149,7 +152,7 @@ export function SupplyList({
       {deleting && (
         <ConfirmationModal
           title="Excluir insumo?"
-          message={`Excluir “${deleting.name}”? ${deleting.source === "purchase" ? `O valor de ${formatCurrency(deleting.amountCents)} voltará ao caixa ${deleting.cashBoxName}.` : "A doação será retirada da lista, sem alterar os saldos."} O histórico será preservado.`}
+          message={deletionConfirmationMessage}
           confirmLabel="Excluir insumo"
           busy={pending}
           onCancel={() => setDeleting(null)}

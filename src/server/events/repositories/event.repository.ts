@@ -1,4 +1,7 @@
-import type { OrderStatus } from "../inputs/event-query.input";
+import type {
+  OrderStatus,
+  OrderFulfillmentFilter,
+} from "../inputs/event-query.input";
 import type { OrderDeletion } from "../models/order-deletion.model";
 import type { EventDeletion } from "../models/event-deletion.model";
 import type { Event } from "../models/event.model";
@@ -12,6 +15,8 @@ export interface EventPage<T> {
   query: string;
 }
 export type EventWriteOutcome =
+  | "delivery_locked"
+  | "delivery_disabled"
   | "has_supplies"
   | "has_orders"
   | "saved"
@@ -30,6 +35,7 @@ export interface EventRepository {
     pageSize: number,
   ): Promise<EventPage<Event>>;
   find(id: string): Promise<Event | null>;
+  hasDeliveryOrders(eventId: string): Promise<boolean>;
   create(event: Event): Promise<EventWriteOutcome>;
   update(event: Event, expectedVersion: number): Promise<EventWriteOutcome>;
   listOrders(
@@ -38,6 +44,7 @@ export interface EventRepository {
     page: number,
     pageSize: number,
     status?: OrderStatus,
+    fulfillment?: OrderFulfillmentFilter,
   ): Promise<EventPage<EventOrder>>;
   findOrder(id: string): Promise<EventOrder | null>;
   createOrder(

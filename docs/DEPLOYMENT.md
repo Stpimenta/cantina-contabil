@@ -15,12 +15,14 @@ git fetch origin
 - Não criar commits de desenvolvimento ou merges locais na main por rotina. Se a main local contém commits próprios, diagnosticar e preservar esse histórico antes de qualquer reconciliação. Não enviar esses commits diretamente à main remota para “sincronizar”.
 - Conferir identidade Git do responsável. Separar arquivos gerados, `.env`, estado D1/R2 e backups; nunca incluir segredos ou dados locais no commit. Não descartar alterações preexistentes para obter uma árvore limpa.
 
-## 2. Escolher a versão antes do commit de entrega
+## 2. Incrementar a versão antes do commit de entrega
 
-**Não entregar uma branch como pronta para envio com a versão ainda pendente.** Pedir a escolha do responsável antes de preparar o commit final. Não deduzir a versão pelo prefixo feat/fix. Isso também vale para PR somente de documentação ou testes.
+**Não entregar uma branch como pronta para envio com a versão ainda pendente.** Regra simplificada aprovada pelo responsável em 11/11/2026: o agente incrementa automaticamente o último número de X.Y.Z ao preparar cada nova entrega, inclusive de documentação/testes. Não há classificação major/minor por tipo de mudança nem cálculo pelo prefixo feat/fix. Uma versão maior já preparada para a mesma entrega é preservada ao retomar; não incrementar novamente por repetição do procedimento.
+
+O incremento acontece localmente antes do commit, nos três pontos do pacote/lockfile. O workflow do GitHub não altera esses arquivos: valida, publica após o merge e cria a tag correspondente. As travas de incremento, versão ativa e tags imutáveis permanecem; não confundir tag automática com aumento do número no pacote.
 
 1. Atualizar a referência `origin/main` e conferir a versão de seu `package.json`.
-2. Obter a versão nova escolhida pelo responsável; ela deve ser maior que a versão da main remota atualizada.
+2. Preparar a próxima versão aumentando somente o último número a partir da main remota atualizada; deve ser maior que ela. Preservar versão maior já preparada para esta entrega e nunca reutilizar tag existente.
 3. Sincronizar os três pontos: `package.json → version`, `package-lock.json → version` e `package-lock.json → packages[""] → version`.
 4. Preservar dependências e demais entradas do lockfile. Não atualizar pacotes para alterar apenas a versão do aplicativo.
 5. Validar com a regra real do projeto, não apenas lendo os números visualmente.
@@ -48,7 +50,7 @@ Esse comando só confere formato, sincronização e incremento; não publica nem
 
 - Executar as verificações do escopo, conforme [TESTING.md](TESTING.md) e [LOCAL.md](LOCAL.md). Código exige grupos afetados e build Cloudflare/TypeScript isolado; documentação exige conteúdo, links e formatação. Não repetir checks aprovados sem mudança ou falha que justifique.
 - Revisar o diff staged e confirmar ausência de conflitos/arquivos indevidos antes de criar o commit. Commits e título do PR usam feat/fix com descrição em inglês.
-- Antes de fornecer o comando de push, confirmar branch, commit, versão escolhida nos três pontos e incremento validado. Se algum desses itens estiver pendente, informar explicitamente que a entrega ainda não está pronta para envio.
+- Antes de fornecer o comando de push, confirmar branch, commit, versão preparada nos três pontos e incremento validado. Se algum desses itens estiver pendente, informar explicitamente que a entrega ainda não está pronta para envio.
 - Push, criação de PR e merge remoto continuam dependendo de pedido explícito do responsável. Não executar publicação manual como alternativa a um CI bloqueado.
 - Conferir o título final sugerido pelo GitHub e os checks do PR. Se a main avançou, conferir novamente se a versão continua maior. Não fazer merge de PR com validação reprovada para tentar corrigir depois.
 - Merge remoto autorizado aciona o deploy automático, mas não comprova sucesso. Só declarar publicação após confirmar execução, versão ativa, tráfego e tag, conforme CI.md.
@@ -57,7 +59,7 @@ Esse comando só confere formato, sincronização e incremento; não publica nem
 
 | Situação                                             | Próximo passo                                                                                                                                          |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| PR aberto, versão igual ou menor que a main          | Atualizar os três pontos para a versão escolhida, validar, criar commit pequeno na mesma branch e enviar somente com autorização.                      |
+| PR aberto, versão igual ou menor que a main          | Atualizar os três pontos para a próxima versão válida, validar, criar commit pequeno na mesma branch e enviar somente com autorização.                 |
 | PR já integrado com versão inválida                  | Criar branch `fix/...` da main remota atualizada, corrigir a versão e preparar novo PR. Atualizar uma branch já integrada não altera o commit da main. |
 | Apenas título do PR incorreto                        | Corrigir título conforme CI.md; isso não altera nem corrige a versão do pacote.                                                                        |
 | Reexecutar job do mesmo commit sem corrigir a versão | Continua inválido. Corrigir os arquivos e validar antes da nova execução.                                                                              |

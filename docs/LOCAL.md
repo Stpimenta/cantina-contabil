@@ -61,18 +61,20 @@ Aplica migrações exclusivamente locais. `npm run dev` e `dev:worker` já fazem
 
 ## Estado das migrações
 
-| Migrações | Conteúdo                                                       | Local        | Produção                   |
-| --------- | -------------------------------------------------------------- | ------------ | -------------------------- |
-| 0001–0003 | Caixas, auditoria e doações recebidas                          | Aplicadas    | Aplicadas                  |
-| 0004–0011 | Eventos/produtos/pedidos, versões, histórico e exclusão lógica | Aplicadas    | Aplicadas                  |
-| 0012–0016 | Insumos/auditoria, ícones, PDF, edição/exclusão                | Aplicadas    | Aplicadas                  |
-| 0017      | Descrição dos insumos                                          | Aplicada     | Aplicada                   |
-| 0018–0019 | Múltiplos comprovantes e nome do doador de insumo              | Aplicadas    | Aplicadas                  |
-| 0020      | Movimentações manuais e integração de saldos                   | Aplicada     | Aplicada                   |
-| **0021**  | **Edição/exclusão de doações e snapshots de auditoria**        | **Aplicada** | **Aplicada em 28/10/2026** |
-| **0022**  | **Comprovantes opcionais em movimentações**                    | **Aplicada** | **Aplicada em 28/10/2026** |
+| Migrações | Conteúdo                                                       | Local                      | Produção                   |
+| --------- | -------------------------------------------------------------- | -------------------------- | -------------------------- |
+| 0001–0003 | Caixas, auditoria e doações recebidas                          | Aplicadas                  | Aplicadas                  |
+| 0004–0011 | Eventos/produtos/pedidos, versões, histórico e exclusão lógica | Aplicadas                  | Aplicadas                  |
+| 0012–0016 | Insumos/auditoria, ícones, PDF, edição/exclusão                | Aplicadas                  | Aplicadas                  |
+| 0017      | Descrição dos insumos                                          | Aplicada                   | Aplicada                   |
+| 0018–0019 | Múltiplos comprovantes e nome do doador de insumo              | Aplicadas                  | Aplicadas                  |
+| 0020      | Movimentações manuais e integração de saldos                   | Aplicada                   | Aplicada                   |
+| **0021**  | **Edição/exclusão de doações e snapshots de auditoria**        | **Aplicada**               | **Aplicada em 28/10/2026** |
+| **0022**  | **Comprovantes opcionais em movimentações**                    | **Aplicada**               | **Aplicada em 28/10/2026** |
+| **0023**  | **Habilitação de entregas e guardas dos pedidos**              | **Aplicada em 01/11/2026** | **Pendente; não aplicada** |
+| **0024**  | **Pagamento de pedidos legados sem alterar entrega**           | **Aplicada em 04/11/2026** | **Pendente; não aplicada** |
 
-As verificações descritas são as já realizadas neste trabalho; em outro ambiente, consultar o estado antes de presumir migrações aplicadas. Código local atual exige 0021/0022. Para preparar o local, npm run db:local ou o fluxo autorizado de npm run dev aplica pendentes; nunca usar D1 remoto como desenvolvimento.
+As verificações descritas são as já realizadas neste trabalho; em outro ambiente, consultar o estado antes de presumir migrações aplicadas. Código desta branch exige também 0023/0024; estado de aplicação em STATUS.md. Para preparar o local, npm run db:local ou o fluxo autorizado de npm run dev aplica pendentes; nunca usar D1 remoto como desenvolvimento.
 
 - 0015 reconstruiu event_supplies em transação para ampliar o CHECK a PDF, preservando IDs, vínculos, índices/triggers e dados; usa defer_foreign_keys. Não editar essa migração já aplicada.
 - 0018 converteu cada comprovante antigo em receipts_json, preservando chave/tipo, dados e auditorias; tamanho legado desconhecido é null.
@@ -121,7 +123,7 @@ Para compilar/verificar sem publicar: `npm run deploy -- --build-only`. Esse cam
 
 ## Publicação automática e publicação manual
 
-Em 31/10/2026 foi autorizado o deploy automático via GitHub Actions após merge de PR na main, com testes/tipos aprovados e demais guardas de [CI.md](CI.md). Ambiente GitHub cloudflare-workers, token de publicação e leitura D1, versão escolhida no PR, mensagem pelo título e tag após confirmação remota. O responsável fará o envio/merge do workflow; sua implementação local não confirma ativação remota. O Actions consulta nomes de migrações, sem aplicar SQL de migração.
+Em 31/10/2026 foi autorizado o deploy automático via GitHub Actions após merge de PR na main, com testes/tipos aprovados e demais guardas de [CI.md](CI.md). Ambiente GitHub cloudflare-workers, token de publicação e leitura D1, versão incrementada localmente antes do commit pelo último número (regra simplificada aprovada em 11/11/2026), mensagem pelo título e tag após confirmação remota. O responsável fará o envio/merge do workflow; sua implementação local não confirma ativação remota. O Actions consulta nomes de migrações, sem aplicar SQL de migração.
 
 Implementar ou corrigir não autoriza deploy manual pelo agente. Acesso à conta e retomada de chat não autorizam migração remota ou alteração de recursos. O procedimento manual abaixo continua disponível somente com solicitação explícita.
 

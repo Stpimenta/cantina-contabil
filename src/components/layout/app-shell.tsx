@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@/server/auth/models/session.model";
 import { useServerAction } from "@/shared/hooks/use-server-action";
 import { logoutAction } from "@/server/auth/actions/logout.action";
+import { BalanceVisibilityProvider } from "../ui/balance-visibility";
 import { Brand } from "./brand";
 import { Navigation } from "./navigation";
 import { PageTransition } from "./page-transition";
@@ -151,7 +152,9 @@ export function AppShell({
       </Button>
       <main id="main" className={styles.main}>
         <div className={styles.content}>
-          <PageTransition>{children}</PageTransition>
+          <BalanceVisibilityProvider>
+            <PageTransition>{children}</PageTransition>
+          </BalanceVisibilityProvider>
         </div>
       </main>
       <span className="sr-only" role="status">

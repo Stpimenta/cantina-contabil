@@ -9,7 +9,10 @@ import { useRouter } from "next/navigation";
 import type { DonationListItem } from "@/server/donations/models/donation-list-item.model";
 import { deleteDonationAction } from "@/server/donations/actions/delete-donation.action";
 import { DonationFormModal } from "@/components/modals/donation-form-modal";
-import { ConfirmationModal } from "@/components/modals/confirmation-modal";
+import {
+  ConfirmationModal,
+  deletionConfirmationMessage,
+} from "@/components/modals/confirmation-modal";
 import { ErrorModal } from "@/components/modals/error-modal";
 import { RecordActionsMenu } from "@/components/ui/record-actions-menu";
 import { useServerAction } from "@/shared/hooks/use-server-action";
@@ -120,7 +123,7 @@ export function DonationList({
       {deleting && (
         <ConfirmationModal
           title="Excluir doação?"
-          message={`Excluir a doação de ${formatCurrency(deleting.amountCents)} do caixa “${deleting.cashBoxName}”? O valor será retirado do saldo real e o histórico preservado. A exclusão será bloqueada se o saldo ficar negativo.`}
+          message={deletionConfirmationMessage}
           confirmLabel="Excluir doação"
           busy={pending}
           onCancel={() => {

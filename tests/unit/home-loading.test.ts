@@ -20,7 +20,7 @@ describe("home loading and empty data", () => {
     expect(html).not.toContain("Preparando");
   });
 
-  it("shows genuine zero balances and customized empty results after data resolves", () => {
+  it("keeps zero balances concealed and shows customized empty results after data resolves", () => {
     const html = renderToStaticMarkup(
       createElement(HomeOverview, {
         data: {
@@ -32,8 +32,35 @@ describe("home loading and empty data", () => {
         },
       }),
     );
-    expect(html).toContain("R$");
+    expect(html).not.toContain("R$");
+    expect(html).toContain("Valor oculto");
     expect(html).toContain("Nenhum caixa encontrado.");
     expect(html).toContain("Nenhum evento próximo.");
+  });
+  it("keeps chart bars while concealing the summary and box amounts", () => {
+    const html = renderToStaticMarkup(
+      createElement(HomeOverview, {
+        data: {
+          realCents: 12345,
+          pendingCents: 6789,
+          boxCount: 1,
+          boxes: [
+            {
+              id: "box",
+              name: "Caixa sintético",
+              balanceCents: 12345,
+              pendingCents: 6789,
+            },
+          ],
+          upcoming: [],
+        },
+      }),
+    );
+    expect(html).toContain("<svg");
+    expect(html).toContain('width="100"');
+    expect(html).toContain("Caixa sintético");
+    expect(html).not.toContain("123,45");
+    expect(html).not.toContain("67,89");
+    expect(html.match(/Valor oculto/g)).toHaveLength(3);
   });
 });

@@ -1,3 +1,7 @@
+import {
+  BalanceAmount,
+  BalanceVisibilityToggle,
+} from "@/components/ui/balance-visibility";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import Link from "next/link";
@@ -22,6 +26,9 @@ export function HomeOverview({ data }: { data?: Overview }) {
         className={styles.summary}
         aria-label="Resumo financeiro de todos os caixas ativos"
       >
+        <div className={styles.summaryToggle}>
+          <BalanceVisibilityToggle disabled={!data} />
+        </div>
         <div className={styles.mainBalance}>
           <p className={styles.eyebrow}>Saldo real</p>
           <p
@@ -30,7 +37,11 @@ export function HomeOverview({ data }: { data?: Overview }) {
               (data && formatCurrency(data.realCents).length > 22) || undefined
             }
           >
-            {data ? formatCurrency(data.realCents) : <Skeleton shape="total" />}
+            {data ? (
+              <BalanceAmount cents={data.realCents} />
+            ) : (
+              <Skeleton shape="total" />
+            )}
           </p>
           <Link className={styles.summaryLink} href="/caixas">
             {data ? data.boxCount : <Skeleton shape="count" />}{" "}
@@ -42,7 +53,7 @@ export function HomeOverview({ data }: { data?: Overview }) {
           <p className={styles.eyebrow}>Pendente</p>
           <p className={styles.pendingValue}>
             {data ? (
-              formatCurrency(data.pendingCents)
+              <BalanceAmount cents={data.pendingCents} />
             ) : (
               <Skeleton shape="amount" />
             )}
@@ -116,7 +127,7 @@ export function HomeOverview({ data }: { data?: Overview }) {
                       <span className={styles.chartLabel}>
                         <span>{box.name}</span>
                         <strong className="balance-value">
-                          {formatCurrency(box.balanceCents)}
+                          <BalanceAmount cents={box.balanceCents} />
                         </strong>
                       </span>
                       <svg

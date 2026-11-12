@@ -67,12 +67,22 @@ O emulador precisa de processos e sockets locais em portas aleatórias de loopba
 
 Arquivos donos da cobertura:
 
-- `tests/unit/home-loading.test.ts`: Home pendente mantém estrutura sem valores fictícios; zero e resultados vazios só aparecem após os dados.
+- `tests/unit/order-steps.test.ts`: validação independente por grupo, etapa do erro final e parcela de pagamento; integração de Pix/dinheiro/misto, preservação e legado em deliveries.test.ts.
+- `tests/unit/breadcrumbs.test.ts`: destinos do Voltar em detalhes de caixa/evento e pedidos/insumos, preservação do caminho e retorno desabilitado no fallback.
+- `tests/unit/balance-visibility.test.ts`: máscara no HTML inicial, ação acessível e uso de CashBoxBalance em caixas/eventos.
+- `tests/unit/home-loading.test.ts`: Home pendente mantém estrutura sem valores fictícios; resultados vazios só aparecem após os dados; valores começam mascarados e barras permanecem visíveis.
 
 - `tests/unit/dev-origins.test.ts`: origens de loopback/rede no desenvolvimento, sem wildcard ou inclusão em produção; inicialização Cloudflare simulada.
 
 - `tests/unit/login-form.test.ts`: HTML inicial do login exige POST para caminho limpo e bloqueia envio antes da hidratação; URLs com campos de credenciais redirecionam antes da sessão, sem credenciais reais.
 
+- `tests/unit/event-products.test.ts`: catálogo opcional, nome/preço específicos por campo, zero permitido e duplicidade rejeitada; integração de cadastro vazio/inclusão posterior em deliveries.test.ts.
+- `tests/unit/address-masks.test.ts`: máscaras parciais/completas de CEP e telefone, validação de CEP/DDD e mesclagem que preserva correções/dados e descarta CEP antigo.
+- `tests/integration/postal-address.test.ts`: caso de uso e adaptador ViaCEP reais com transporte controlado, acesso, entrada inválida, contrato/identidade, CEP inexistente/genérico e erros HTTP/rede/timeout; sem serviço externo real nem banco.
+- `tests/unit/order-query.test.ts`: composição e normalização dos filtros independentes de pagamento e transporte.
+- `tests/integration/order-fulfillment-filter.test.ts`: Não concluídas combina entrega/retirada, busca/pagamento, contagem e paginação antes do limite; exclui concluídos/excluídos, inclui legado não concluído e preserva saldos.
+- `tests/unit/order-delivery.test.ts`: endereço parcial/completo/vazio, CEP/UF, contato/DDD, modalidade obrigatória e link Maps sem dados de contato/referência.
+- `tests/integration/deliveries.test.ts`: entrega/retirada, conclusão/desfazer independente de pagamento, atualização rápida isolada/conjunta atômica, saldos/parcelas/dados preservados, concorrência, idempotência, históricos, pedidos legados, exclusão e guardas atômicas.
 - `tests/unit/rules.test.ts`: dinheiro, datas, inputs e regras de pedidos/insumos.
 - `tests/unit/ci-api.test.mjs`: recuperação limitada de GET com socket encerrado, timeout por tentativa e ausência de retry para escritas/erros não reconhecidos.
 - `tests/unit/release-error.test.mjs`: classificação técnica controlada e ausência de conteúdo privado nos diagnósticos.
