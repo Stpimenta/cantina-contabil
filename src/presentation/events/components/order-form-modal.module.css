@@ -25,8 +25,25 @@
 }
 
 @media (max-width: 37.499rem) {
-  .productInfo {
-    flex-basis: 100%;
+  .productRow {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+
+  .productHeading {
+    gap: var(--space-2);
+  }
+
+  .productQuantity {
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    gap: var(--space-2);
+  }
+
+  .productCount {
+    max-width: 5ch;
+    text-align: center;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -37,4 +54,25 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  width: 100%;
+}
+.stepTitle {
+  outline: none;
+}
+
+.cancelAction {
+  display: contents;
+}
+
+@media (max-width: 63.999rem) {
+  .stepCancel {
+    display: none;
+  }
 }

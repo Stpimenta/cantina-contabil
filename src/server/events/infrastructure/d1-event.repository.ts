@@ -1,4 +1,7 @@
-import type { OrderStatus } from "../inputs/event-query.input";
+import type {
+  OrderStatus,
+  OrderFulfillmentFilter,
+} from "../inputs/event-query.input";
 import type { OrderDeletion } from "../models/order-deletion.model";
 import type { EventDeletion } from "../models/event-deletion.model";
 import {
@@ -58,7 +61,14 @@ function readOrder({
   catalogVersion: _catalogVersion,
   ...row
 }: OrderRow): EventOrder {
-  return { ...JSON.parse(payloadJson), ...row };
+  return {
+    fulfillmentMode: null,
+    address: null,
+    contactPhone: "",
+    fulfilled: false,
+    ...JSON.parse(payloadJson),
+    ...row,
+  };
 }
 const eventPayload = (e: Event) =>
   JSON.stringify({
@@ -66,12 +76,17 @@ const eventPayload = (e: Event) =>
     name: e.name,
     description: e.description,
     occursOn: e.occursOn,
+    deliveryEnabled: e.deliveryEnabled,
     products: e.products,
   });
 const orderPayload = (o: EventOrder) =>
   JSON.stringify({
     customerName: o.customerName,
     note: o.note,
+    fulfillmentMode: o.fulfillmentMode,
+    address: o.address,
+    contactPhone: o.contactPhone,
+    fulfilled: o.fulfilled,
     items: o.items,
     totalCents: o.totalCents,
     paid: o.paid,
@@ -118,6 +133,10 @@ export class D1EventRepository implements EventRepository {
       const result = await execute();
       return result.meta.changes > 0 ? "saved" : "stale";
     } catch (cause) {
+      if (hasDatabaseError(cause, "EVENT_DELIVERY_LOCKED"))
+        return "delivery_locked";
+      if (hasDatabaseError(cause, "EVENT_DELIVERY_DISABLED"))
+        return "delivery_disabled";
       if (hasDatabaseError(cause, "EVENT_HAS_SUPPLIES")) return "has_supplies";
       if (hasDatabaseError(cause, "EVENT_HAS_ORDERS")) return "has_orders";
       if (hasDatabaseError(cause, "EVENT_BOX_UNAVAILABLE"))
@@ -165,6 +184,16 @@ export class D1EventRepository implements EventRepository {
       .get();
     return row ? readEvent(row) : null;
   }
+  async hasDeliveryOrders(eventId: string) {
+    const row = await this.db.get<{ present: number }>(sql`SELECT EXISTS(
+      SELECT 1 FROM event_orders WHERE event_id=${eventId} AND (
+        json_extract(payload_json,'$.fulfillmentMode') IS NOT NULL
+        OR json_extract(payload_json,'$.address') IS NOT NULL
+        OR coalesce(json_extract(payload_json,'$.contactPhone'),'')!=''
+        OR coalesce(json_extract(payload_json,'$.fulfilled'),0)!=0
+      )) AS present`);
+    return row?.present === 1;
+  }
   create(e: Event) {
     return this.write(() =>
       this.db
@@ -175,6 +204,7 @@ export class D1EventRepository implements EventRepository {
           name: e.name,
           description: e.description,
           occursOn: e.occursOn,
+          deliveryEnabled: e.deliveryEnabled,
           ...metadata(e),
           payloadJson: eventPayload(e),
         })
@@ -190,6 +220,7 @@ export class D1EventRepository implements EventRepository {
           name: e.name,
           description: e.description,
           occursOn: e.occursOn,
+          deliveryEnabled: e.deliveryEnabled,
           version: e.version,
           updatedAt: e.updatedAt,
           updatedBy: e.updatedBy,
@@ -238,12 +269,16 @@ export class D1EventRepository implements EventRepository {
     page: number,
     pageSize: number,
     status: OrderStatus = "all",
+    fulfillment: OrderFulfillmentFilter = "all",
   ) {
     const search = `%${query.replace(/[!%_]/g, "!$&")}%`;
     const condition = and(
       eq(eventOrders.eventId, eventId),
       isNull(eventOrders.deletedAt),
       status === "all" ? undefined : eq(eventOrders.paid, status === "paid"),
+      fulfillment === "pending"
+        ? sql`coalesce(json_extract(${eventOrders.payloadJson}, '$.fulfilled'), 0) = 0`
+        : undefined,
       sql`${eventOrders.customerName} LIKE ${search} ESCAPE '!'`,
     );
     const result = await this.db

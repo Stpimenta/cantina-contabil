@@ -23,9 +23,18 @@ export const orderStatusSchema = z
   .enum(["all", "pending", "paid"])
   .catch("all");
 export type OrderStatus = z.infer<typeof orderStatusSchema>;
+export const orderFulfillmentFilterSchema = z
+  .enum(["all", "pending"])
+  .catch("all");
+export type OrderFulfillmentFilter = z.infer<
+  typeof orderFulfillmentFilterSchema
+>;
 export const validateOrderQuery = (input: unknown) =>
   validateInput(
-    listSchema.extend({ status: orderStatusSchema }),
+    listSchema.extend({
+      status: orderStatusSchema,
+      fulfillment: orderFulfillmentFilterSchema,
+    }),
     input,
     "INVALID_EVENT_INPUT",
   );

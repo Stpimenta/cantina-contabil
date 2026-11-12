@@ -9,6 +9,9 @@ export const events = sqliteTable("events", {
     .notNull()
     .references(() => cashBoxes.id),
   name: text("name").notNull(),
+  deliveryEnabled: integer("delivery_enabled", { mode: "boolean" })
+    .notNull()
+    .default(false),
   description: text("description").notNull(),
   occursOn: text("occurs_on").notNull(),
   version: integer("version").notNull(),

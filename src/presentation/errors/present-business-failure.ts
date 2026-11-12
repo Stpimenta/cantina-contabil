@@ -6,6 +6,13 @@ import type {
 } from "@/shared/errors/business-failure";
 
 const messages: Record<BusinessCode, string> = {
+  ORDER_FULFILLMENT_UNDEFINED:
+    "Defina Entrega ou Retirada na edição do pedido.",
+  INVALID_POSTAL_CODE_INPUT: "Confira o CEP informado.",
+  EVENT_DELIVERY_LOCKED:
+    "Este evento possui pedidos com dados de entrega ou retirada. Não é possível desativar as entregas.",
+  EVENT_DELIVERY_DISABLED:
+    "As entregas não estão habilitadas neste evento. Atualize a página antes de tentar novamente.",
   DONATION_CHANGED:
     "Esta doação foi alterada ou excluída. Atualize a lista antes de tentar novamente.",
   DONATION_INSUFFICIENT_BALANCE:
@@ -63,6 +70,17 @@ const messages: Record<BusinessCode, string> = {
   ACCESS_DENIED: "Seu perfil não tem permissão para esta operação.",
 };
 const issueMessages: Record<ValidationIssue, string> = {
+  INVALID_ORDER_STATUS: "Escolha uma alteração para salvar.",
+  INVALID_POSTAL_CODE: "Informe um CEP com oito dígitos.",
+  INVALID_PRODUCT_NAME: "Informe o nome do produto.",
+  INVALID_PRODUCT_PRICE: "Informe um preço válido.",
+  INVALID_PRODUCT_ICON: "Escolha um ícone.",
+  INVALID_FULFILLMENT_MODE: "Escolha Entrega ou Retirada.",
+  INVALID_ORDER_ADDRESS:
+    "Complete rua, número ou Sem número, bairro, cidade e UF. Se informar CEP, use oito dígitos. Confira o limite indicado no campo.",
+  INVALID_CONTACT_PHONE:
+    "Informe telefone com DDD: 10 dígitos para fixo ou 11 para celular.",
+  INVALID_FULFILLMENT_STATUS: "Escolha a situação da entrega ou retirada.",
   INVALID_MOVEMENT_RECEIPT:
     "Anexe até 5 arquivos JPEG, PNG, WebP ou PDF, de até 5 MB cada.",
   INVALID_MOVEMENT_DIRECTION: "Escolha Entrada ou Saída.",

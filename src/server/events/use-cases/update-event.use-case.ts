@@ -39,6 +39,15 @@ export class UpdateEventUseCase {
       return current!;
     if (!current) return eventMissing();
     if (current.version !== expected) return eventChanged();
+    if (
+      current.deliveryEnabled &&
+      !data.deliveryEnabled &&
+      (await this.events.hasDeliveryOrders(id))
+    )
+      throwBusinessError({
+        code: "EVENT_DELIVERY_LOCKED",
+        category: "conflict",
+      });
     if (current.cashBoxId !== data.cashBoxId)
       throwBusinessError({ code: "EVENT_BOX_LOCKED", category: "conflict" });
 

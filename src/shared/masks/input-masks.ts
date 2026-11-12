@@ -27,3 +27,19 @@ export function maskBrazilianDate(value: string) {
     .filter(Boolean)
     .join("/");
 }
+
+export function maskBrazilianPostalCode(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  return digits.length > 5
+    ? `${digits.slice(0, 5)}-${digits.slice(5)}`
+    : digits;
+}
+
+export function maskBrazilianPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (!digits) return "";
+  if (digits.length < 3) return `(${digits}`;
+  const local = digits.slice(2);
+  const split = digits.length > 10 ? 5 : 4;
+  return `(${digits.slice(0, 2)}) ${local.slice(0, split)}${local.length > split ? `-${local.slice(split)}` : ""}`;
+}

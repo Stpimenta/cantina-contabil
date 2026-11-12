@@ -1,3 +1,5 @@
+import type { OrderAddress } from "@/server/events/models/order-address.model";
+import { formatOrderAddress } from "@/shared/formatting/order-address";
 import { ProductIcon } from "@/components/ui/product-icon";
 import { productIcons } from "@/shared/products/product-icons";
 import type { EventAudit } from "@/server/events/models/event-audit.model";
@@ -103,6 +105,10 @@ function Snapshot({
             </dd>
           </div>
           <div>
+            <dt>Entregas habilitadas</dt>
+            <dd>{value.deliveryEnabled ? "Sim" : "Não"}</dd>
+          </div>
+          <div>
             <dt>Data</dt>
             <dd>{formatDateOnly(String(value.occursOn))}</dd>
           </div>
@@ -131,6 +137,44 @@ function Snapshot({
                 <dt>Pix</dt>
                 <dd>{formatCurrency(Number(value.pixCents))}</dd>
               </div>
+            </>
+          )}
+          {value.fulfillmentMode != null && (
+            <>
+              <div>
+                <dt>Modalidade</dt>
+                <dd>
+                  {value.fulfillmentMode === "delivery"
+                    ? "Entrega"
+                    : "Retirada"}
+                </dd>
+              </div>
+              <div>
+                <dt>Situação da entrega/retirada</dt>
+                <dd>
+                  {value.fulfillmentMode === "delivery"
+                    ? value.fulfilled
+                      ? "Entregue"
+                      : "A entregar"
+                    : value.fulfilled
+                      ? "Retirado"
+                      : "A retirar"}
+                </dd>
+              </div>
+              <div>
+                <dt>Telefone de contato</dt>
+                <dd>{String(value.contactPhone || "Não informado")}</dd>
+              </div>
+              {value.fulfillmentMode === "delivery" && (
+                <div>
+                  <dt>Endereço</dt>
+                  <dd>
+                    {value.address
+                      ? formatOrderAddress(value.address as OrderAddress)
+                      : "Não informado"}
+                  </dd>
+                </div>
+              )}
             </>
           )}
           <div>

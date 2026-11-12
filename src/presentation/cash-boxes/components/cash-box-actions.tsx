@@ -7,7 +7,10 @@ import { deleteCashBoxAction } from "@/server/cash-boxes/actions/delete-cash-box
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { CashBoxFormModal } from "@/components/modals/cash-box-form-modal";
-import { ConfirmationModal } from "@/components/modals/confirmation-modal";
+import {
+  ConfirmationModal,
+  deletionConfirmationMessage,
+} from "@/components/modals/confirmation-modal";
 import { ErrorModal } from "@/components/modals/error-modal";
 import { useToast } from "@/components/ui/toast-provider";
 
@@ -77,7 +80,7 @@ export function CashBoxActions({ box }: { box?: CashBox }) {
       {deleting && box && (
         <ConfirmationModal
           title="Excluir caixa?"
-          message={`O caixa “${box.name}” deixará de aparecer na lista. Seus dados e histórico serão preservados.`}
+          message={deletionConfirmationMessage}
           confirmLabel="Excluir caixa"
           busy={pending}
           onConfirm={remove}

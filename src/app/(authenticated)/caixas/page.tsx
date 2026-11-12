@@ -1,3 +1,4 @@
+import { BalanceVisibilityToggle } from "@/components/ui/balance-visibility";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import styles from "./page.module.css";
 import Link from "next/link";
@@ -47,9 +48,12 @@ export default async function CashBoxesPage({
         description="Organize os caixas por finalidade."
         actions={
           result.ok ? (
-            <CashBoxActions
-              key={`${result.value.query}:${result.value.page}`}
-            />
+            <>
+              <BalanceVisibilityToggle />
+              <CashBoxActions
+                key={`${result.value.query}:${result.value.page}`}
+              />
+            </>
           ) : undefined
         }
       />
@@ -60,7 +64,7 @@ export default async function CashBoxesPage({
           <SearchForm
             action="/caixas"
             query={result.value.query}
-            label="Buscar caixa por nome"
+            label="Buscar pelo nome"
           />
           {result.value.items.length === 0 && (
             <SectionFeedback area="caixas">
@@ -87,6 +91,7 @@ export default async function CashBoxesPage({
                       )}
                     </div>
                     <CashBoxBalance
+                      concealable
                       amountCents={box.balanceCents}
                       pendingCents={box.pendingCents}
                     />

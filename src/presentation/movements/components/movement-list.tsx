@@ -20,7 +20,10 @@ import { Icon } from "@/components/ui/icon";
 import { RecordActionsMenu } from "@/components/ui/record-actions-menu";
 import { useToast } from "@/components/ui/toast-provider";
 import { Modal } from "@/components/modals/modal";
-import { ConfirmationModal } from "@/components/modals/confirmation-modal";
+import {
+  ConfirmationModal,
+  deletionConfirmationMessage,
+} from "@/components/modals/confirmation-modal";
 import { ErrorModal } from "@/components/modals/error-modal";
 import { MovementFormModal } from "./movement-form-modal";
 import { MovementSnapshot } from "./movement-snapshot";
@@ -163,7 +166,7 @@ export function MovementList({
       {deleting && (
         <ConfirmationModal
           title="Excluir movimentação?"
-          message={`Excluir ${deleting.direction === "incoming" ? "a entrada" : "a saída"} de ${formatCurrency(deleting.amountCents)} do caixa “${deleting.cashBoxName}”? O saldo será recalculado e o histórico preservado. A operação será bloqueada se deixar o caixa negativo.`}
+          message={deletionConfirmationMessage}
           confirmLabel="Excluir movimentação"
           busy={pending}
           onCancel={() => {

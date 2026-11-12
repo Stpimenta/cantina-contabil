@@ -1,3 +1,4 @@
+import { BalanceVisibilityToggle } from "../ui/balance-visibility";
 import { PageHeader } from "./page-header";
 import { Breadcrumbs } from "./breadcrumbs";
 import { Button } from "../ui/button";
@@ -146,6 +147,7 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
       </span>
       {nested && (
         <Breadcrumbs
+          loading
           items={[
             { label: "Home", href: "/" },
             {
@@ -171,7 +173,14 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
         }
         hideDescriptionOnMobile={!nested}
         compactActionsOnMobile={area !== "home" && area !== "doacoes"}
-        actions={area === "home" ? undefined : <LoadingActions area={area} />}
+        actions={
+          <>
+            {(area === "caixas" || area === "caixa") && (
+              <BalanceVisibilityToggle disabled />
+            )}
+            {area !== "home" && <LoadingActions area={area} />}
+          </>
+        }
       />
       {area === "home" ? (
         <HomeOverview />
@@ -253,13 +262,7 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
               action={area === "pedidos" ? "/eventos" : `/${area}`}
               query=""
               label={
-                area === "caixas"
-                  ? "Buscar caixa por nome"
-                  : area === "eventos"
-                    ? "Buscar evento por nome"
-                    : area === "doacoes"
-                      ? "Buscar por doador"
-                      : "Buscar pedido pelo nome da pessoa"
+                area === "doacoes" ? "Buscar por doador" : "Buscar pelo nome"
               }
               disabled
               actions={

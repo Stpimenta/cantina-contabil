@@ -1,3 +1,4 @@
+import { BalanceVisibilityToggle } from "@/components/ui/balance-visibility";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { CashBoxBalance } from "@/presentation/cash-boxes/components/cash-box-balance";
 import { redirect, notFound } from "next/navigation";
@@ -82,9 +83,15 @@ export default async function CashBoxPage({
             compactActionsOnMobile
             title={result.value.name}
             description="Detalhes do caixa"
-            actions={<CashBoxActions box={result.value} />}
+            actions={
+              <>
+                <BalanceVisibilityToggle />
+                <CashBoxActions box={result.value} />
+              </>
+            }
           />
           <CashBoxBalance
+            concealable
             amountCents={result.value.balanceCents}
             pendingCents={result.value.pendingCents}
             prominent

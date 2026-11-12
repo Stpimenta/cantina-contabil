@@ -1,3 +1,4 @@
+import { UpdateOrderStatusUseCase } from "./use-cases/update-order-status.use-case";
 import { UpdateSupplyUseCase } from "./use-cases/update-supply.use-case";
 import { DeleteSupplyUseCase } from "./use-cases/delete-supply.use-case";
 import "server-only";
@@ -41,6 +42,7 @@ export function createEvents() {
     update: new UpdateEventUseCase(repo, boxes),
     createOrder: new CreateOrderUseCase(repo),
     updateOrder: new UpdateOrderUseCase(repo),
+    updateOrderStatus: new UpdateOrderStatusUseCase(repo),
     list: new ListEventsUseCase(repo),
     get: new GetEventUseCase(repo),
     orders: new ListOrdersUseCase(repo),

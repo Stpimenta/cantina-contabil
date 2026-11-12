@@ -5,6 +5,7 @@ export interface Event {
   name: string;
   description: string;
   occursOn: string;
+  deliveryEnabled: boolean;
   products: EventProduct[];
   version: number;
   createdAt: string;

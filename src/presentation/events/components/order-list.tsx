@@ -1,9 +1,13 @@
 "use client";
+import { OrderStatusModal } from "./order-status-modal";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import styles from "./order-list.module.css";
 import { deleteOrderAction } from "@/server/events/actions/delete-order.action";
 import { useServerAction } from "@/shared/hooks/use-server-action";
-import { ConfirmationModal } from "@/components/modals/confirmation-modal";
+import {
+  ConfirmationModal,
+  deletionConfirmationMessage,
+} from "@/components/modals/confirmation-modal";
 import { ErrorModal } from "@/components/modals/error-modal";
 import { useState, type ReactNode } from "react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -25,6 +29,7 @@ export function OrderList({
   search?: ReactNode;
 }) {
   const [selected, setSelected] = useState<EventOrder | "new" | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<EventOrder | null>(null);
   const [deleting, setDeleting] = useState<EventOrder | null>(null);
   const { execute, pending, isPending, error, closeError } = useServerAction({
     connectionMessage:
@@ -41,7 +46,7 @@ export function OrderList({
         actions={
           <Button
             mobileIcon={<Icon name="plus" />}
-            disabled={pending}
+            disabled={pending || event.products.length === 0}
             aria-label="Adicionar pedido"
             title="Adicionar pedido"
             onClick={() => setSelected("new")}
@@ -53,7 +58,9 @@ export function OrderList({
       {search}
       {orders.length === 0 && (
         <SectionFeedback area="pedidos">
-          Nenhum pedido encontrado.
+          {event.products.length === 0
+            ? "Adicione produtos para cadastrar pedidos."
+            : "Nenhum pedido encontrado."}
         </SectionFeedback>
       )}
       <ul className="record-list" aria-label="Pedidos do evento">
@@ -70,11 +77,36 @@ export function OrderList({
                   .map((p) => `${p.quantity} × ${p.name}`)
                   .join(" · ")}
               </p>
+              {event.deliveryEnabled && (
+                <p className="muted record-meta">
+                  {order.fulfillmentMode === "delivery"
+                    ? order.fulfilled
+                      ? "Entregue"
+                      : "A entregar"
+                    : order.fulfillmentMode === "pickup"
+                      ? order.fulfilled
+                        ? "Retirado"
+                        : "A retirar"
+                      : "Entrega/retirada não definida"}
+                </p>
+              )}
               {order.note && (
                 <p className={`muted ${styles.note}`}>{order.note}</p>
               )}
             </div>
             <div className="action-group">
+              {(!order.paid || event.deliveryEnabled) && (
+                <Button
+                  variant="neutral"
+                  disabled={pending}
+                  iconOnly
+                  aria-label={`Atualizar situação do pedido de ${order.customerName}`}
+                  title="Atualizar situação"
+                  onClick={() => setUpdatingStatus(order)}
+                >
+                  <Icon name="plus" />
+                </Button>
+              )}
               <Button
                 disabled={pending}
                 variant="neutral"
@@ -102,10 +134,22 @@ export function OrderList({
           </li>
         ))}
       </ul>
+      {updatingStatus && (
+        <OrderStatusModal
+          order={updatingStatus}
+          deliveryEnabled={event.deliveryEnabled}
+          onClose={() => setUpdatingStatus(null)}
+          onSaved={() => {
+            setUpdatingStatus(null);
+            notify("Pedido atualizado.");
+            router.refresh();
+          }}
+        />
+      )}
       {deleting && (
         <ConfirmationModal
           title="Excluir pedido?"
-          message={`Excluir o pedido de “${deleting.customerName}”? O valor de ${formatCurrency(deleting.totalCents)} será retirado do saldo ${deleting.paid ? "real" : "pendente"}. O histórico será preservado. Esta ação não registra devolução de dinheiro.`}
+          message={deletionConfirmationMessage}
           confirmLabel="Excluir pedido"
           busy={pending}
           onCancel={() => {
