@@ -1,13 +1,13 @@
 # Arquitetura e padrões aprovados
 
-Contrato atual atualizado em 11/11/2026. Histórico de versões em [RELEASES.md](RELEASES.md); contexto de retomada em [STATUS.md](STATUS.md). Uma pendência não autoriza implementação.
+Contrato atual atualizado em 12/11/2026. Histórico de versões em [RELEASES.md](RELEASES.md); contexto de retomada em [STATUS.md](STATUS.md). Uma pendência não autoriza implementação.
 
 ## Stack e limites atuais
 
 - Next.js, React e TypeScript; Cloudflare Workers com OpenNext; D1 com Drizzle ORM e consultas parametrizadas.
 - Consultas por Server Components e gravações por Server Actions; chamadas internas não fazem HTTP para a própria aplicação.
-- Não há API REST própria, controllers ou camada de DTOs. Login/perfil usam uma API externa.
-- Nome público Ministério Contábil; identificadores técnicos/cookies e URL preservados. Versão publicada e diferenças locais são registradas somente em STATUS.md; migrações por ambiente em LOCAL.md e fatos históricos em RELEASES.md. R2 privado em produção e emulado no local. Anexos gerais, cobrança online e filas/WS continuam futuros.
+- API própria de consulta das comandas por Route Handlers e use cases, sem controllers/DTOs obrigatórios. Gravações seguem Server Actions; login/perfil usam a API externa.
+- Nome público Ministério Contábil; identificadores técnicos/cookies e URL preservados. Versão publicada e diferenças locais são registradas somente em STATUS.md; migrações por ambiente em LOCAL.md e fatos históricos em RELEASES.md. R2 privado em produção e emulado no local. Anexos gerais, cobrança online e Cloudflare Queues permanecem fora do escopo; comandas usam Durable Objects/WebSocket.
 
 ## Estrutura e responsabilidades
 
@@ -37,7 +37,7 @@ src/
 migrations/                  # alterações SQL versionadas, com preservação dos objetos existentes
 ```
 
-`server/` é o backend da aplicação, mesmo sem uma API própria exposta. A organização é por funcionalidade: suas camadas ficam próximas. Não reunir todos os models, inputs ou repositories de funcionalidades diferentes em pastas globais.
+`server/` é o backend da aplicação, inclusive para a API própria de comandas. A organização é por funcionalidade: suas camadas ficam próximas. Não reunir todos os models, inputs ou repositories de funcionalidades diferentes em pastas globais.
 
 | Parte                  | Responsabilidade                                                                                      | Limite                                                                     |
 | ---------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
@@ -65,7 +65,7 @@ Referências conceituais: [Clean Architecture](https://blog.cleancoder.com/uncle
 - **Validação:** validateInput executa schema.safeParse; resultado válido contém os dados normalizados. parseInput entrega esses dados ao use case ou lança BusinessError com códigos/issues técnicos. O formulário de doação também usa essa validação pura para feedback local, sem substituir a validação obrigatória no servidor.
 - **Falha:** executeOperation → handleFailure. BusinessError é traduzido pelo catálogo da apresentação; infraestrutura/desconhecidos recebem diagnóstico no logger e referência segura para a interface. Erros de validação com campos corrigíveis ficam inline; ErrorModal atende as demais falhas de gravação; PageFailure atende consultas. O use case não escolhe mensagens nem componentes visuais.
 
-Para uma futura API, o adaptador HTTP chamará os mesmos use cases e validadores, conforme a seção API futura; não dependerá das Actions. Não antecipar essa implementação.
+A API de comandas adapta HTTP para os mesmos use cases e validadores; não depende de Actions nem acessa banco diretamente. Ver a seção API de comandas.
 
 Use cases não dependem de Next/HTTP/Cloudflare. A interface usa Server Actions, tipos e regras puras; não importa banco, segredos ou composição para o navegador. Server Components podem chamar use cases diretamente no servidor. `server-only` protege os pontos de composição/infraestrutura necessários; o nome da pasta server sozinho não protege imports.
 
@@ -249,13 +249,50 @@ Migração 0024_legacy_order_payment.sql substitui somente a trigger de atualiza
 
 Aprovado em 11/11/2026. validateOrderQuery mantém status de pagamento e acrescenta fulfillment (all/pending, padrão e inválidos normalizados para all). ListOrdersUseCase aplica o filtro de transporte somente quando o evento habilita entregas. D1EventRepository compartilha a mesma condição para contagem e listagem paginada: não excluído, evento, nome, pagamento e, quando solicitado, fulfilled falso ou ausente no payload. Legados sem modalidade ainda não concluídos entram nessa seleção; concluídos e excluídos ficam fora. Mantém ordenação/paginação, não altera saldos ou registros e não exige nova migração. Página preserva ambos os filtros em SearchForm/Pagination e normaliza transporte para all em eventos comuns.
 
-## Modalidade Cantina — proposta suspensa
+## Modalidade Cantina e comandas
 
-O responsável interrompeu expressamente a implementação em 11/11/2026. O seletor do evento continua somente Padrão/Entregas, sobre o booleano deliveryEnabled; nenhuma terceira modalidade, enum, migração ou regra de Cantina foi criada. A proposta de começar com o comportamento da Padrão ficou apenas como referência para um planejamento futuro, sem decisão sobre persistência, diferenças ou autorização de implementar. O diagrama do banco também foi adiado. Não confundir essa proposta com o escopo da branch de entregas.
+Autorizada em 12/11/2026, substituindo a suspensão anterior. `deliveryEnabled` preserva Entregas; `canteenEnabled` identifica a terceira modalidade, mutuamente exclusivos. Ausência da nova coluna nos dados antigos é migrada para false sem regravar versões/snapshots. Entrar ou sair de Cantina é bloqueado quando houver qualquer pedido preservado, inclusive excluído, no use case e em trigger D1. As guardas anteriores entre Padrão/Entregas continuam válidas. Não há mudança financeira.
 
-## API futura
+Pedido de Cantina conserva os campos atuais e acrescenta `collected` no payload versionado. Criar começa aguardando; editar preserva retirada; CollectCommandUseCase marca/desfaz somente esse estado, versão, operação e autoria, sem mudar valor/itens/pagamento. A consulta mínima Command expõe apenas ID/versão, nome, observação, itens com nome/quantidade/ícone, criação, pagamento e retirada. ListCommandsUseCase consulta 15 por página, nome/retirada no banco antes de contar/paginar, criação/ID crescentes. GetCommandUseCase valida vínculo ao evento; excluído/ausente retorna null, sem expor outro evento.
 
-Quando houver necessidade aprovada: Route Handler → controller por operação → use case → repository. Rotas específicas por recurso, sem endpoint genérico que decida tudo por campo de ação. Não antecipar catálogo REST, controllers ou DTOs. OpenAPI/Swagger ficam para o futuro; preservar tipos independentes de HTTP desde agora.
+### Identidade e acesso temporário
+
+`server/canteen` organiza models, inputs Zod, contratos, use cases, adaptadores e composition. Identidade de entrada é sessão normal ou credencial temporária; a autorização resolve um ator user/access sem criar sessão financeira fictícia. Verifica perfil/expiração ou hash/escopo/expiração/revogação em toda operação. Gravação de retirada temporária revalida também no D1 ao commit, protegendo corrida com revogação/vencimento.
+
+CreateAccessUseCase exige login normal e evento Cantina. Nome de até 100 caracteres, vencimento escolhido com sugestão +2h e nenhum máximo inventado. Segredo criptográfico de 256 bits, somente SHA-256 indexável em canteen_access. O link usa fragmento (`/acesso-comandas#chave=...`), que não vai ao servidor/preview; GET não ativa nem consome. A tela limpa o fragmento com replaceState e mantém segredo somente em memória. Ativação explícita POST verifica Origin e troca atomicamente link ainda não usado por credencial aleatória própria do navegador. Banco guarda só o hash da credencial. Corrida de ativação admite um vencedor; outro navegador recebe Este link já foi utilizado em outro navegador. Repetição pelo navegador original com seu cookie recupera o mesmo acesso, sem renovar vencimento. Apagar cookies exige outro acesso.
+
+Cookie `__Host-cantina-command-access` em produção, HttpOnly/Secure/SameSite=Strict, Path=/ e vencimento do acesso; desenvolvimento usa cantina-command-access, sem Secure em HTTP. Nenhum fingerprint físico, segredo na URL WebSocket, armazenamento persistente do segredo no navegador ou log de URLs/headers sensíveis. Posse do link permite a primeira ativação; a UI explica isso e só mostra o link durante sua criação, mascarado inicialmente, com copiar/mostrar explícitos.
+
+A sessão temporária permite somente consultar comandas/pedido do próprio evento e marcar/desfazer retirada. Não acessa financeiro, cadastro, edição/exclusão, documentação/API geral ou criação/revogação de acessos. Login normal continua exigido nas Actions de gerenciamento, Scalar e spec. Revogação manual e vencimento invalidam consultas/mutações/handshake; o hub fecha sockets vinculados e envia session-ended. Segurança não depende de esse aviso chegar: offline será recusado ao reconectar. A tela mostra Sua sessão foi encerrada, distinta da queda transitória.
+
+Snapshots da retirada guardam updatedActor com ID/nome do acesso e ID/nome do criador separados. `updated_by=0` é somente o discriminador legado de ator não usuário, nunca o ID do criador. A auditoria conserva actor_access_id/access_creator_id/access_creator_name além dos snapshots, e o nome exibido é Caixa 2 — acesso criado por Sérgio T Pimenta. Ações posteriores de um usuário restauram autoria normal; não atribuir a ele a retirada anterior nem presumir identidade de quem segura o tablet.
+
+### Publicação durável e WebSocket
+
+Mesmo Worker OpenNext, com custom-worker.ts e CommandHub exportado; namespace COMMANDS, um Durable Object SQLite por evento. Usa acceptWebSocket/attachments de hibernação, sem timers de heartbeat/polling no navegador, serviço separado ou Cloudflare Queues. D1 continua fonte da verdade. A RPC armCommands no entrypoint padrão reutiliza WORKER_SELF_REFERENCE, inclusive pelo proxy do Next em desenvolvimento; não cria outra porta HTTP ou serviço separado. O Wrangler não executa classes DO internas no getPlatformProxy; a RPC alcança o Worker local que já roda na porta 8787. `DurablePublicationCoordinator` é injetado no repository de Eventos e protege criação/edição/exclusão de pedido Cantina, incluindo pagamento e retirada.
+
+Protocolo sem lacuna entre commit e despertar:
+
+1. Antes da gravação, o hub persiste evento e alarme sob output gate; só depois insere intenção armed no D1 com deadline de 120s. Se armar falha, a operação não grava.
+2. Trigger exige intenção armed do evento/operação e deadline futuro. A alteração do pedido e a intenção committed com ID/versão são uma única transação D1. Revogação usa o mesmo protocolo, com trigger na alteração de revoked_at.
+3. Alarme consulta apenas trabalho pendente, transmite ID/versão a sockets ainda autorizados e marca published. Falha após envio pode repetir; não promete exactly-once. Intenção sem commit vence/cancela e cerca qualquer gravação tardia, sem trabalho infinito de uma operação abandonada.
+4. Antes do IO do processamento, persiste novo despertar em 30s: falha prolongada não depende apenas das seis tentativas automáticas do provedor. Enquanto armed/committed existe, agenda próximo trabalho (até 1s no sucesso normal); sem trabalho, remove alarme, salvo vencimento exato de sockets ativos. Não há loop periódico ocioso. Falha total/indisponibilidade do provedor pode atrasar a recuperação; não equivale a entrega instantânea garantida.
+
+Handshake registra socket antes de ready. Cliente mantém avisos em fila enquanto busca snapshot inicial/reconexão, drena também os recebidos durante essa busca e só habilita retirada após sincronizar. Processamento serial, versões antigas/repetidas ignoradas e reconexão com backoff até 30s. Pedido afetado é consultado por GET com a janela atual: retorna somente esse pedido e IDs/contagem/página da janela; itens que faltam para preenchê-la são buscados por seus próprios IDs. Não enviar toda a lista a cada edição; busca/retirada/paginação e contagens permanecem coerentes, inclusive exclusão e reposição.
+
+Queda mantém dados carregados e aviso vermelho discreto, com operações desabilitadas até reconexão e sincronização. Uma recusa de upgrade consulta a autorização uma vez para distinguir encerramento de sessão; isso não é polling. O servidor valida Origin, sessão/escopo e modalidade antes de entregar ao binding; o hub repete expiração/revogação no handshake, envio e mensagens recebidas. Credencial nunca aparece na URL WS.
+
+Referências: [custom Worker OpenNext](https://opennext.js.org/cloudflare/howtos/custom-worker), [hibernação WebSocket](https://developers.cloudflare.com/durable-objects/best-practices/websockets/) e [alarms](https://developers.cloudflare.com/durable-objects/api/alarms/). SQLite é necessário para o plano Free; estimativa de 60 pedidos/um tablet não substitui medição nem garante ficar nas cotas de todos os serviços.
+
+## API de comandas e documentação
+
+API própria aprovada em 12/11: Route Handler extrai sessão/entrada → composition → use case → repository. Nunca chama Action, duplica autorização/regra de negócio ou consulta banco na rota. Sem migração geral das gravações para REST. Adaptador de upgrade no custom Worker usa AuthorizeConnectionUseCase; a exceção técnica evita tentar passar resposta 101 pelo servidor de rotas Next. Erros HTTP usam o executor central ou handleFailure na entrada de upgrade, com catálogo único/logger seguro.
+
+- GET /api/eventos/{id}/comandas: página mínima filtrada. GET /api/eventos/{id}/comandas/{orderId}: pedido mínimo ou null; window=1 acrescenta IDs/contagem/página da seleção atual. UUIDs e filtros usam Zod compartilhado; respostas no envelope Result. Sem cache público, SQL, fingerprints, hashes, credenciais ou model completo na resposta.
+- GET /api/eventos/{id}/comandas/socket: upgrade do mesmo domínio, cookie atual, Origin obrigatório; binding interno recebe ator já autorizado, sem credencial. Protocolo em [WEBSOCKET.md](WEBSOCKET.md).
+- HTTP 400/401/403/404/409/500/503 traduz categoria técnica; falha inesperada conserva referência segura. Não retornar payload/stack/SQL bruto.
+- OpenAPI 3.1 gerado por scripts/generate-openapi.mjs antes de build/typecheck, via zod-openapi e os mesmos schemas de entrada/saída. Artefato privado ignorado em src/server/api/generated; nunca em public. GET /api/openapi exige sessão/perfil normal, sem fallback de acesso temporário.
+- Scalar em /api-docs, no layout autenticado, com componentes/estilos empacotados localmente e spec autenticada. Sem CDN/proxy pago, persistência de credenciais ou bearer externo. Telemetria, fontes remotas e agente externo do Scalar ficam explicitamente desabilitados. Cookie HMAC normal continua limitado a duas horas; cookie não impede um portador externo de fazer chamadas. Assinatura do JWT externo permanece pendência aceita, não corrigida neste escopo.
 
 ## Autenticação e perfil
 

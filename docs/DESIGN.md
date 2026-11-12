@@ -284,3 +284,11 @@ Usar a pergunta curta Excluir [tipo]? como título e somente O histórico será 
 ## Filtro de entrega ou retirada
 
 No modal Filtros de pedidos, preservar Pagamento e acrescentar Entrega ou retirada somente em eventos habilitados, com opções Todas/Não concluídas. Reutilizar SelectField empilhado, Modal padrão de altura natural, rodapé Cancelar/Aplicar filtros e anúncio acessível existentes, sem CSS ou nova geometria. Botão Filtros mostra contagem de critérios ativos (pagamento e transporte); busca não entra nessa contagem. O parâmetro permanece na busca/paginação, conforme UX-CONTRACT.
+
+## Comandas e acesso temporário
+
+Comandas reutiliza record-list/record-row e os campos, botões, SelectField, SearchForm, Pagination, PageHeader, ErrorModal e SectionFeedback existentes. Nome/itens são principais, pagamento/retirada ficam próximos e discretos; ação de retirada/desfazer conserva texto em todas as larguras. Conteúdo flexível com min-width:0 e quebra de nomes/observações longos; ações quebram naturalmente, sem coluna vazia ou largura fixa. Sem cards novos, cor por setor, densidade exclusiva ou estilo interno sobrescrito.
+
+Aviso de conexão/encerramento usa texto discreto no topo e token color-danger, com live region; não esconder registros carregados nem comunicar somente pela cor. Fallback reaproveita estrutura da lista e controles desabilitados, sem valor fictício, ilustração ou frase visível de espera. Tablet sem login usa os mesmos tokens de largura/intervalos do conteúdo do AppShell, em página dedicada sem navegação financeira. O mínimo central de 300ms também se aplica a essa página.
+
+Modal de acesso reutiliza size=form e form-grid: nome em linha inteira, DateField/horário lado a lado a partir de 1024px, uma coluna abaixo. Link secreto mascarado inicialmente em Field com ações explícitas de mostrar/copiar; nunca exibi-lo em toast. Confirmação de revogação reutiliza ConfirmationModal e foco em Cancelar; sua mensagem é própria de revogação, sem reutilizar texto de exclusão de registros. Documentação Scalar é a integração técnica aprovada, hospedada no próprio app e protegida por login; não muda o tema das telas do negócio.

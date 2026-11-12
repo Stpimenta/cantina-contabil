@@ -82,11 +82,21 @@ export default async function EventPage({
             title={result.value.event.name}
             description="Detalhes do evento"
             actions={
-              <EventActions
-                event={result.value.event}
-                cashBoxes={result.value.cashBoxes}
-                today={currentDateInSaoPaulo()}
-              />
+              <>
+                {result.value.event.canteenEnabled && (
+                  <Link
+                    href={`/eventos/${id}/comandas`}
+                    className={buttonClassName({ variant: "neutral" })}
+                  >
+                    Comandas
+                  </Link>
+                )}
+                <EventActions
+                  event={result.value.event}
+                  cashBoxes={result.value.cashBoxes}
+                  today={currentDateInSaoPaulo()}
+                />
+              </>
             }
           />
           <section
@@ -133,6 +143,7 @@ export default async function EventPage({
             </div>
             <div className={styles.actions}>
               <EventOrders eventId={id} />
+
               <Link
                 href={`/eventos/${id}/insumos`}
                 className={buttonClassName({
@@ -147,6 +158,7 @@ export default async function EventPage({
               <EventHistory eventId={id} result={result.value.history} />
             </div>
           </section>
+
           <section
             className={styles.information}
             aria-labelledby="event-information-title"

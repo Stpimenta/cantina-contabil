@@ -6,6 +6,13 @@ import type {
 } from "@/shared/errors/business-failure";
 
 const messages: Record<BusinessCode, string> = {
+  EVENT_MODALITY_LOCKED:
+    "Este evento possui pedidos preservados. Não é possível trocar a modalidade.",
+  CANTEEN_REQUIRED:
+    "As comandas estão disponíveis somente na modalidade Cantina.",
+  TEMP_ACCESS_USED: "Este link já foi utilizado em outro navegador",
+  TEMP_ACCESS_ENDED: "Sua sessão foi encerrada",
+  INVALID_TEMP_ACCESS: "Confira o nome, a data e o horário do acesso.",
   ORDER_FULFILLMENT_UNDEFINED:
     "Defina Entrega ou Retirada na edição do pedido.",
   INVALID_POSTAL_CODE_INPUT: "Confira o CEP informado.",
@@ -70,6 +77,8 @@ const messages: Record<BusinessCode, string> = {
   ACCESS_DENIED: "Seu perfil não tem permissão para esta operação.",
 };
 const issueMessages: Record<ValidationIssue, string> = {
+  INVALID_ACCESS_NAME: "Informe o nome do acesso, com até 100 caracteres.",
+  INVALID_ACCESS_EXPIRY: "Informe data e horário futuros para o vencimento.",
   INVALID_ORDER_STATUS: "Escolha uma alteração para salvar.",
   INVALID_POSTAL_CODE: "Informe um CEP com oito dígitos.",
   INVALID_PRODUCT_NAME: "Informe o nome do produto.",

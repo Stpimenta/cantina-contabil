@@ -96,3 +96,9 @@ Arquivos donos da cobertura:
 A suíte deve passar individualmente e em conjunto, com saída diferente de zero nas falhas e identificação da regra violada. Ao modificar regras cobertas, atualizar os cenários correspondentes sem espelhar detalhes internos. Não alterar regra de negócio apenas para tornar um teste verde.
 
 Os testes não validam visual, interação no navegador, cabeçalhos HTTP das rotas de comprovantes, carga ou serviço externo real. A implementação não resolve a assinatura pendente do JWT externo nem reconcilia objetos R2 sem vínculo. Não exige limpeza de objetos após falha D1: o contrato preserva resultados incertos. Nenhuma migração no banco de desenvolvimento ou produção faz parte da execução da suíte.
+
+## Cantina e acesso temporário
+
+`tests/integration/canteen.test.ts` amplia o harness opcionalmente com o CommandHub real, empacotado por esbuild da stack existente. Mesmo D1 sintético e DO SQLite descartáveis no Miniflare, sem app Next, .env, banco local/remoto ou servidor do responsável. Testa retirada/desfazer independente do pagamento, versão/idempotência/concorrência, autoria acesso/criador, ativação única em corrida e repetição do navegador original, hash sem segredo persistido, escopo/revogação/expiração, modalidade bloqueada com pedido preservado/excluído, paginação e recuperação por alarme com socket conectado/hibernado. Fechar sockets/emulador e remover somente diretório temporário ao terminar.
+
+`tests/unit/canteen-contracts.test.ts` valida exclusividade das modalidades, vencimento futuro sem máximo arbitrário, credencial aleatória/hash, OpenAPI 3.1/cookies/erros/resposta mínima e fallback sem vazio fictício. A descrição é gerada antes de build/typecheck; o build isolado verifica também o custom Worker e binding COMMANDS. A suíte não comprova interação/visual no navegador, encaminhamento real de upgrade pela porta 5174 ou consumo efetivo de cotas Free. Esses testes funcionais permanecem com o responsável.

@@ -61,18 +61,19 @@ Aplica migrações exclusivamente locais. `npm run dev` e `dev:worker` já fazem
 
 ## Estado das migrações
 
-| Migrações | Conteúdo                                                       | Local                      | Produção                   |
-| --------- | -------------------------------------------------------------- | -------------------------- | -------------------------- |
-| 0001–0003 | Caixas, auditoria e doações recebidas                          | Aplicadas                  | Aplicadas                  |
-| 0004–0011 | Eventos/produtos/pedidos, versões, histórico e exclusão lógica | Aplicadas                  | Aplicadas                  |
-| 0012–0016 | Insumos/auditoria, ícones, PDF, edição/exclusão                | Aplicadas                  | Aplicadas                  |
-| 0017      | Descrição dos insumos                                          | Aplicada                   | Aplicada                   |
-| 0018–0019 | Múltiplos comprovantes e nome do doador de insumo              | Aplicadas                  | Aplicadas                  |
-| 0020      | Movimentações manuais e integração de saldos                   | Aplicada                   | Aplicada                   |
-| **0021**  | **Edição/exclusão de doações e snapshots de auditoria**        | **Aplicada**               | **Aplicada em 28/10/2026** |
-| **0022**  | **Comprovantes opcionais em movimentações**                    | **Aplicada**               | **Aplicada em 28/10/2026** |
-| **0023**  | **Habilitação de entregas e guardas dos pedidos**              | **Aplicada em 01/11/2026** | **Pendente; não aplicada** |
-| **0024**  | **Pagamento de pedidos legados sem alterar entrega**           | **Aplicada em 04/11/2026** | **Pendente; não aplicada** |
+| Migrações | Conteúdo                                                         | Local                           | Produção                     |
+| --------- | ---------------------------------------------------------------- | ------------------------------- | ---------------------------- |
+| 0001–0003 | Caixas, auditoria e doações recebidas                            | Aplicadas                       | Aplicadas                    |
+| 0004–0011 | Eventos/produtos/pedidos, versões, histórico e exclusão lógica   | Aplicadas                       | Aplicadas                    |
+| 0012–0016 | Insumos/auditoria, ícones, PDF, edição/exclusão                  | Aplicadas                       | Aplicadas                    |
+| 0017      | Descrição dos insumos                                            | Aplicada                        | Aplicada                     |
+| 0018–0019 | Múltiplos comprovantes e nome do doador de insumo                | Aplicadas                       | Aplicadas                    |
+| 0020      | Movimentações manuais e integração de saldos                     | Aplicada                        | Aplicada                     |
+| **0021**  | **Edição/exclusão de doações e snapshots de auditoria**          | **Aplicada**                    | **Aplicada em 28/10/2026**   |
+| **0022**  | **Comprovantes opcionais em movimentações**                      | **Aplicada**                    | **Aplicada em 28/10/2026**   |
+| **0023**  | **Habilitação de entregas e guardas dos pedidos**                | **Aplicada em 01/11/2026**      | **Pendente; não aplicada**   |
+| **0024**  | **Pagamento de pedidos legados sem alterar entrega**             | **Aplicada em 04/11/2026**      | **Pendente; não aplicada**   |
+| **0025**  | **Cantina, acessos temporários, auditoria e publicação durável** | **Não aplicada neste worktree** | **Não aplicada pelo agente** |
 
 As verificações descritas são as já realizadas neste trabalho; em outro ambiente, consultar o estado antes de presumir migrações aplicadas. Código desta branch exige também 0023/0024; estado de aplicação em STATUS.md. Para preparar o local, npm run db:local ou o fluxo autorizado de npm run dev aplica pendentes; nunca usar D1 remoto como desenvolvimento.
 
@@ -152,3 +153,15 @@ Workflow, configuração do GitHub e recuperação de falhas: [CI.md](CI.md).
 - [Cloudflare: Local Explorer](https://developers.cloudflare.com/workers/local-development/local-explorer/)
 - [Next.js: debug no VS Code](https://nextjs.org/docs/app/guides/debugging)
 - [Cloudflare: defer_foreign_keys no D1](https://developers.cloudflare.com/d1/sql-api/foreign-keys/)
+
+## Cantina no ambiente local
+
+custom-worker.ts envolve o fetch gerado por OpenNext e exporta CommandHub. Os dois wrangler.jsonc usam o mesmo entrypoint e declaram COMMANDS com migração de classe SQLite canteen-v1. A configuração local emula DB/R2/DO e não usa recurso remoto. Build isolado copia também o custom entrypoint, gera OpenAPI privado antes de compilar e inspeciona o bundle final; --build-only continua sem upload/criação de recurso.
+
+A preparação persistente das gravações usa armCommands pela RPC do binding WORKER_SELF_REFERENCE para o Worker já iniciado; getPlatformProxy não executa classes DO internas, portanto Next não usa COMMANDS diretamente. Isso não cria serviço/configuração paralelos.
+
+No desenvolvimento pela porta 5174, Next encaminha somente o upgrade /api/eventos/:id/comandas/socket para o Worker de loopback 8787; consultas/Actions continuam no Next. O encaminhamento local preserva Origin/x-forwarded-host, aceito apenas fora de APP_ENV=production. Em produção o custom Worker exige Origin do próprio domínio. Não colocar URL WS com segredo ou variável pública com credencial. Cookies de desenvolvimento conservam os nomes sem __Host e são próprios do ambiente.
+
+A migração D1 0025 é nova e não foi aplicada ao banco de desenvolvimento/produção neste trabalho. As migrações de classe DO e o binding são preparação local, não recurso remoto já criado. Produção exige ação explicitamente autorizada para a preparação de recursos/migrações; não antecipar deploy nem alteração remota. npm run dev segue o procedimento existente de migrações locais, que o responsável executa; preserve backups/estado antes de aplicar novas migrações.
+
+Scalar e zod-openapi são as dependências adicionais aprovadas para documentação; a referência é empacotada no app, sem CDN/proxy externo. A geração usa esbuild já presente no lockfile da stack OpenNext; artefato em src/server/api/generated é ignorado e reconstruído antes de build/typecheck, nunca servido como arquivo público. `/api-docs` requer login normal e `/api/openapi` repete a autorização, mesmo quando solicitado diretamente.

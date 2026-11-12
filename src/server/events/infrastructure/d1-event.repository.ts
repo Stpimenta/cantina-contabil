@@ -1,3 +1,4 @@
+import { throwBusinessError } from "@/shared/errors/business-error";
 import type {
   OrderStatus,
   OrderFulfillmentFilter,
@@ -77,10 +78,13 @@ const eventPayload = (e: Event) =>
     description: e.description,
     occursOn: e.occursOn,
     deliveryEnabled: e.deliveryEnabled,
+    canteenEnabled: e.canteenEnabled,
     products: e.products,
   });
 const orderPayload = (o: EventOrder) =>
   JSON.stringify({
+    ...(o.collected !== undefined ? { collected: o.collected } : {}),
+    updatedActor: o.updatedActor,
     customerName: o.customerName,
     note: o.note,
     fulfillmentMode: o.fulfillmentMode,
@@ -116,7 +120,18 @@ export class D1EventRepository implements EventRepository {
       .limit(5)
       .all();
   }
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly publications?: import("@/server/canteen/repositories/canteen.repository").PublicationCoordinator,
+  ) {}
+  private async arm(eventId: string, operation: string) {
+    const event = await this.find(eventId);
+    if (event?.canteenEnabled) {
+      if (!this.publications)
+        throw new Error("Canteen publication coordinator required");
+      await this.publications.arm(eventId, operation);
+    }
+  }
   async cashBoxes() {
     return this.db
       .select({ id: cashBoxes.id, name: cashBoxes.name })
@@ -133,6 +148,15 @@ export class D1EventRepository implements EventRepository {
       const result = await execute();
       return result.meta.changes > 0 ? "saved" : "stale";
     } catch (cause) {
+      if (hasDatabaseError(cause, "TEMP_ACCESS_ENDED"))
+        throwBusinessError({
+          code: "TEMP_ACCESS_ENDED",
+          category: "unauthenticated",
+        });
+      if (hasDatabaseError(cause, "CANTEEN_PUBLICATION_REQUIRED"))
+        throwBusinessError({ code: "EVENT_CHANGED", category: "conflict" });
+      if (hasDatabaseError(cause, "EVENT_MODALITY_LOCKED"))
+        return "modality_locked";
       if (hasDatabaseError(cause, "EVENT_DELIVERY_LOCKED"))
         return "delivery_locked";
       if (hasDatabaseError(cause, "EVENT_DELIVERY_DISABLED"))
@@ -184,6 +208,12 @@ export class D1EventRepository implements EventRepository {
       .get();
     return row ? readEvent(row) : null;
   }
+  async hasOrders(eventId: string) {
+    const row = await this.db.get<{ present: number }>(
+      sql`SELECT EXISTS(SELECT 1 FROM event_orders WHERE event_id=${eventId}) AS present`,
+    );
+    return row?.present === 1;
+  }
   async hasDeliveryOrders(eventId: string) {
     const row = await this.db.get<{ present: number }>(sql`SELECT EXISTS(
       SELECT 1 FROM event_orders WHERE event_id=${eventId} AND (
@@ -205,6 +235,7 @@ export class D1EventRepository implements EventRepository {
           description: e.description,
           occursOn: e.occursOn,
           deliveryEnabled: e.deliveryEnabled,
+          canteenEnabled: e.canteenEnabled,
           ...metadata(e),
           payloadJson: eventPayload(e),
         })
@@ -221,6 +252,7 @@ export class D1EventRepository implements EventRepository {
           description: e.description,
           occursOn: e.occursOn,
           deliveryEnabled: e.deliveryEnabled,
+          canteenEnabled: e.canteenEnabled,
           version: e.version,
           updatedAt: e.updatedAt,
           updatedBy: e.updatedBy,
@@ -316,7 +348,8 @@ export class D1EventRepository implements EventRepository {
       .get();
     return row ? readOrder(row) : null;
   }
-  createOrder(o: EventOrder, catalogVersion: number) {
+  async createOrder(o: EventOrder, catalogVersion: number) {
+    await this.arm(o.eventId, o.lastOperation);
     return this.write(() =>
       this.db
         .insert(eventOrders)
@@ -335,7 +368,8 @@ export class D1EventRepository implements EventRepository {
         .run(),
     );
   }
-  updateOrder(o: EventOrder, expected: number, catalogVersion: number) {
+  async updateOrder(o: EventOrder, expected: number, catalogVersion: number) {
+    await this.arm(o.eventId, o.lastOperation);
     return this.write(() =>
       this.db
         .update(eventOrders)
@@ -363,7 +397,9 @@ export class D1EventRepository implements EventRepository {
         .run(),
     );
   }
-  softDeleteOrder(deletion: OrderDeletion) {
+  async softDeleteOrder(deletion: OrderDeletion) {
+    const operation = crypto.randomUUID();
+    await this.arm(deletion.eventId, operation);
     return this.write(() =>
       this.db
         .update(eventOrders)
@@ -375,8 +411,9 @@ export class D1EventRepository implements EventRepository {
           updatedBy: deletion.deletedBy,
           updatedByName: deletion.deletedByName,
           catalogVersion: deletion.catalogVersion,
+          lastOperation: operation,
           version: sql`${eventOrders.version} + 1`,
-          payloadJson: sql`json_set(${eventOrders.payloadJson}, '$.deletedAt', ${deletion.deletedAt}, '$.deletedBy', ${deletion.deletedBy}, '$.deletedByName', ${deletion.deletedByName})`,
+          payloadJson: sql`json_set(json_remove(${eventOrders.payloadJson}, '$.updatedActor'), '$.deletedAt', ${deletion.deletedAt}, '$.deletedBy', ${deletion.deletedBy}, '$.deletedByName', ${deletion.deletedByName})`,
         })
         .where(
           and(

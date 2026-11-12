@@ -45,6 +45,7 @@ export function EventFormModal({
     description: event?.description ?? "",
     occursOn: event?.occursOn ?? today,
     deliveryEnabled: event?.deliveryEnabled ?? false,
+    canteenEnabled: event?.canteenEnabled ?? false,
     products:
       event?.products.map((p) => ({
         id: p.id,
@@ -195,12 +196,25 @@ export function EventFormModal({
             <SelectField
               id={`${id}-delivery-enabled`}
               label="Modalidade"
-              value={input.deliveryEnabled ? "yes" : "no"}
-              onValueChange={(v) => change("deliveryEnabled", v === "yes")}
+              value={
+                input.canteenEnabled
+                  ? "canteen"
+                  : input.deliveryEnabled
+                    ? "yes"
+                    : "no"
+              }
+              onValueChange={(v) =>
+                setInput((current) => ({
+                  ...current,
+                  deliveryEnabled: v === "yes",
+                  canteenEnabled: v === "canteen",
+                }))
+              }
               disabled={pending}
               options={[
                 { value: "no", label: "Padrão" },
                 { value: "yes", label: "Entregas" },
+                { value: "canteen", label: "Cantina" },
               ]}
             />
             <div className="form-full">

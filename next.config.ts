@@ -42,7 +42,19 @@ export default async function configure(phase: string) {
       persist: { path: resolve(".wrangler/state/v3") },
       remoteBindings: false,
     });
-    return { ...nextConfig, allowedDevOrigins };
+    return {
+      ...nextConfig,
+      allowedDevOrigins,
+      async rewrites() {
+        return [
+          {
+            source: "/api/eventos/:id/comandas/socket",
+            destination:
+              "http://127.0.0.1:8787/api/eventos/:id/comandas/socket",
+          },
+        ];
+      },
+    };
   }
   return nextConfig;
 }

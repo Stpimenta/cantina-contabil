@@ -12,6 +12,9 @@ export const events = sqliteTable("events", {
   deliveryEnabled: integer("delivery_enabled", { mode: "boolean" })
     .notNull()
     .default(false),
+  canteenEnabled: integer("canteen_enabled", { mode: "boolean" })
+    .notNull()
+    .default(false),
   description: text("description").notNull(),
   occursOn: text("occurs_on").notNull(),
   version: integer("version").notNull(),

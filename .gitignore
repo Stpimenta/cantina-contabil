@@ -43,3 +43,6 @@ Desktop.ini
 /.idea/
 /.vscode/*
 !/.vscode/launch.json
+
+# Private OpenAPI description, regenerated before build/typecheck.
+/src/server/api/generated/

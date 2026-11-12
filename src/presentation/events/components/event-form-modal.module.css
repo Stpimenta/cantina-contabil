@@ -34,9 +34,9 @@
 
 @media (min-width: 64rem) {
   .product {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) var(
-        --control-height
-      ) var(--control-height);
+    grid-template-columns:
+      minmax(0, 2fr) minmax(0, 1fr) var(--control-height)
+      var(--control-height);
     gap: var(--space-4);
   }
   .name {

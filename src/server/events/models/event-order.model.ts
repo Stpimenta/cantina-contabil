@@ -9,6 +9,8 @@ export interface EventOrder {
   address: OrderAddress | null;
   contactPhone: string;
   fulfilled: boolean;
+  collected?: boolean;
+  updatedActor?: import("@/server/canteen/models/command-actor.model").CommandActor;
   items: OrderItem[];
   totalCents: number;
   paid: boolean;
