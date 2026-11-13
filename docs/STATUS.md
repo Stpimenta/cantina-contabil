@@ -6,11 +6,11 @@ Atualizado em **12/11/2026**. Ler [AGENTS.md](../AGENTS.md) e contratos donos: [
 
 | Item                 | Estado confirmado                                                                                                                                                                                                       |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Worktree             | `/home/stpimenta/.codex/worktrees/34a1/cantina_contabil`, branch `feat/cantina-command-orders`                                                                                                                          |
+| Worktree             | `/home/stpimenta/Desktop/Projects/cantina_contabil`, branch `feat/cantina-command-orders`; pasta normal do projeto, conforme pedido do responsável                                                                      |
 | Base                 | `origin/main` **476a218**, após fetch de 12/11, merge do PR #8 contendo Eventos/Entregas **39315cc** e retomada **db4faed**                                                                                             |
 | Código local         | MVP Cantina implementado e verificado localmente no commit **cff932c**, feat: add canteen pickup board and temporary access. Retomada documental conserva a mesma entrega/versão                                        |
 | Versão local         | **0.6.10** nos três pontos do pacote/lockfile, incremento automático simples aprovado sobre main **0.6.9**, validado por validatePackageVersion                                                                         |
-| D1 deste worktree    | Nenhuma migração aplicada ao desenvolvimento. Testes usam somente bancos novos descartáveis                                                                                                                             |
+| D1 deste worktree    | Banco de desenvolvimento da pasta normal preservado; 0025 não aplicada. Testes anteriores usaram somente bancos novos descartáveis                                                                                      |
 | D1 da pasta original | Entrega anterior documenta até **0024** com backups; não reconferido neste trabalho                                                                                                                                     |
 | Migração nova        | **0025_canteen.sql**, somente arquivo versionado; não aplicada ao desenvolvimento/produção pelo agente                                                                                                                  |
 | D1 remoto            | Última conferência documentada até **0022**; 0023/0024/0025 não reconferidas/aplicadas pelo agente neste trabalho                                                                                                       |
@@ -29,9 +29,15 @@ Autorização final de 12/11 substitui a suspensão anterior; a primeira tentati
 - custom-worker.ts reutiliza OpenNext e exporta CommandHub. RPC armCommands por WORKER_SELF_REFERENCE alcança o mesmo Worker, inclusive a partir do Next local, pois getPlatformProxy não executa DO interno. Porta 5174 encaminha somente o upgrade WS ao Worker local de loopback; nenhum serviço separado.
 - Documentos donos consolidados substituindo suspensão/proibição antigas. README, RELEASES e arquivos preexistentes da pasta original preservados.
 
-## Preservação do Git original
+## Reorganização para a pasta normal do projeto
 
-A pasta `/home/stpimenta/Desktop/Projects/cantina_contabil` permanece na main local **c4b4fc0**, com merge de **476a218** interrompido, `docs/STATUS.md` em conflito e alterações staged da entrega anterior. Apenas leitura: nenhum abort/resolução/troca/commit nessa pasta. README, next-env.d.ts e docs-example/ preexistentes não foram copiados nem incluídos nesta entrega. O worktree `94cc/cantina_contabil`, branch `feat/cantina-orders`, foi encontrado limpo em **476a218** e não foi alterado.
+A pedido explícito do responsável, a implementação está agora em `/home/stpimenta/Desktop/Projects/cantina_contabil`, na branch `feat/cantina-command-orders`, versão **0.6.10**. O worktree 34a1 foi deixado em HEAD destacado para liberar a mesma branch; não houve cópia de banco/segredos ou nova implementação paralela. O worktree 94cc/feat/cantina-orders anterior não foi alterado.
+
+O merge antigo da main local foi diagnosticado: todas as entradas do índice já correspondiam a origin/main 476a218, exceto STATUS.md em conflito. Antes de encerrá-lo, 90 arquivos alterados/não rastreados e o índice/metadados do merge foram guardados no backup privado `.wrangler/backups/before-canteen-handoff-20261113-000304.tar.gz` (horário UTC no nome, permissão 600), com bytes conferidos. Depois, o merge foi abortado e a branch existente da Cantina foi aberta na pasta normal, sem reset/rebase/reescrita de commits nem atualização/envio da main.
+
+README.md, next-env.d.ts e docs-example/ preexistentes foram mantidos fora dos commits e comparados byte a byte com o backup após a troca. .env, D1/R2, backups e builds locais preservados. O processo principal de npm run dev da pasta normal foi encerrado a pedido do responsável, fechando seus filhos; portas 5174/8787 conferidas livres. Nenhum app foi reiniciado nem migração aplicada. Dependências alinhadas ao lockfile com npm ci, sem executar scripts de instalação.
+
+A mudança de pasta não altera o código verificado; não repetir build/testes por essa reorganização. Conferir branch/versão, alterações preservadas, dependências, documentação e ausência de operação Git interrompida. A próxima execução de npm run dev será feita pelo responsável na pasta normal, ciente de que o fluxo aplica migrações locais pendentes.
 
 ## Verificação e limites
 
