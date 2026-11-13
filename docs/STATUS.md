@@ -53,6 +53,12 @@ Todas as rotas próprias de telas/APIs usam inglês, incluindo caixa/doações/m
 
 **56 testes aprovados em oito grupos** (origem/POST de ativação, link, ambiente/redirecionamentos, contratos/carregamento/OpenAPI, breadcrumbs, Cantina/WS e comprovantes). Tipos incluindo testes aprovados em cópia temporária; o check direto encontrou tipos antigos de rotas em .next, preservados porque o ambiente está em uso. Build Cloudflare/TypeScript isolado, inspeção de pacote e dry-run aprovados, gzip aproximado de 2161 KiB. Sem app/navegador iniciado pelo agente, migração, mudança de banco ou envio remoto.
 
+## Correção da revogação local
+
+Mesma branch/entrega **0.6.10**, na pasta normal. O proxy do Next usava o nome do Worker executável; WORKER_SELF_REFERENCE resolvia no proxy vazio e falhava antes de persistir a revogação. O ambiente `next` do mesmo wrangler.local.jsonc agora identifica o proxy separadamente e mantém o binding para `cantina-contabil-local`. Mesmos IDs D1/R2 e estado local preservados, remote=false. Contratos de revogação, alarme, autoria e produção mantidos.
+
+**14 testes aprovados em três grupos**: configuração real do Wrangler, inicialização do proxy e Cantina com proxy vazio separado no Miniflare descartável, incluindo revogação e encerramento do socket. Tipos incluindo testes aprovados em cópia temporária. Build Cloudflare isolado, inspeção e dry-run aprovados, sem upload. A suíte não reproduz dois processos Wrangler/Next reais; teste manual permanece com o responsável. Nenhum app iniciado/reiniciado, migração, banco de desenvolvimento/remoto ou recurso alterado pelo agente. Responsável deve reiniciar npm run dev e conferir a revogação na interface.
+
 ## Verificação e limites
 
 - **Build final 0.6.10 aprovado** após os ajustes de RPC, geração privada de OpenAPI, carregamento e privacidade do Scalar: Cloudflare/OpenNext/TypeScript em cópia temporária isolada, inspeção sem valores privados e Wrangler dry-run, **sem upload**. COMMANDS/DB/R2/WORKER_SELF_REFERENCE reconhecidos; bundle gzip de aproximadamente 2158 KiB. Isso não comprova produção nem consumo real de cotas.

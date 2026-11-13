@@ -107,6 +107,31 @@ export async function harness(withCommands = false) {
           },
         },
       },
+      ...(withCommands
+        ? [
+            {
+              config: {
+                name: "cantina-next-proxy-tests",
+                compatibilityDate: "2026-10-01",
+                manifest: {
+                  mainModule: "proxy.js",
+                  modules: {
+                    "proxy.js": {
+                      type: "esm" as const,
+                      contents: "export default {}",
+                    },
+                  },
+                },
+                env: {
+                  WORKER_SELF_REFERENCE: {
+                    type: "worker" as const,
+                    worker: "cantina-tests",
+                  },
+                },
+              },
+            },
+          ]
+        : []),
     ],
   });
   try {
@@ -126,7 +151,8 @@ export async function harness(withCommands = false) {
       ? await mf.getDurableObjectNamespace("COMMANDS")
       : null;
     const worker = withCommands
-      ? ((await mf.getBindings()).WORKER_SELF_REFERENCE as {
+      ? ((await mf.getBindings("cantina-next-proxy-tests"))
+          .WORKER_SELF_REFERENCE as {
           armCommands(eventId: string, operation: string): Promise<void>;
         })
       : null;

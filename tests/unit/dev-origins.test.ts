@@ -1,3 +1,4 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import { describe, expect, it, vi } from "vitest";
 import {
   PHASE_DEVELOPMENT_SERVER,
@@ -40,6 +41,12 @@ describe("development origins", () => {
   });
   it("allows both loopback names and the local network without a wildcard", async () => {
     const config = await configure(PHASE_DEVELOPMENT_SERVER);
+    expect(initOpenNextCloudflareForDev).toHaveBeenCalledWith(
+      expect.objectContaining({
+        environment: "next",
+        remoteBindings: false,
+      }),
+    );
     expect(config.allowedDevOrigins).toEqual([
       "localhost",
       "127.0.0.1",

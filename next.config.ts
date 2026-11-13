@@ -100,6 +100,7 @@ export default async function configure(phase: string) {
     ];
     await initOpenNextCloudflareForDev({
       configPath: resolve("wrangler.local.jsonc"),
+      environment: "next",
       persist: { path: resolve(".wrangler/state/v3") },
       remoteBindings: false,
     });
