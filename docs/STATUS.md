@@ -10,7 +10,7 @@ Atualizado em **12/11/2026**. Ler [AGENTS.md](../AGENTS.md) e contratos donos: [
 | Base                 | `origin/main` **476a218**, após fetch de 12/11, merge do PR #8 contendo Eventos/Entregas **39315cc** e retomada **db4faed**                                                                                             |
 | Código local         | MVP Cantina implementado e verificado localmente no commit **cff932c**, feat: add canteen pickup board and temporary access. Retomada documental conserva a mesma entrega/versão                                        |
 | Versão local         | **0.6.10** nos três pontos do pacote/lockfile, incremento automático simples aprovado sobre main **0.6.9**, validado por validatePackageVersion                                                                         |
-| D1 deste worktree    | Banco de desenvolvimento da pasta normal preservado; 0025 não aplicada. Testes anteriores usaram somente bancos novos descartáveis                                                                                      |
+| D1 deste worktree    | Ambiente local iniciado pelo responsável; banco preservado e sem migração pelo agente. Histórico de migrações não reconferido neste ajuste                                                                              |
 | D1 da pasta original | Entrega anterior documenta até **0024** com backups; não reconferido neste trabalho                                                                                                                                     |
 | Migração nova        | **0025_canteen.sql**, somente arquivo versionado; não aplicada ao desenvolvimento/produção pelo agente                                                                                                                  |
 | D1 remoto            | Última conferência documentada até **0022**; 0023/0024/0025 não reconferidas/aplicadas pelo agente neste trabalho                                                                                                       |
@@ -39,6 +39,12 @@ README.md, next-env.d.ts e docs-example/ preexistentes foram mantidos fora dos c
 
 A mudança de pasta não altera o código verificado; não repetir build/testes por essa reorganização. Conferir branch/versão, alterações preservadas, dependências, documentação e ausência de operação Git interrompida. A próxima execução de npm run dev será feita pelo responsável na pasta normal, ciente de que o fluxo aplica migrações locais pendentes.
 
+## Correção da abertura do link temporário
+
+Na mesma branch/entrega **0.6.10**, corrigida a perda da chave no desenvolvimento: o efeito lia o fragmento, limpava a URL e sua repetição pelo Strict Mode lia vazio, desabilitando Ativar acesso. Captura protegida por referência da instância montada, mantendo a chave somente em memória e a URL limpa. Sem mudança de layout, sessão, ativação explícita ou regras do acesso. Reabrir o link completo copiado; a aba que já perdeu o fragmento não consegue reconstruí-lo.
+
+Regressão reproduzida antes da alteração; os **dois testes específicos** e os **cinco contratos de Cantina** passaram após a correção, assim como os tipos incluindo testes. Build completo Cloudflare/TypeScript isolado, inspeção de pacote e dry-run aprovados. Sem navegador, leitura de segredos, nova migração, parada/reinício do ambiente do responsável ou envio remoto.
+
 ## Verificação e limites
 
 - **Build final 0.6.10 aprovado** após os ajustes de RPC, geração privada de OpenAPI, carregamento e privacidade do Scalar: Cloudflare/OpenNext/TypeScript em cópia temporária isolada, inspeção sem valores privados e Wrangler dry-run, **sem upload**. COMMANDS/DB/R2/WORKER_SELF_REFERENCE reconhecidos; bundle gzip de aproximadamente 2158 KiB. Isso não comprova produção nem consumo real de cotas.
@@ -51,6 +57,6 @@ A mudança de pasta não altera o código verificado; não repetir build/testes 
 
 ## Pendências antes de uso/publicação
 
-Testes manuais da UI e conexão local ficam com o responsável. D1 local/produção não foram migrados; recursos DO remotos não foram criados. Não iniciar ambiente nem aplicar migração/desenvolvimento/produção automaticamente.
+Testes manuais da UI e conexão local ficam com o responsável. Nenhuma migração pelo agente; histórico local após a inicialização pelo responsável não reconferido. Recursos DO remotos não foram criados. Não iniciar/reiniciar ambiente nem aplicar migrações automaticamente.
 
 Sem push/PR/merge/deploy pelo agente. Envio depende de novo pedido. Assinatura do JWT externo, reconciliação R2 sem vínculo, avisos de dependências e reconciliação da main original continuam pendentes e fora do MVP. Cliente cadastrar próprio pedido, índice alfabético, WhatsApp/rotas de entrega, pagamentos integrados, lucro e transferências continuam futuros.

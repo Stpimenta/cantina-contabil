@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/shared/hooks/use-server-action";
@@ -8,7 +8,11 @@ import type { Result } from "@/shared/errors/application-error";
 export function ActivateAccess() {
   const [secret, setSecret] = useState<string | null>(null),
     router = useRouter();
+  const captured = useRef(false);
   useEffect(() => {
+    // Development may replay effect setup after the URL was already cleaned.
+    if (captured.current) return;
+    captured.current = true;
     setSecret(new URLSearchParams(location.hash.slice(1)).get("chave"));
     history.replaceState(null, "", location.pathname);
   }, []);
