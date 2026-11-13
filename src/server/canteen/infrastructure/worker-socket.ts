@@ -85,7 +85,7 @@ export async function workerSocket(
         "canteen.socket",
         "Não foi possível abrir a conexão.",
         error,
-        { route: "/api/eventos/[id]/comandas/socket", method: "GET" },
+        { route: "/api/events/[id]/commands/socket", method: "GET" },
       ),
     ) as unknown as WorkerResponse;
   }

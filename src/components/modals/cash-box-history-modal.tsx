@@ -33,7 +33,7 @@ export function CashBoxHistoryModal({
           onClose={() => {
             setOpen(false);
             if (initialOpen)
-              router.replace(`/caixas/${boxId}`, { scroll: false });
+              router.replace(`/cash-boxes/${boxId}`, { scroll: false });
           }}
         >
           {children}

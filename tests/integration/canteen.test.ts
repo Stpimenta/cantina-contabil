@@ -353,7 +353,7 @@ describe("Cantina, acesso temporário e entrega durável", () => {
         expiresAt: Math.floor(Date.now() / 1000) + 3,
       }),
       a = await s.activate.execute(issued.secret);
-    const url = `https://app.test/api/eventos/${s.event.id}/comandas/socket`;
+    const url = `https://app.test/api/events/${s.event.id}/commands/socket`;
     const missing = await h.mf.dispatchFetch(url, {
       headers: { Upgrade: "websocket", Origin: "https://app.test" },
     });

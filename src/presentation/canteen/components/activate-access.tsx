@@ -32,14 +32,14 @@ export function ActivateAccess() {
         onClick={() =>
           execute(
             async () => {
-              const r = await fetch("/acesso-comandas/ativar", {
+              const r = await fetch("/command-access/activate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ secret }),
               });
               return r.json() as Promise<Result<{ eventId: string }>>;
             },
-            (v) => router.replace(`/comandas/${v.eventId}`),
+            (v) => router.replace(`/commands/${v.eventId}`),
           )
         }
       >

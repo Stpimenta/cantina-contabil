@@ -1,3 +1,4 @@
+import { loadingAreaForPath } from "@/components/layout/route-loading";
 import { describe, expect, it, vi } from "vitest";
 import { createOpenApiDocument } from "@/server/api/infrastructure/openapi";
 import { saveEventInputSchema } from "@/server/events/inputs/save-event.input";
@@ -14,6 +15,20 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }),
 }));
 describe("contratos da Cantina", () => {
+  it.each([
+    ["/cash-boxes", "caixas"],
+    ["/cash-boxes/1", "caixa"],
+    ["/donations", "doacoes"],
+    ["/movements", "movimentacoes"],
+    ["/events", "eventos"],
+    ["/events/1", "evento"],
+    ["/events/1/orders", "pedidos"],
+    ["/events/1/supplies", "insumos"],
+    ["/events/1/commands", "comandas"],
+    ["/commands/1", "comandasTemporarias"],
+  ])("retains the matching loading structure for %s", (path, area) => {
+    expect(loadingAreaForPath(path)).toBe(area);
+  });
   it("gera OpenAPI 3.1 com cookies, parâmetros, respostas mínimas e erros explícitos", () => {
     const d = createOpenApiDocument("0.6.9");
     expect(d.openapi).toBe("3.1.0");
@@ -22,7 +37,7 @@ describe("contratos da Cantina", () => {
       appSession: { type: "apiKey", in: "cookie" },
       commandAccess: { type: "apiKey", in: "cookie" },
     });
-    const op = d.paths?.["/api/eventos/{id}/comandas/{orderId}"]?.get;
+    const op = d.paths?.["/api/events/{id}/commands/{orderId}"]?.get;
     expect(op?.operationId).toBe("getCommand");
     expect(Object.keys(op?.responses ?? {})).toEqual([
       "200",

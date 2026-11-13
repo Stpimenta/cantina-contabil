@@ -45,6 +45,14 @@ Na mesma branch/entrega **0.6.10**, corrigida a perda da chave no desenvolviment
 
 Regressão reproduzida antes da alteração; os **dois testes específicos** e os **cinco contratos de Cantina** passaram após a correção, assim como os tipos incluindo testes. Build completo Cloudflare/TypeScript isolado, inspeção de pacote e dry-run aprovados. Sem navegador, leitura de segredos, nova migração, parada/reinício do ambiente do responsável ou envio remoto.
 
+## Ativação local e caminhos em inglês
+
+Mesma branch/entrega **0.6.10**, na pasta normal do projeto. Corrigida a recusa 403 causada pela comparação entre Origin do navegador e hostname interno da URL montada pelo Next. A exceção de Host/protocolo vale somente no desenvolvimento; produção exige a origem da URL pública. Recusa retorna Result JSON, sem consumir o link nem gravar cookie.
+
+Todas as rotas próprias de telas/APIs usam inglês, incluindo caixa/doações/movimentações/eventos/pedidos/insumos/comprovantes/comandas/ativação. Navegação, invalidação, carregamento, HTTP, WebSocket, OpenAPI, testes e contratos atualizados. Redirecionamentos 307 mantêm links anteriores. Textos da interface e endpoints externos preservados. Reinício do ambiente e teste manual pelo responsável; reabrir o link completo, pois a chave já removida da aba não pode ser reconstruída.
+
+**56 testes aprovados em oito grupos** (origem/POST de ativação, link, ambiente/redirecionamentos, contratos/carregamento/OpenAPI, breadcrumbs, Cantina/WS e comprovantes). Tipos incluindo testes aprovados em cópia temporária; o check direto encontrou tipos antigos de rotas em .next, preservados porque o ambiente está em uso. Build Cloudflare/TypeScript isolado, inspeção de pacote e dry-run aprovados, gzip aproximado de 2161 KiB. Sem app/navegador iniciado pelo agente, migração, mudança de banco ou envio remoto.
+
 ## Verificação e limites
 
 - **Build final 0.6.10 aprovado** após os ajustes de RPC, geração privada de OpenAPI, carregamento e privacidade do Scalar: Cloudflare/OpenNext/TypeScript em cópia temporária isolada, inspeção sem valores privados e Wrangler dry-run, **sem upload**. COMMANDS/DB/R2/WORKER_SELF_REFERENCE reconhecidos; bundle gzip de aproximadamente 2158 KiB. Isso não comprova produção nem consumo real de cotas.

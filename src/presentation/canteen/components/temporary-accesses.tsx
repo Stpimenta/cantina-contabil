@@ -168,7 +168,7 @@ function CreateAccessModal({
     e.preventDefault();
     execute(
       () => createAccessAction(eventId, input),
-      (v) => setLink(`${location.origin}/acesso-comandas#chave=${v.secret}`),
+      (v) => setLink(`${location.origin}/command-access#chave=${v.secret}`),
     );
   }
   return (

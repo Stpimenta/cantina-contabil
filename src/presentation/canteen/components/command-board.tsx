@@ -91,13 +91,13 @@ export function CommandBoard({
     async function update(id: string, version: number) {
       if (disposed || ended || (seen.get(id) ?? 0) >= version) return;
       const change = await read<WindowChange>(
-        `/api/eventos/${initial.eventId}/comandas/${id}?${params}&window=1`,
+        `/api/events/${initial.eventId}/commands/${id}?${params}&window=1`,
         commandWindowSchema,
       );
       const previous = dataRef.current;
       const next = await reconcileCommandWindow(previous, change, (id) =>
         read<Command | null>(
-          `/api/eventos/${initial.eventId}/comandas/${id}`,
+          `/api/events/${initial.eventId}/commands/${id}`,
           commandResponseSchema.nullable(),
         ),
       );
@@ -126,7 +126,7 @@ export function CommandBoard({
       ready = false;
       setConnection("syncing");
       const url = new URL(
-        `/api/eventos/${initial.eventId}/comandas/socket`,
+        `/api/events/${initial.eventId}/commands/socket`,
         location.href,
       );
       url.protocol = location.protocol === "https:" ? "wss:" : "ws:";
@@ -162,7 +162,7 @@ export function CommandBoard({
           chain = chain
             .then(async () => {
               const snapshot = await read<CommandPage>(
-                `/api/eventos/${initial.eventId}/comandas?${params}`,
+                `/api/events/${initial.eventId}/commands?${params}`,
                 commandPageSchema,
               );
               if (
@@ -205,7 +205,7 @@ export function CommandBoard({
         // A refused upgrade has no WebSocket close status. Authenticate once to distinguish expiry.
         try {
           await read<CommandPage>(
-            `/api/eventos/${initial.eventId}/comandas?${params}`,
+            `/api/events/${initial.eventId}/commands?${params}`,
             commandPageSchema,
           );
         } catch {}

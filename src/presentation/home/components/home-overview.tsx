@@ -43,7 +43,7 @@ export function HomeOverview({ data }: { data?: Overview }) {
               <Skeleton shape="total" />
             )}
           </p>
-          <Link className={styles.summaryLink} href="/caixas">
+          <Link className={styles.summaryLink} href="/cash-boxes">
             {data ? data.boxCount : <Skeleton shape="count" />}{" "}
             {data?.boxCount === 1 ? "caixa ativo" : "caixas ativos"}
             <Icon name="arrow" />
@@ -62,7 +62,7 @@ export function HomeOverview({ data }: { data?: Overview }) {
         </div>
       </section>
       <nav className={styles.hooks} aria-label="Ações do dia a dia">
-        <Link href="/doacoes" className={styles.hook}>
+        <Link href="/donations" className={styles.hook}>
           <span className={styles.hookIcon}>
             <Icon name="donation" />
           </span>
@@ -72,7 +72,7 @@ export function HomeOverview({ data }: { data?: Overview }) {
           </span>
           <Icon name="chevronRight" />
         </Link>
-        <Link href="/movimentacoes" className={styles.hook}>
+        <Link href="/movements" className={styles.hook}>
           <span className={styles.hookIcon}>
             <Icon name="movements" />
           </span>
@@ -92,7 +92,7 @@ export function HomeOverview({ data }: { data?: Overview }) {
             </div>
             <Link
               className={styles.more}
-              href="/caixas"
+              href="/cash-boxes"
               aria-label="Ver todos os caixas"
             >
               <Icon name="arrow" />
@@ -121,7 +121,7 @@ export function HomeOverview({ data }: { data?: Overview }) {
                 return (
                   <li key={box.id}>
                     <Link
-                      href={`/caixas/${box.id}`}
+                      href={`/cash-boxes/${box.id}`}
                       className={styles.chartLink}
                     >
                       <span className={styles.chartLabel}>
@@ -176,7 +176,7 @@ export function HomeOverview({ data }: { data?: Overview }) {
             </div>
             <Link
               className={styles.more}
-              href="/eventos"
+              href="/events"
               aria-label="Ver todos os eventos"
             >
               <Icon name="arrow" />
@@ -193,7 +193,7 @@ export function HomeOverview({ data }: { data?: Overview }) {
               {data.upcoming.map((event) => (
                 <li key={event.id}>
                   <Link
-                    href={`/eventos/${event.id}`}
+                    href={`/events/${event.id}`}
                     className={styles.eventLink}
                   >
                     <span className={styles.eventContent}>

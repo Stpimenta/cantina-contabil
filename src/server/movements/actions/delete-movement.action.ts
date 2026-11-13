@@ -10,7 +10,7 @@ export async function deleteMovementAction(form: FormData) {
       message:
         "Não foi possível confirmar a operação. Confira as movimentações antes de tentar novamente.",
       source: "src/server/movements/actions/delete-movement.action.ts",
-      route: "/movimentacoes",
+      route: "/movements",
       method: "POST",
     },
     async (context) => {
@@ -20,9 +20,9 @@ export async function deleteMovementAction(form: FormData) {
         id: form.get("id"),
         version: Number(form.get("version")),
       });
-      revalidatePath("/movimentacoes");
-      revalidatePath("/caixas", "layout");
-      revalidatePath("/eventos", "layout");
+      revalidatePath("/movements");
+      revalidatePath("/cash-boxes", "layout");
+      revalidatePath("/events", "layout");
       return { id: result.id };
     },
   );

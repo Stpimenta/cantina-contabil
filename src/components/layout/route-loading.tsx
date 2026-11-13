@@ -10,7 +10,7 @@ import { SearchForm } from "../ui/search-form";
 import { Skeleton } from "../ui/skeleton";
 import { HomeOverview } from "@/presentation/home/components/home-overview";
 import homePageStyles from "@/app/(authenticated)/page.module.css";
-import eventStyles from "@/app/(authenticated)/eventos/[id]/page.module.css";
+import eventStyles from "@/app/(authenticated)/events/[id]/page.module.css";
 import donationStyles from "@/presentation/donations/components/donation-list.module.css";
 import supplyStyles from "@/presentation/events/components/supply-list.module.css";
 import balanceStyles from "@/presentation/cash-boxes/components/cash-box-balance.module.css";
@@ -66,17 +66,17 @@ export type LoadingArea = keyof typeof areas;
 
 export function loadingAreaForPath(pathname: string): LoadingArea {
   const segments = pathname.split("/").filter(Boolean);
-  if (segments[0] === "caixas") return segments[1] ? "caixa" : "caixas";
-  if (segments[0] === "comandas") return "comandasTemporarias";
+  if (segments[0] === "cash-boxes") return segments[1] ? "caixa" : "caixas";
+  if (segments[0] === "commands") return "comandasTemporarias";
   if (segments[0] === "api-docs") return "apiDocs";
-  if (segments[2] === "comandas") return "comandas";
-  if (segments[0] === "eventos") {
-    if (segments[2] === "pedidos") return "pedidos";
-    if (segments[2] === "insumos") return "insumos";
+  if (segments[2] === "commands") return "comandas";
+  if (segments[0] === "events") {
+    if (segments[2] === "orders") return "pedidos";
+    if (segments[2] === "supplies") return "insumos";
     return segments[1] ? "evento" : "eventos";
   }
-  if (segments[0] === "doacoes") return "doacoes";
-  if (segments[0] === "movimentacoes") return "movimentacoes";
+  if (segments[0] === "donations") return "doacoes";
+  if (segments[0] === "movements") return "movimentacoes";
   return "home";
 }
 
@@ -183,7 +183,7 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
             { label: "Home", href: "/" },
             {
               label: area === "caixa" ? "Caixas" : "Eventos",
-              href: area === "caixa" ? "/caixas" : "/eventos",
+              href: area === "caixa" ? "/cash-boxes" : "/events",
             },
             ...(!detail ? [{ label: "Evento" }] : []),
             { label: title },
@@ -290,7 +290,16 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
         <>
           {search && (
             <SearchForm
-              action={area === "pedidos" ? "/eventos" : `/${area}`}
+              action={
+                (
+                  {
+                    caixas: "/cash-boxes",
+                    doacoes: "/donations",
+                    eventos: "/events",
+                    pedidos: "/events",
+                  } as Partial<Record<LoadingArea, string>>
+                )[area] ?? "/"
+              }
               query=""
               label={
                 area === "doacoes" ? "Buscar por doador" : "Buscar pelo nome"

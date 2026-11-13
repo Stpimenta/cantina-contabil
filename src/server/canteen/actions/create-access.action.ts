@@ -8,7 +8,7 @@ export async function createAccessAction(eventId: string, input: unknown) {
       operation: "canteen.createAccess",
       message: "Não foi possível criar o acesso.",
       source: "src/server/canteen/actions/create-access.action.ts",
-      route: "/eventos/[id]/comandas",
+      route: "/events/[id]/commands",
       method: "POST",
     },
     async () =>

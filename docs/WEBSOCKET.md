@@ -4,7 +4,7 @@ Contrato do MVP autorizado em 12/11/2026. Dados/regras em [ARCHITECTURE.md](ARCH
 
 ## Conexão
 
-`GET /api/eventos/{id}/comandas/socket`, upgrade WebSocket no mesmo domínio com Origin correspondente e cookie de sessão normal ou acesso temporário. Sem bearer externo, evento/segredo de ativação na credencial URL ou subprotocol secreto. O caminho contém somente o identificador do evento. Servidor autoriza evento Cantina e ator antes do binding; escopo/revogação/expiração são novamente conferidos no hub.
+`GET /api/events/{id}/commands/socket`, upgrade WebSocket no mesmo domínio com Origin correspondente e cookie de sessão normal ou acesso temporário. Sem bearer externo, evento/segredo de ativação na credencial URL ou subprotocol secreto. O caminho contém somente o identificador do evento. Servidor autoriza evento Cantina e ator antes do binding; escopo/revogação/expiração são novamente conferidos no hub.
 
 O custom Worker trata upgrade diretamente porque a porta de rotas Next não é dona de WebSocket. A operação usa AuthorizeConnectionUseCase e os mesmos contratos/repositories; não chama Action nem move regra de negócio para o adaptador.
 

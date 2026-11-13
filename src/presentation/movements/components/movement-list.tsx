@@ -82,7 +82,10 @@ export function MovementList({
                 </span>
               </p>
               <p className="record-meta">
-                <Link className="text-link" href={`/caixas/${item.cashBoxId}`}>
+                <Link
+                  className="text-link"
+                  href={`/cash-boxes/${item.cashBoxId}`}
+                >
                   {item.cashBoxName}
                 </Link>{" "}
                 · {formatDateOnly(item.occurredOn)}
@@ -137,7 +140,7 @@ export function MovementList({
                 {details.receipts.map((receipt, index) => (
                   <ReceiptLink
                     key={receipt.id}
-                    src={`/movimentacoes/${details.id}/comprovante?receiptId=${encodeURIComponent(receipt.id)}`}
+                    src={`/movements/${details.id}/receipt?receiptId=${encodeURIComponent(receipt.id)}`}
                     name="movimentação"
                     type={receipt.type}
                     label={`${receipt.type === "application/pdf" ? "Baixar" : "Ver"} comprovante ${index + 1}`}

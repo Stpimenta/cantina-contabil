@@ -98,7 +98,7 @@ export function SupplyList({
                 ) : (
                   <Link
                     className={`text-link ${styles.originLink}`}
-                    href={`/caixas/${supply.cashBoxId}`}
+                    href={`/cash-boxes/${supply.cashBoxId}`}
                   >
                     {supply.cashBoxName}
                   </Link>

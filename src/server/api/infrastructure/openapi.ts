@@ -77,7 +77,7 @@ export function createOpenApiDocument(version: string) {
       },
     },
     paths: {
-      "/api/eventos/{id}/comandas": {
+      "/api/events/{id}/commands": {
         get: {
           operationId: "listCommands",
           summary: "Consultar página de comandas",
@@ -95,7 +95,7 @@ export function createOpenApiDocument(version: string) {
           },
         },
       },
-      "/api/eventos/{id}/comandas/{orderId}": {
+      "/api/events/{id}/commands/{orderId}": {
         get: {
           operationId: "getCommand",
           summary: "Consultar pedido afetado",

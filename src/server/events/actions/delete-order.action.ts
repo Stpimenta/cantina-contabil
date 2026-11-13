@@ -14,7 +14,7 @@ export async function deleteOrderAction(
       message:
         "Não foi possível confirmar a operação. Atualize os registros antes de tentar novamente.",
       source: "src/server/events/actions/delete-order.action.ts",
-      route: "/eventos",
+      route: "/events",
       method: "POST",
     },
     async (context) => {
@@ -26,10 +26,10 @@ export async function deleteOrderAction(
         id,
         version,
       );
-      revalidatePath("/eventos");
-      revalidatePath(`/eventos/${value.eventId}`);
-      revalidatePath(`/eventos/${value.eventId}/pedidos`);
-      revalidatePath("/caixas", "layout");
+      revalidatePath("/events");
+      revalidatePath(`/events/${value.eventId}`);
+      revalidatePath(`/events/${value.eventId}/orders`);
+      revalidatePath("/cash-boxes", "layout");
       return value;
     },
   );

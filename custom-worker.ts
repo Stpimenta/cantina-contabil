@@ -11,7 +11,7 @@ export default class AppWorker extends WorkerEntrypoint<
   Parameters<typeof workerSocket>[1]
 > {
   fetch(request: WorkerRequest): Promise<WorkerResponse> {
-    const match = /^\/api\/eventos\/([^/]+)\/comandas\/socket$/.exec(
+    const match = /^\/api\/events\/([^/]+)\/commands\/socket$/.exec(
       new URL(request.url).pathname,
     );
     return match

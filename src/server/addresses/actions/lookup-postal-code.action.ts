@@ -9,7 +9,7 @@ export async function lookupPostalCodeAction(input: unknown) {
       message:
         "Não foi possível consultar o CEP. Você pode preencher o endereço manualmente.",
       source: "src/server/addresses/actions/lookup-postal-code.action.ts",
-      route: "/eventos",
+      route: "/events",
       method: "POST",
     },
     async (context) => {

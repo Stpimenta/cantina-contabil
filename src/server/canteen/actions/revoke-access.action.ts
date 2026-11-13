@@ -13,7 +13,7 @@ export async function revokeAccessAction(
       message:
         "Não foi possível confirmar a revogação. Confira o acesso antes de repetir.",
       source: "src/server/canteen/actions/revoke-access.action.ts",
-      route: "/eventos/[id]/comandas",
+      route: "/events/[id]/commands",
       method: "POST",
     },
     async () =>

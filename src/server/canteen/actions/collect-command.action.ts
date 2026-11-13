@@ -13,7 +13,7 @@ export async function collectCommandAction(
       message:
         "Não foi possível confirmar a retirada. Aguarde a sincronização antes de repetir.",
       source: "src/server/canteen/actions/collect-command.action.ts",
-      route: "/comandas",
+      route: "/commands",
       method: "POST",
     },
     async () =>

@@ -309,7 +309,7 @@ it("páginas enviam metadados sem chaves privadas aos componentes cliente", asyn
     h.receipts,
   ).execute(h.actor, e.id, supplyInput(null), [pdf()]);
   const { default: MovementsPage } =
-    await import("@/app/(authenticated)/movimentacoes/page");
+    await import("@/app/(authenticated)/movements/page");
   const { MovementList } =
     await import("@/presentation/movements/components/movement-list");
   const movement = clientProps(
@@ -323,7 +323,7 @@ it("páginas enviam metadados sem chaves privadas aos componentes cliente", asyn
   expect(JSON.stringify(movement)).not.toContain(m.receipts[0].key);
   expect(JSON.stringify(movement)).not.toContain("fingerprint");
   const { default: SuppliesPage } =
-    await import("@/app/(authenticated)/eventos/[id]/insumos/page");
+    await import("@/app/(authenticated)/events/[id]/supplies/page");
   const { SupplyList } =
     await import("@/presentation/events/components/supply-list");
   const supplies = clientProps(

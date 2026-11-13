@@ -10,7 +10,7 @@ export async function deleteDonationAction(form: FormData) {
       message:
         "Não foi possível confirmar a operação. Confira as doações antes de tentar novamente.",
       source: "src/server/donations/actions/delete-donation.action.ts",
-      route: "/doacoes",
+      route: "/donations",
       method: "POST",
     },
     async (context) => {
@@ -20,8 +20,8 @@ export async function deleteDonationAction(form: FormData) {
         id: form.get("id"),
         version: Number(form.get("version")),
       });
-      revalidatePath("/doacoes");
-      revalidatePath("/caixas", "layout");
+      revalidatePath("/donations");
+      revalidatePath("/cash-boxes", "layout");
       return result;
     },
   );

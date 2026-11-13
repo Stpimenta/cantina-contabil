@@ -42,7 +42,7 @@ beforeEach(() => {
 describe("temporary access activation link", () => {
   it("keeps activation available when development replays the URL-cleaning effect", () => {
     const secret = "a".repeat(64);
-    const location = { hash: `#chave=${secret}`, pathname: "/acesso-comandas" };
+    const location = { hash: `#chave=${secret}`, pathname: "/command-access" };
     const clean = vi.fn(() => {
       location.hash = "";
     });
@@ -54,14 +54,14 @@ describe("temporary access activation link", () => {
     capture(); // Strict Mode replays setup after cleanup on the same mounted component.
     const html = renderToStaticMarkup(createElement(ActivateAccess));
     expect(location.hash).toBe("");
-    expect(clean).toHaveBeenCalledWith(null, "", "/acesso-comandas");
+    expect(clean).toHaveBeenCalledWith(null, "", "/command-access");
     expect(lifecycle.secret).toBe(secret);
     expect(html).not.toContain('disabled=""');
     expect(html).not.toContain("Abra o link fornecido");
     expect(html).not.toContain(secret);
   });
   it("keeps activation disabled when the supplied URL has no key", () => {
-    vi.stubGlobal("location", { hash: "", pathname: "/acesso-comandas" });
+    vi.stubGlobal("location", { hash: "", pathname: "/command-access" });
     vi.stubGlobal("history", { replaceState: vi.fn() });
     renderToStaticMarkup(createElement(ActivateAccess));
     lifecycle.effects[0]();

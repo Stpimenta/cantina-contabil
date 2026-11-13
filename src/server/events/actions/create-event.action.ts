@@ -10,16 +10,16 @@ export async function createEventAction(input: unknown) {
       message:
         "Não foi possível confirmar a operação. Atualize os registros antes de tentar novamente.",
       source: "src/server/events/actions/create-event.action.ts",
-      route: "/eventos",
+      route: "/events",
       method: "POST",
     },
     async (context) => {
       const session = await createAuth().getSession.execute();
       context.actorId = session?.user.id ?? 0;
       const value = await createEvents().create.execute(session, input);
-      revalidatePath("/eventos");
-      revalidatePath(`/eventos/${value.id}`);
-      revalidatePath("/caixas", "layout");
+      revalidatePath("/events");
+      revalidatePath(`/events/${value.id}`);
+      revalidatePath("/cash-boxes", "layout");
       return value;
     },
   );

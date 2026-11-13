@@ -20,7 +20,7 @@ export function CommandLoading({
           loading
           items={[
             { label: "Home", href: "/" },
-            { label: "Eventos", href: "/eventos" },
+            { label: "Eventos", href: "/events" },
             { label: "Evento" },
             { label: "Comandas" },
           ]}
@@ -30,7 +30,7 @@ export function CommandLoading({
       <div className={styles.page}>
         <span className="sr-only">Sincronização pendente</span>
         <SearchForm
-          action="/eventos"
+          action="/events"
           label="Buscar pelo nome"
           query=""
           disabled
