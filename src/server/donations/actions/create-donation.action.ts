@@ -11,7 +11,7 @@ export async function createDonationAction(form: FormData) {
       message:
         "Não foi possível confirmar o registro da doação. Confira a lista antes de tentar novamente.",
       source: "src/server/donations/actions/create-donation.action.ts",
-      route: "/doacoes",
+      route: "/donations",
       method: "POST",
     },
     async (context) => {
@@ -32,9 +32,9 @@ export async function createDonationAction(form: FormData) {
         input,
       );
       context.cashBoxId = value.cashBoxId;
-      revalidatePath("/doacoes");
-      revalidatePath("/caixas");
-      revalidatePath(`/caixas/${value.cashBoxId}`);
+      revalidatePath("/donations");
+      revalidatePath("/cash-boxes");
+      revalidatePath(`/cash-boxes/${value.cashBoxId}`);
       return value;
     },
   );

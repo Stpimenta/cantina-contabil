@@ -20,8 +20,8 @@ export function Navigation({ onNavigate }: { onNavigate?: () => void }) {
       </Link>
       <Link
         className={styles.link}
-        href="/caixas"
-        aria-current={pathname.startsWith("/caixas") ? "page" : undefined}
+        href="/cash-boxes"
+        aria-current={pathname.startsWith("/cash-boxes") ? "page" : undefined}
         onClick={onNavigate}
       >
         <Icon name="box" />
@@ -29,8 +29,8 @@ export function Navigation({ onNavigate }: { onNavigate?: () => void }) {
       </Link>
       <Link
         className={styles.link}
-        href="/doacoes"
-        aria-current={pathname.startsWith("/doacoes") ? "page" : undefined}
+        href="/donations"
+        aria-current={pathname.startsWith("/donations") ? "page" : undefined}
         onClick={onNavigate}
       >
         <Icon name="donation" />
@@ -38,8 +38,8 @@ export function Navigation({ onNavigate }: { onNavigate?: () => void }) {
       </Link>
       <Link
         className={styles.link}
-        href="/eventos"
-        aria-current={pathname.startsWith("/eventos") ? "page" : undefined}
+        href="/events"
+        aria-current={pathname.startsWith("/events") ? "page" : undefined}
         onClick={onNavigate}
       >
         <Icon name="calendar" />
@@ -47,10 +47,8 @@ export function Navigation({ onNavigate }: { onNavigate?: () => void }) {
       </Link>
       <Link
         className={styles.link}
-        href="/movimentacoes"
-        aria-current={
-          pathname.startsWith("/movimentacoes") ? "page" : undefined
-        }
+        href="/movements"
+        aria-current={pathname.startsWith("/movements") ? "page" : undefined}
         onClick={onNavigate}
       >
         <Icon name="movements" />

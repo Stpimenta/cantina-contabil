@@ -1,3 +1,6 @@
+import commandStyles from "@/presentation/canteen/components/command-board.module.css";
+import { ApiDocumentationLoading } from "@/presentation/api/api-documentation-loading";
+import { CommandLoading } from "@/presentation/canteen/components/command-loading";
 import { BalanceVisibilityToggle } from "../ui/balance-visibility";
 import { PageHeader } from "./page-header";
 import { Breadcrumbs } from "./breadcrumbs";
@@ -7,7 +10,7 @@ import { SearchForm } from "../ui/search-form";
 import { Skeleton } from "../ui/skeleton";
 import { HomeOverview } from "@/presentation/home/components/home-overview";
 import homePageStyles from "@/app/(authenticated)/page.module.css";
-import eventStyles from "@/app/(authenticated)/eventos/[id]/page.module.css";
+import eventStyles from "@/app/(authenticated)/events/[id]/page.module.css";
 import donationStyles from "@/presentation/donations/components/donation-list.module.css";
 import supplyStyles from "@/presentation/events/components/supply-list.module.css";
 import balanceStyles from "@/presentation/cash-boxes/components/cash-box-balance.module.css";
@@ -45,6 +48,17 @@ const areas = {
     icon: "calendar",
     description: "Detalhes do evento",
   },
+  comandasTemporarias: {
+    title: "Comandas",
+    icon: "calendar",
+    description: undefined,
+  },
+  apiDocs: {
+    title: "Documentação da API",
+    icon: undefined,
+    description: undefined,
+  },
+  comandas: { title: "Comandas", icon: "calendar", description: undefined },
   pedidos: { title: "Pedidos", icon: undefined, description: undefined },
   insumos: { title: "Insumos", icon: undefined, description: undefined },
 } as const;
@@ -52,14 +66,17 @@ export type LoadingArea = keyof typeof areas;
 
 export function loadingAreaForPath(pathname: string): LoadingArea {
   const segments = pathname.split("/").filter(Boolean);
-  if (segments[0] === "caixas") return segments[1] ? "caixa" : "caixas";
-  if (segments[0] === "eventos") {
-    if (segments[2] === "pedidos") return "pedidos";
-    if (segments[2] === "insumos") return "insumos";
+  if (segments[0] === "cash-boxes") return segments[1] ? "caixa" : "caixas";
+  if (segments[0] === "commands") return "comandasTemporarias";
+  if (segments[0] === "api-docs") return "apiDocs";
+  if (segments[2] === "commands") return "comandas";
+  if (segments[0] === "events") {
+    if (segments[2] === "orders") return "pedidos";
+    if (segments[2] === "supplies") return "insumos";
     return segments[1] ? "evento" : "eventos";
   }
-  if (segments[0] === "doacoes") return "doacoes";
-  if (segments[0] === "movimentacoes") return "movimentacoes";
+  if (segments[0] === "donations") return "doacoes";
+  if (segments[0] === "movements") return "movimentacoes";
   return "home";
 }
 
@@ -73,7 +90,13 @@ const creation = {
 } as const;
 
 function LoadingActions({ area }: { area: LoadingArea }) {
-  if (area === "home") return null;
+  if (
+    area === "home" ||
+    area === "comandas" ||
+    area === "comandasTemporarias" ||
+    area === "apiDocs"
+  )
+    return null;
   if (area === "caixa" || area === "evento")
     return (
       <>
@@ -122,6 +145,14 @@ function BalancePlaceholder() {
 }
 
 export function RouteLoading({ area }: { area: LoadingArea }) {
+  if (area === "comandas") return <CommandLoading />;
+  if (area === "comandasTemporarias")
+    return (
+      <main className={commandStyles.shell}>
+        <CommandLoading restricted />
+      </main>
+    );
+  if (area === "apiDocs") return <ApiDocumentationLoading />;
   const { title, icon, description } = areas[area];
   const detail = area === "caixa" || area === "evento";
   const nested = detail || area === "pedidos" || area === "insumos";
@@ -152,7 +183,7 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
             { label: "Home", href: "/" },
             {
               label: area === "caixa" ? "Caixas" : "Eventos",
-              href: area === "caixa" ? "/caixas" : "/eventos",
+              href: area === "caixa" ? "/cash-boxes" : "/events",
             },
             ...(!detail ? [{ label: "Evento" }] : []),
             { label: title },
@@ -192,7 +223,7 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
               <div className={eventStyles.summary}>
                 <BalancePlaceholder />
                 <div className={`muted record-meta ${eventStyles.payments}`}>
-                  {["Dinheiro", "Pix", "Insumos"].map((label) => (
+                  {["Dinheiro", "Pix"].map((label) => (
                     <p key={label}>
                       <span>{label}:</span> <Skeleton shape="amount" />
                     </p>
@@ -257,9 +288,23 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
         </>
       ) : (
         <>
+          {area === "insumos" && (
+            <p className="muted record-meta">
+              Total em compras: <Skeleton shape="amount" />
+            </p>
+          )}
           {search && (
             <SearchForm
-              action={area === "pedidos" ? "/eventos" : `/${area}`}
+              action={
+                (
+                  {
+                    caixas: "/cash-boxes",
+                    doacoes: "/donations",
+                    eventos: "/events",
+                    pedidos: "/events",
+                  } as Partial<Record<LoadingArea, string>>
+                )[area] ?? "/"
+              }
               query=""
               label={
                 area === "doacoes" ? "Buscar por doador" : "Buscar pelo nome"

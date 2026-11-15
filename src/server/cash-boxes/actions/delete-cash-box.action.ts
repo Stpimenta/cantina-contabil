@@ -12,7 +12,7 @@ export async function deleteCashBoxAction(id: string, version: number) {
       message:
         "Não foi possível confirmar a exclusão. Atualize a lista antes de tentar novamente.",
       source: "src/server/cash-boxes/actions/delete-cash-box.action.ts",
-      route: "/caixas/[id]",
+      route: "/cash-boxes/[id]",
       method: "POST",
     },
     async (context) => {
@@ -29,8 +29,8 @@ export async function deleteCashBoxAction(id: string, version: number) {
         id,
         version,
       );
-      revalidatePath("/caixas");
-      revalidatePath(`/caixas/${id}`);
+      revalidatePath("/cash-boxes");
+      revalidatePath(`/cash-boxes/${id}`);
       return value;
     },
   );

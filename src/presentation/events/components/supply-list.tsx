@@ -32,11 +32,13 @@ export type SupplyListEntry = Omit<
 export function SupplyList({
   eventId,
   eventName,
+  supplyCostCents,
   supplies,
   cashBoxes,
 }: {
   eventId: string;
   eventName: string;
+  supplyCostCents: number;
   supplies: SupplyListEntry[];
   cashBoxes: { id: string; name: string }[];
 }) {
@@ -68,6 +70,9 @@ export function SupplyList({
           </Button>
         }
       />
+      <p className="muted record-meta">
+        Total em compras: {formatCurrency(supplyCostCents)}
+      </p>
       {supplies.length === 0 && (
         <SectionFeedback area="insumos">
           Nenhum insumo encontrado.
@@ -98,7 +103,7 @@ export function SupplyList({
                 ) : (
                   <Link
                     className={`text-link ${styles.originLink}`}
-                    href={`/caixas/${supply.cashBoxId}`}
+                    href={`/cash-boxes/${supply.cashBoxId}`}
                   >
                     {supply.cashBoxName}
                   </Link>

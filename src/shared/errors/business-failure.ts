@@ -1,6 +1,11 @@
 import type { ErrorCategory } from "./application-error";
 
 export type BusinessCode =
+  | "EVENT_MODALITY_LOCKED"
+  | "CANTEEN_REQUIRED"
+  | "TEMP_ACCESS_USED"
+  | "TEMP_ACCESS_ENDED"
+  | "INVALID_TEMP_ACCESS"
   | "ORDER_FULFILLMENT_UNDEFINED"
   | "INVALID_POSTAL_CODE_INPUT"
   | "EVENT_DELIVERY_LOCKED"
@@ -45,6 +50,8 @@ export type BusinessCode =
   | "ACCESS_DENIED";
 
 export type ValidationIssue =
+  | "INVALID_ACCESS_EXPIRY"
+  | "INVALID_ACCESS_NAME"
   | "INVALID_ORDER_STATUS"
   | "INVALID_POSTAL_CODE"
   | "INVALID_PRODUCT_NAME"

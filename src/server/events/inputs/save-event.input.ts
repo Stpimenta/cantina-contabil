@@ -13,25 +13,32 @@ const productSchema = z.object({
   icon: z.enum(productIcons.map((icon) => icon.id)),
   price: moneyInputSchema,
 });
-export const saveEventInputSchema = z.object({
-  requestId: z.uuid(),
-  deliveryEnabled: z.boolean().default(false),
-  cashBoxId: z.string().trim().min(1),
-  name: z
-    .string()
-    .trim()
-    .min(1)
-    .refine((v) => v.length <= 100),
-  description: z
-    .string()
-    .trim()
-    .refine((v) => v.length <= 500),
-  occursOn: z.string().refine(isDateOnly),
-  products: z
-    .array(productSchema)
-    .max(100)
-    .refine((rows) => new Set(rows.map((row) => row.id)).size === rows.length),
-});
+export const saveEventInputSchema = z
+  .object({
+    requestId: z.uuid(),
+    deliveryEnabled: z.boolean().default(false),
+    canteenEnabled: z.boolean().default(false),
+    cashBoxId: z.string().trim().min(1),
+    name: z
+      .string()
+      .trim()
+      .min(1)
+      .refine((v) => v.length <= 100),
+    description: z
+      .string()
+      .trim()
+      .refine((v) => v.length <= 500),
+    occursOn: z.string().refine(isDateOnly),
+    products: z
+      .array(productSchema)
+      .max(100)
+      .refine(
+        (rows) => new Set(rows.map((row) => row.id)).size === rows.length,
+      ),
+  })
+  .refine((data) => !(data.deliveryEnabled && data.canteenEnabled), {
+    path: ["canteenEnabled"],
+  });
 export type SaveEventInput = z.input<typeof saveEventInputSchema>;
 export type EventData = z.output<typeof saveEventInputSchema>;
 export function validateSaveEvent(input: unknown) {

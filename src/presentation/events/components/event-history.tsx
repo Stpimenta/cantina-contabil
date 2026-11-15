@@ -22,7 +22,7 @@ export function EventHistory({
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<EventAudit | null>(null);
   const open = !!params.get("history");
-  const basePath = `/eventos/${eventId}`;
+  const basePath = `/events/${eventId}`;
   function navigate(show: boolean) {
     if (pending) return;
     const next = new URLSearchParams(params.toString());

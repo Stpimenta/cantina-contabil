@@ -15,6 +15,7 @@ export interface EventPage<T> {
   query: string;
 }
 export type EventWriteOutcome =
+  | "modality_locked"
   | "delivery_locked"
   | "delivery_disabled"
   | "has_supplies"
@@ -36,6 +37,7 @@ export interface EventRepository {
   ): Promise<EventPage<Event>>;
   find(id: string): Promise<Event | null>;
   hasDeliveryOrders(eventId: string): Promise<boolean>;
+  hasOrders(eventId: string): Promise<boolean>;
   create(event: Event): Promise<EventWriteOutcome>;
   update(event: Event, expectedVersion: number): Promise<EventWriteOutcome>;
   listOrders(

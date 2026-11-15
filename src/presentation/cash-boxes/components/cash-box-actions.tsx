@@ -30,7 +30,7 @@ export function CashBoxActions({ box }: { box?: CashBox }) {
       () => {
         setDeleting(false);
         notify("Caixa excluído.");
-        router.replace("/caixas");
+        router.replace("/cash-boxes");
         router.refresh();
       },
     );

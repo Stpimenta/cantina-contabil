@@ -12,7 +12,7 @@ export async function createCashBoxAction(form: FormData) {
       message:
         "Não foi possível confirmar o cadastro. Atualize a lista antes de tentar novamente.",
       source: "src/server/cash-boxes/actions/create-cash-box.action.ts",
-      route: "/caixas",
+      route: "/cash-boxes",
       method: "POST",
     },
     async (context) => {
@@ -30,7 +30,7 @@ export async function createCashBoxAction(form: FormData) {
         name,
         description,
       });
-      revalidatePath("/caixas");
+      revalidatePath("/cash-boxes");
       return value;
     },
   );

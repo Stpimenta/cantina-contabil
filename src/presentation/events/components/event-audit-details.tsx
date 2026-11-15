@@ -92,6 +92,12 @@ function Snapshot({
           <dd>Excluído</dd>
         </div>
       )}
+      {type === "order" && typeof value.collected === "boolean" && (
+        <div>
+          <dt>Retirada na Cantina</dt>
+          <dd>{value.collected ? "Retirado" : "Aguardando retirada"}</dd>
+        </div>
+      )}
       {type === "event" ? (
         <>
           <div>

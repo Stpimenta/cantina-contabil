@@ -14,7 +14,7 @@ export async function receiveSupplyAction(
       message:
         "Não foi possível confirmar o recebimento. Confira os insumos antes de repetir.",
       source: "src/server/events/actions/receive-supply.action.ts",
-      route: "/eventos/[id]/insumos",
+      route: "/events/[id]/supplies",
       method: "POST",
     },
     async (context) => {
@@ -26,8 +26,8 @@ export async function receiveSupplyAction(
         id,
         version,
       );
-      revalidatePath(`/eventos/${eventId}`);
-      revalidatePath(`/eventos/${eventId}/insumos`);
+      revalidatePath(`/events/${eventId}`);
+      revalidatePath(`/events/${eventId}/supplies`);
       return value;
     },
   );

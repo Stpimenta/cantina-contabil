@@ -16,7 +16,7 @@ export async function updateCashBoxAction(
       message:
         "Não foi possível confirmar a alteração. Atualize os dados antes de tentar novamente.",
       source: "src/server/cash-boxes/actions/update-cash-box.action.ts",
-      route: "/caixas/[id]",
+      route: "/cash-boxes/[id]",
       method: "POST",
     },
     async (context) => {
@@ -37,8 +37,8 @@ export async function updateCashBoxAction(
         version,
         { name, description },
       );
-      revalidatePath("/caixas");
-      revalidatePath(`/caixas/${id}`);
+      revalidatePath("/cash-boxes");
+      revalidatePath(`/cash-boxes/${id}`);
       return value;
     },
   );

@@ -9,6 +9,8 @@ export const eventMissing = () =>
 export const eventChanged = () =>
   throwBusinessError({ code: "EVENT_CHANGED", category: "conflict" });
 export function checkEventWrite(outcome: EventWriteOutcome) {
+  if (outcome === "modality_locked")
+    throwBusinessError({ code: "EVENT_MODALITY_LOCKED", category: "conflict" });
   if (outcome === "delivery_locked")
     throwBusinessError({ code: "EVENT_DELIVERY_LOCKED", category: "conflict" });
   if (outcome === "delivery_disabled")
@@ -33,6 +35,7 @@ export function eventFields(data: EventData) {
     description: data.description,
     occursOn: data.occursOn,
     deliveryEnabled: data.deliveryEnabled,
+    canteenEnabled: data.canteenEnabled,
     products: data.products.map(({ price, ...p }) => ({
       ...p,
       priceCents: price,
@@ -85,6 +88,7 @@ export function orderFields(
   if (subtotal > BigInt(Number.MAX_SAFE_INTEGER))
     throwBusinessError({ code: "AMOUNT_LIMIT", category: "validation" });
   return {
+    ...(event.canteenEnabled ? { collected: current?.collected ?? false } : {}),
     customerName: data.customerName,
     note: data.note,
     fulfillmentMode: data.fulfillmentMode,

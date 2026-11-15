@@ -10,7 +10,7 @@ export async function updateMovementAction(form: FormData) {
       message:
         "Não foi possível confirmar a operação. Confira as movimentações antes de tentar novamente.",
       source: "src/server/movements/actions/update-movement.action.ts",
-      route: "/movimentacoes",
+      route: "/movements",
       method: "POST",
     },
     async (context) => {
@@ -35,9 +35,9 @@ export async function updateMovementAction(form: FormData) {
         },
         files,
       );
-      revalidatePath("/movimentacoes");
-      revalidatePath("/caixas", "layout");
-      revalidatePath("/eventos", "layout");
+      revalidatePath("/movements");
+      revalidatePath("/cash-boxes", "layout");
+      revalidatePath("/events", "layout");
       return { id: result.id };
     },
   );

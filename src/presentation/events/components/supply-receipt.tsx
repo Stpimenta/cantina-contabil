@@ -17,7 +17,7 @@ export function SupplyReceipt({
   return (
     <ReceiptLink
       {...props}
-      src={`/eventos/${eventId}/insumos/${supplyId}/comprovante${receiptId ? `?receiptId=${encodeURIComponent(receiptId)}` : ""}`}
+      src={`/events/${eventId}/supplies/${supplyId}/receipt${receiptId ? `?receiptId=${encodeURIComponent(receiptId)}` : ""}`}
     />
   );
 }

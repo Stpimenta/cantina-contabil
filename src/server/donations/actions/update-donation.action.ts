@@ -10,7 +10,7 @@ export async function updateDonationAction(form: FormData) {
       message:
         "Não foi possível confirmar a operação. Confira as doações antes de tentar novamente.",
       source: "src/server/donations/actions/update-donation.action.ts",
-      route: "/doacoes",
+      route: "/donations",
       method: "POST",
     },
     async (context) => {
@@ -27,8 +27,8 @@ export async function updateDonationAction(form: FormData) {
           note: form.get("note"),
         },
       );
-      revalidatePath("/doacoes");
-      revalidatePath("/caixas", "layout");
+      revalidatePath("/donations");
+      revalidatePath("/cash-boxes", "layout");
       return result;
     },
   );

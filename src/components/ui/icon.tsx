@@ -2,6 +2,12 @@ import styles from "./icon.module.css";
 import type { SVGProps } from "react";
 
 const paths = {
+  alert: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v6m0 3h.01" />
+    </>
+  ),
   movements: (
     <>
       <path d="M4 7h15m-4-4 4 4-4 4M20 17H5m4-4-4 4 4 4" />

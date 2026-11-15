@@ -62,3 +62,9 @@ Para repetir após aplicar manualmente migrações autorizadas ou corrigir permi
 - [GitHub: concorrência e fila](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
 
 Referência do problema de socket/reuso no cliente do Node: [Undici #3492](https://github.com/nodejs/undici/issues/3492). O relatório do projeto confirma socket encerrado, não a causa física exata do encerramento.
+
+## Cantina: preparação do pacote
+
+Build/typecheck geram a descrição OpenAPI privada a partir dos schemas Zod antes de compilar. O pacote isolado inclui custom-worker.ts, que reutiliza OpenNext e exporta CommandHub. Wrangler reconhece COMMANDS e a migração SQLite canteen-v1; dry-run apenas verifica o pacote, sem criar/aplicar recurso. Os segredos/estado local continuam fora da allowlist.
+
+A migração D1 0025 e o novo binding/classe DO precisam ser considerados na preparação autorizada de produção. Este trabalho não aplica migrações, cria namespace remoto nem publica; o Actions conserva sua política de somente consulta de migrações D1, sem aplicação automática. Nenhuma alteração nessa política foi autorizada. Resultado do build/dry-run não confirma recursos ou versão ativa em produção.

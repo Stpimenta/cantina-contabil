@@ -6,37 +6,37 @@ const root = { label: "Home", href: "/" };
 describe("retorno das páginas secundárias", () => {
   it.each([
     {
-      items: [root, { label: "Caixas", href: "/caixas" }, { label: "Caixa" }],
-      href: "/caixas",
+      items: [
+        root,
+        { label: "Caixas", href: "/cash-boxes" },
+        { label: "Caixa" },
+      ],
+      href: "/cash-boxes",
       label: "Caixas",
     },
     {
-      items: [
-        root,
-        { label: "Eventos", href: "/eventos" },
-        { label: "Evento" },
-      ],
-      href: "/eventos",
+      items: [root, { label: "Eventos", href: "/events" }, { label: "Evento" }],
+      href: "/events",
       label: "Eventos",
     },
     {
       items: [
         root,
-        { label: "Eventos", href: "/eventos" },
-        { label: "Evento", href: "/eventos/1" },
+        { label: "Eventos", href: "/events" },
+        { label: "Evento", href: "/events/1" },
         { label: "Pedidos" },
       ],
-      href: "/eventos/1",
+      href: "/events/1",
       label: "Evento",
     },
     {
       items: [
         root,
-        { label: "Eventos", href: "/eventos" },
-        { label: "Evento", href: "/eventos/1" },
+        { label: "Eventos", href: "/events" },
+        { label: "Evento", href: "/events/1" },
         { label: "Insumos" },
       ],
-      href: "/eventos/1",
+      href: "/events/1",
       label: "Evento",
     },
   ])(

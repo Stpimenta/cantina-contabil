@@ -47,7 +47,10 @@ export function SupplyDetailsModal({
           <dt>Origem</dt>
           <dd>
             {supply.cashBoxId ? (
-              <Link className="text-link" href={`/caixas/${supply.cashBoxId}`}>
+              <Link
+                className="text-link"
+                href={`/cash-boxes/${supply.cashBoxId}`}
+              >
                 {supply.cashBoxName}
               </Link>
             ) : (

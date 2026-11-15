@@ -66,6 +66,16 @@ export class UpdateOrderStatusUseCase {
           : 0;
     const order = {
       ...current,
+      ...(current.updatedActor
+        ? {
+            updatedActor: {
+              kind: "user" as const,
+              id: actor.id,
+              name: actor.name,
+              expiresAt: session!.expiresAt,
+            },
+          }
+        : {}),
       paid: data.payment ? true : current.paid,
       fulfilled: data.fulfilled ?? current.fulfilled,
       cashCents,

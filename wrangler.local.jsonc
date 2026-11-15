@@ -1,12 +1,66 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cantina-contabil-local",
-  "main": ".open-next/worker.js",
+  "main": "custom-worker.ts",
+  "durable_objects": {
+    "bindings": [{ "name": "COMMANDS", "class_name": "CommandHub" }],
+  },
+  "migrations": [{ "tag": "canteen-v1", "new_sqlite_classes": ["CommandHub"] }],
   "compatibility_date": "2026-10-25",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
-  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "cantina-contabil-local" }],
-  "d1_databases": [{ "binding": "DB", "database_name": "cantina-contabil-local", "database_id": "00000000-0000-0000-0000-000000000001", "migrations_dir": "migrations", "remote": false }],
-  "r2_buckets": [{ "binding": "RECEIPTS", "bucket_name": "cantina-contabil-receipts-local", "remote": false }],
-  "dev": { "ip": "127.0.0.1", "port": 8787, "inspector_ip": "127.0.0.1", "inspector_port": 9229 }
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "cantina-contabil-local" },
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cantina-contabil-local",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations",
+      "remote": false,
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "RECEIPTS",
+      "bucket_name": "cantina-contabil-receipts-local",
+      "remote": false,
+    },
+  ],
+  // The Next platform proxy has no executable entrypoint. Its name must differ
+  // from the local Worker so RPC resolves through the development registry.
+  "env": {
+    "next": {
+      "name": "cantina-contabil-next-proxy",
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "cantina-contabil-local",
+        },
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "cantina-contabil-local",
+          "database_id": "00000000-0000-0000-0000-000000000001",
+          "migrations_dir": "migrations",
+          "remote": false,
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "RECEIPTS",
+          "bucket_name": "cantina-contabil-receipts-local",
+          "remote": false,
+        },
+      ],
+    },
+  },
+  "dev": {
+    "ip": "127.0.0.1",
+    "port": 8787,
+    "inspector_ip": "127.0.0.1",
+    "inspector_port": 9229,
+  },
 }

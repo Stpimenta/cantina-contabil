@@ -206,7 +206,7 @@ export function MovementFormModal({
                   size: receipt.size,
                   label: (
                     <ReceiptLink
-                      src={`/movimentacoes/${movement!.id}/comprovante?receiptId=${encodeURIComponent(receipt.id)}`}
+                      src={`/movements/${movement!.id}/receipt?receiptId=${encodeURIComponent(receipt.id)}`}
                       name="movimentação"
                       type={receipt.type}
                       label={`${receipt.type === "application/pdf" ? "Baixar" : "Ver"} comprovante ${index + 1}`}

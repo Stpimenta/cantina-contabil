@@ -10,7 +10,7 @@ export async function createOrderAction(eventId: string, input: unknown) {
       message:
         "Não foi possível confirmar a operação. Atualize os registros antes de tentar novamente.",
       source: "src/server/events/actions/create-order.action.ts",
-      route: "/eventos",
+      route: "/events",
       method: "POST",
     },
     async (context) => {
@@ -21,10 +21,10 @@ export async function createOrderAction(eventId: string, input: unknown) {
         eventId,
         input,
       );
-      revalidatePath("/eventos");
-      revalidatePath(`/eventos/${eventId}`);
-      revalidatePath(`/eventos/${eventId}/pedidos`);
-      revalidatePath("/caixas", "layout");
+      revalidatePath("/events");
+      revalidatePath(`/events/${eventId}`);
+      revalidatePath(`/events/${eventId}/orders`);
+      revalidatePath("/cash-boxes", "layout");
       return value;
     },
   );

@@ -65,7 +65,7 @@ export function DonationFiltersModal({
           if (selectedBox) params.set("cashBoxId", selectedBox);
           if (selectedYear) params.set("year", selectedYear);
           startTransition(() =>
-            router.push(`/doacoes${params.size ? `?${params}` : ""}`, {
+            router.push(`/donations${params.size ? `?${params}` : ""}`, {
               scroll: false,
             }),
           );

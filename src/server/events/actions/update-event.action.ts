@@ -14,7 +14,7 @@ export async function updateEventAction(
       message:
         "Não foi possível confirmar a operação. Atualize os registros antes de tentar novamente.",
       source: "src/server/events/actions/update-event.action.ts",
-      route: "/eventos",
+      route: "/events",
       method: "POST",
     },
     async (context) => {
@@ -26,9 +26,9 @@ export async function updateEventAction(
         version,
         input,
       );
-      revalidatePath("/eventos");
-      revalidatePath(`/eventos/${value.id}`);
-      revalidatePath("/caixas", "layout");
+      revalidatePath("/events");
+      revalidatePath(`/events/${value.id}`);
+      revalidatePath("/cash-boxes", "layout");
       return value;
     },
   );

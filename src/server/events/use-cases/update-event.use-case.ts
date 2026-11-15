@@ -48,6 +48,14 @@ export class UpdateEventUseCase {
         code: "EVENT_DELIVERY_LOCKED",
         category: "conflict",
       });
+    if (current.canteenEnabled !== data.canteenEnabled) {
+      if (await this.events.hasOrders(id))
+        throwBusinessError({
+          code: "EVENT_MODALITY_LOCKED",
+          category: "conflict",
+        });
+      // The D1 trigger also includes logically deleted orders and concurrent writes.
+    }
     if (current.cashBoxId !== data.cashBoxId)
       throwBusinessError({ code: "EVENT_BOX_LOCKED", category: "conflict" });
 

@@ -6,6 +6,7 @@ export interface Event {
   description: string;
   occursOn: string;
   deliveryEnabled: boolean;
+  canteenEnabled: boolean;
   products: EventProduct[];
   version: number;
   createdAt: string;

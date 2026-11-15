@@ -21,7 +21,7 @@ export function CashBoxHistory({
   return (
     <div className="stack">
       <FilterForm
-        action={`/caixas/${id}`}
+        action={`/cash-boxes/${id}`}
         fixedParams={{ history: "1" }}
         resetParams={{ category: "all" }}
         canReset={category !== "all"}
@@ -47,7 +47,7 @@ export function CashBoxHistory({
             <CashBoxHistoryList entries={result.value.items} />
           )}
           <Pagination
-            basePath={`/caixas/${id}`}
+            basePath={`/cash-boxes/${id}`}
             pageKey="history"
             page={result.value.page}
             pageSize={DEFAULT_PAGE_SIZE}

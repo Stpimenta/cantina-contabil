@@ -1,3 +1,4 @@
+import { DurablePublicationCoordinator } from "@/server/canteen/infrastructure/publication-coordinator";
 import { UpdateOrderStatusUseCase } from "./use-cases/update-order-status.use-case";
 import { UpdateSupplyUseCase } from "./use-cases/update-supply.use-case";
 import { DeleteSupplyUseCase } from "./use-cases/delete-supply.use-case";
@@ -24,7 +25,7 @@ import { ListEventHistoryUseCase } from "./use-cases/list-event-history.use-case
 import { GetEventBoxesUseCase } from "./use-cases/get-event-boxes.use-case";
 export function createEvents() {
   const db = createDatabase();
-  const repo = new D1EventRepository(db);
+  const repo = new D1EventRepository(db, new DurablePublicationCoordinator());
   const boxes = new D1CashBoxRepository(db);
   const supplies = new D1EventSupplyRepository(db);
   const receipts = new R2ReceiptRepository();

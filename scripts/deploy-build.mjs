@@ -66,6 +66,7 @@ export function prepareDeployment(projectRoot) {
   try {
     // Explicit allowlist: never copy .env, credentials, local data or existing builds.
     for (const name of [
+      "custom-worker.ts",
       "src",
       "public",
       "scripts",

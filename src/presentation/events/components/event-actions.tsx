@@ -71,7 +71,7 @@ export function EventActions({
               () => {
                 setConfirmDelete(false);
                 notify("Evento excluído.");
-                router.push("/eventos");
+                router.push("/events");
                 router.refresh();
               },
             )

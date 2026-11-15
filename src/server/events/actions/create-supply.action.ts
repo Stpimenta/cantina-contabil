@@ -10,7 +10,7 @@ export async function createSupplyAction(eventId: string, form: FormData) {
       message:
         "Não foi possível confirmar o cadastro. Confira os insumos antes de tentar novamente.",
       source: "src/server/events/actions/create-supply.action.ts",
-      route: "/eventos/[id]/insumos",
+      route: "/events/[id]/supplies",
       method: "POST",
     },
     async (context) => {
@@ -37,9 +37,9 @@ export async function createSupplyAction(eventId: string, form: FormData) {
         },
         files,
       );
-      revalidatePath(`/eventos/${eventId}`);
-      revalidatePath(`/eventos/${eventId}/insumos`);
-      revalidatePath("/caixas", "layout");
+      revalidatePath(`/events/${eventId}`);
+      revalidatePath(`/events/${eventId}/supplies`);
+      revalidatePath("/cash-boxes", "layout");
       return { id: value.id };
     },
   );

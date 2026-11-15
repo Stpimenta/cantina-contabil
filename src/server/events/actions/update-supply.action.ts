@@ -14,7 +14,7 @@ export async function updateSupplyAction(
       message:
         "Não foi possível confirmar a alteração. Confira os insumos antes de tentar novamente.",
       source: "src/server/events/actions/update-supply.action.ts",
-      route: "/eventos/[id]/insumos",
+      route: "/events/[id]/supplies",
       method: "POST",
     },
     async (context) => {
@@ -43,9 +43,9 @@ export async function updateSupplyAction(
         },
         files,
       );
-      revalidatePath(`/eventos/${eventId}`);
-      revalidatePath(`/eventos/${eventId}/insumos`);
-      revalidatePath("/caixas", "layout");
+      revalidatePath(`/events/${eventId}`);
+      revalidatePath(`/events/${eventId}/supplies`);
+      revalidatePath("/cash-boxes", "layout");
       return { id: value.id };
     },
   );
