@@ -112,7 +112,7 @@ export default async function EventPage({
               />
               <div
                 className={`muted record-meta ${styles.payments}`}
-                aria-label="Recebimentos por forma de pagamento e gastos com insumos"
+                aria-label="Recebimentos por forma de pagamento"
               >
                 <p>
                   <span>Dinheiro:</span>{" "}
@@ -121,12 +121,6 @@ export default async function EventPage({
                 <p>
                   <span>Pix:</span>{" "}
                   <span>{formatCurrency(result.value.event.pixCents)}</span>
-                </p>
-                <p>
-                  <span>Insumos:</span>{" "}
-                  <span>
-                    {formatCurrency(result.value.event.supplyCostCents)}
-                  </span>
                 </p>
               </div>
               <div className={styles.statistics}>

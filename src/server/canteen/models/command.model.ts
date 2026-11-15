@@ -1,3 +1,5 @@
+export type CommandFilter = "all" | "waiting" | "collected";
+
 export interface Command {
   id: string;
   version: number;
@@ -16,5 +18,5 @@ export interface CommandPage {
   page: number;
   pageSize: number;
   query: string;
-  collected: boolean;
+  collected: CommandFilter;
 }

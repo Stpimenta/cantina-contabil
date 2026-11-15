@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Icon } from "@/components/ui/icon";
 import { useRouter } from "next/navigation";
 import type {
   Command,
@@ -20,7 +22,7 @@ import { collectCommandAction } from "@/server/canteen/actions/collect-command.a
 import { useServerAction } from "@/shared/hooks/use-server-action";
 import { Button } from "@/components/ui/button";
 import { SearchForm } from "@/components/ui/search-form";
-import { SelectField } from "@/components/ui/select-field";
+import { CommandFilters } from "./command-filters";
 import { Pagination } from "@/components/ui/pagination";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import { ErrorModal } from "@/components/modals/error-modal";
@@ -36,6 +38,7 @@ export function CommandBoard({
     [connection, setConnection] = useState<
       "syncing" | "connected" | "offline" | "ended"
     >("syncing");
+  const [interrupted, setInterrupted] = useState(false);
   const dataRef = useRef(data);
   dataRef.current = data;
   const refreshRef = useRef<(id: string, version: number) => Promise<void>>(
@@ -64,7 +67,7 @@ export function CommandBoard({
     const params = new URLSearchParams({
       q: initial.query,
       page: String(initial.page),
-      collected: initial.collected ? "collected" : "waiting",
+      collected: initial.collected,
     });
     async function read<T>(url: string, schema: z.ZodType<T>): Promise<T> {
       const response = await fetch(url, {
@@ -113,6 +116,7 @@ export function CommandBoard({
     function fail() {
       if (disposed || ended) return;
       ready = false;
+      setInterrupted(true);
       setConnection("offline");
       socket?.close();
     }
@@ -187,6 +191,7 @@ export function CommandBoard({
               ) {
                 ready = true;
                 attempt = 0;
+                setInterrupted(false);
                 setConnection("connected");
               }
             })
@@ -201,6 +206,7 @@ export function CommandBoard({
           return;
         }
         ready = false;
+        setInterrupted(true);
         setConnection("offline");
         // A refused upgrade has no WebSocket close status. Authenticate once to distinguish expiry.
         try {
@@ -232,41 +238,41 @@ export function CommandBoard({
     basePath,
     router,
   ]);
-  const filters = { collected: initial.collected ? "collected" : "waiting" };
+  const filters = { collected: initial.collected };
   return (
     <div className={styles.page}>
-      <p className={styles.notice} role="status" aria-live="polite">
-        {connection === "ended" ? (
-          "Sua sessão foi encerrada"
-        ) : connection === "offline" ? (
-          "Conexão interrompida. As retiradas estarão disponíveis após sincronizar."
-        ) : (
-          <span className="sr-only">
-            {connection === "syncing"
-              ? "Sincronizando comandas"
-              : "Comandas atualizadas"}
-          </span>
-        )}
-      </p>
+      {(connection === "ended" || interrupted || connection === "offline") &&
+      typeof document !== "undefined" ? (
+        createPortal(
+          <div className={styles.notice} role="status" aria-live="polite">
+            <Icon name="alert" />
+            <p>
+              {connection === "ended"
+                ? "Sua sessão foi encerrada"
+                : "Sem conexão. As retiradas estarão disponíveis após sincronizar."}
+            </p>
+          </div>,
+          document.body,
+        )
+      ) : (
+        <span className="sr-only" role="status">
+          {connection === "syncing"
+            ? "Sincronizando comandas"
+            : "Comandas atualizadas"}
+        </span>
+      )}
       <SearchForm
         action={basePath}
         query={initial.query}
         label="Buscar pelo nome"
         filters={filters}
-      />
-      <SelectField
-        id="command-status"
-        label="Situação"
-        value={filters.collected}
-        options={[
-          { value: "waiting", label: "Aguardando retirada" },
-          { value: "collected", label: "Retirados" },
-        ]}
-        onValueChange={(v) => {
-          const p = new URLSearchParams({ collected: v });
-          if (initial.query) p.set("q", initial.query);
-          router.replace(`${basePath}?${p}`, { scroll: false });
-        }}
+        actions={
+          <CommandFilters
+            basePath={basePath}
+            collected={initial.collected}
+            query={initial.query}
+          />
+        }
       />
       <section aria-label="Comandas">
         {data.items.length ? (
@@ -275,14 +281,17 @@ export function CommandBoard({
               <li key={order.id} className="record-row">
                 <div className={styles.content}>
                   <h2 className="record-title">{order.customerName}</h2>
-                  <p className="muted record-meta">
-                    {order.collected ? "Retirado" : "Aguardando retirada"} ·{" "}
-                    {order.paid ? "Pago" : "Pendente"}
+                  <p
+                    className={`record-meta ${styles.pickupStatus}${order.collected ? " muted" : ` ${styles.waiting}`}`}
+                  >
+                    {order.collected && <Icon name="check" />}
+                    <span>{order.collected ? "Retirado" : "A retirar"}</span>
                   </p>
                   <ul className={styles.items}>
                     {order.items.map((i, n) => (
                       <li key={n}>
-                        {i.quantity} × {i.name}
+                        <span className={styles.quantity}>{i.quantity}×</span>{" "}
+                        {i.name}
                       </li>
                     ))}
                   </ul>
@@ -315,9 +324,11 @@ export function CommandBoard({
           <SectionFeedback area="pedidos">
             {initial.query
               ? "Nenhum pedido encontrado."
-              : initial.collected
+              : initial.collected === "collected"
                 ? "Nenhum pedido retirado."
-                : "Nenhum pedido aguardando retirada."}
+                : initial.collected === "waiting"
+                  ? "Nenhum pedido aguardando retirada."
+                  : "Nenhum pedido encontrado."}
           </SectionFeedback>
         )}
       </section>

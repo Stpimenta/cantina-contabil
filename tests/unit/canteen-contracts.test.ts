@@ -102,11 +102,12 @@ describe("contratos da Cantina", () => {
     expect(await credentialCodec.hash(a)).not.toBe(a);
     expect(await credentialCodec.hash(a)).toHaveLength(64);
   });
-  it("fallback mantém busca, situação e ações desabilitadas com skeleton e anúncio acessível", () => {
+  it("fallback mantém busca, filtros e ações desabilitadas com skeleton e anúncio acessível", () => {
     const html = renderToStaticMarkup(createElement(CommandLoading));
     expect(html).toContain('aria-busy="true"');
     expect(html).toContain("Buscar pelo nome");
-    expect(html).toContain("Aguardando retirada");
+    expect(html).toContain("Filtros");
+    expect(html).not.toContain("command-status-loading");
     expect(html).toContain("disabled");
     expect(html).not.toContain("empty-states");
   });

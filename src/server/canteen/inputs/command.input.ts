@@ -7,7 +7,7 @@ export const commandQuerySchema = z.object({
     .catch("")
     .transform((v) => v.trim().slice(0, 100)),
   page: z.coerce.number().int().positive().catch(1),
-  collected: z.enum(["waiting", "collected"]).catch("waiting"),
+  collected: z.enum(["all", "waiting", "collected"]).catch("all"),
 });
 export const collectCommandSchema = z.object({
   requestId: z.uuid(),

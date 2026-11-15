@@ -1,5 +1,6 @@
 "use client";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
 import type { TemporaryAccess } from "@/server/canteen/models/temporary-access.model";
 import { validateTemporaryAccess } from "@/server/canteen/inputs/command.input";
@@ -10,6 +11,8 @@ import { Modal } from "@/components/modals/modal";
 import { ConfirmationModal } from "@/components/modals/confirmation-modal";
 import { ErrorModal } from "@/components/modals/error-modal";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import styles from "./temporary-accesses.module.css";
 import { Field } from "@/components/ui/field";
 import { DateField } from "@/components/ui/date-field";
 import { useUnsavedChanges } from "@/shared/hooks/use-unsaved-changes";
@@ -39,96 +42,18 @@ export function TemporaryAccesses({
   eventId: string;
   accesses: TemporaryAccess[];
 }) {
-  const [open, setOpen] = useState(false),
+  const [managing, setManaging] = useState(false),
+    [open, setOpen] = useState(false),
     [revoking, setRevoking] = useState<TemporaryAccess | null>(null),
     router = useRouter();
   const { execute, pending, error, closeError } = useServerAction({
     connectionMessage:
       "Não foi possível confirmar a revogação. Confira os acessos antes de repetir.",
   });
-  return (
-    <section className="stack">
-      <div className="spread-row">
-        <h2>Acessos temporários</h2>
-        <Button variant="neutral" onClick={() => setOpen(true)}>
-          Criar acesso
-        </Button>
-      </div>
-      {accesses.length ? (
-        <ul className="record-list">
-          {accesses.map((a) => (
-            <li key={a.id} className="record-row">
-              <div>
-                <p>{a.name}</p>
-                <p className="muted record-meta">
-                  {a.revokedAt
-                    ? "Revogado"
-                    : a.expiresAt * 1000 <= Date.now()
-                      ? "Encerrado"
-                      : a.activatedAt
-                        ? "Ativado"
-                        : "Aguardando ativação"}{" "}
-                  · {formatDateTime(new Date(a.expiresAt * 1000).toISOString())}
-                </p>
-              </div>
-              {!a.revokedAt && a.expiresAt * 1000 > Date.now() && (
-                <Button
-                  variant="danger"
-                  disabled={pending}
-                  onClick={() => setRevoking(a)}
-                >
-                  Revogar
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="muted">Nenhum acesso temporário criado.</p>
-      )}
-      {open && (
-        <CreateAccessModal
-          eventId={eventId}
-          onClose={() => {
-            setOpen(false);
-            router.refresh();
-          }}
-        />
-      )}
-      {revoking && (
-        <ConfirmationModal
-          title="Revogar acesso?"
-          message={`O acesso ${revoking.name} será encerrado neste navegador.`}
-          confirmLabel="Revogar"
-          onCancel={() => setRevoking(null)}
-          onConfirm={() =>
-            execute(
-              () =>
-                revokeAccessAction(eventId, revoking.id, crypto.randomUUID()),
-              () => {
-                setRevoking(null);
-                router.refresh();
-              },
-            )
-          }
-          busy={pending}
-        />
-      )}
-      <ErrorModal error={error} onClose={closeError} />
-    </section>
-  );
-}
-function CreateAccessModal({
-  eventId,
-  onClose,
-}: {
-  eventId: string;
-  onClose: () => void;
-}) {
-  const [initial] = useState(suggested),
+  const [initial, setInitial] = useState(suggested),
     [discard, setDiscard] = useState(false);
   const id = useId(),
-    [requestId] = useState(() => crypto.randomUUID()),
+    [requestId, setRequestId] = useState(() => crypto.randomUUID()),
     [name, setName] = useState(""),
     [date, setDate] = useState(initial.date),
     [time, setTime] = useState(initial.time),
@@ -142,61 +67,244 @@ function CreateAccessModal({
       new Date(`${date}T${time}:00-03:00`).getTime() / 1000,
     ),
   };
-  const { execute, pending, error, fields, closeError, showError } =
-    useServerAction({
-      connectionMessage:
-        "Não foi possível confirmar a criação. Confira os acessos antes de repetir.",
-      fieldIds: {
-        name: `${id}-name`,
-        expiresAt: date && !time ? `${id}-time` : `${id}-date`,
-      },
-      validationKey: JSON.stringify({ name, date, time }),
-      validate: () => {
-        const r = validateTemporaryAccess(input);
-        return r.ok ? null : presentBusinessFailure(r.error);
-      },
-    });
+  const {
+    execute: create,
+    pending: creating,
+    error: createError,
+    fields,
+    closeError: closeCreateError,
+    showError,
+  } = useServerAction({
+    connectionMessage:
+      "Não foi possível confirmar a criação. Confira os acessos antes de repetir.",
+    fieldIds: {
+      name: `${id}-name`,
+      expiresAt: date && !time ? `${id}-time` : `${id}-date`,
+    },
+    validationKey: JSON.stringify({ open, name, date, time }),
+    validate: () => {
+      if (!open) return null;
+      const r = validateTemporaryAccess(input);
+      return r.ok ? null : presentBusinessFailure(r.error);
+    },
+  });
   const dirty =
     !link && (name !== "" || date !== initial.date || time !== initial.time);
-  useUnsavedChanges(dirty);
-  function close() {
-    if (pending) return;
-    if (dirty) setDiscard(true);
-    else onClose();
+  useUnsavedChanges(open && dirty);
+  const closeTarget = useRef<"form" | "manager">("form");
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  function finishClose() {
+    setOpen(false);
+    setName("");
+    setLink("");
+    setShow(false);
+    setCopied(false);
+    setDiscard(false);
+    if (closeTarget.current === "manager") setManaging(false);
+    else triggerRef.current?.focus();
+  }
+  function close(target: "form" | "manager") {
+    closeTarget.current = target;
+    if (creating) return;
+    if (open && dirty) setDiscard(true);
+    else finishClose();
+  }
+  function closeResult() {
+    setLink("");
+    requestAnimationFrame(() => triggerRef.current?.focus());
   }
   function submit(e: FormEvent) {
     e.preventDefault();
-    execute(
+    create(
       () => createAccessAction(eventId, input),
-      (v) => setLink(`${location.origin}/command-access#chave=${v.secret}`),
+      (v) => {
+        setOpen(false);
+        setName("");
+        setShow(false);
+        setCopied(false);
+        setLink(`${location.origin}/command-access#chave=${v.secret}`);
+        router.refresh();
+      },
     );
   }
   return (
     <>
-      <Modal
-        open
-        title="Acesso temporário às comandas"
-        size="form"
-        onClose={close}
-        footer={
-          <>
-            <Button variant="neutral" disabled={pending} onClick={close}>
+      <Button variant="neutral" onClick={() => setManaging(true)}>
+        Gerenciar acessos
+      </Button>
+      {managing && (
+        <Modal
+          open
+          title="Gerenciar acessos"
+          size="wide"
+          onClose={() => {
+            if (!pending) close("manager");
+          }}
+          footer={
+            <Button
+              variant="danger"
+              disabled={pending || creating}
+              onClick={() => close("manager")}
+            >
               Fechar
             </Button>
-            {!link && (
-              <Button type="submit" form={id} busy={pending}>
-                Criar acesso
-              </Button>
+          }
+        >
+          <div className="stack">
+            <div>
+              <div className={styles.heading}>
+                <h3>Acessos temporários</h3>
+                <Button
+                  variant="neutral"
+                  ref={triggerRef}
+                  mobileIcon={<Icon name={open ? "minus" : "plus"} />}
+                  aria-label={open ? "Recolher criação" : "Criar acesso"}
+                  title={open ? "Recolher criação" : "Criar acesso"}
+                  aria-expanded={open}
+                  aria-controls={`${id}-creation`}
+                  disabled={creating || pending}
+                  onClick={() => {
+                    if (open) close("form");
+                    else {
+                      const next = suggested();
+                      setInitial(next);
+                      setRequestId(crypto.randomUUID());
+                      setDate(next.date);
+                      setTime(next.time);
+                      setOpen(true);
+                    }
+                  }}
+                >
+                  <span
+                    className={`${styles.arrow}${open ? ` ${styles.expanded}` : ""}`}
+                  >
+                    <Icon name="chevronDown" />
+                  </span>
+                  <span>{open ? "Recolher criação" : "Criar acesso"}</span>
+                </Button>
+              </div>
+              <section
+                id={`${id}-creation`}
+                className={`${styles.disclosure}${open ? ` ${styles.open}` : ""}`}
+                aria-label="Criar acesso"
+                aria-hidden={!open}
+                inert={!open}
+              >
+                <div className={styles.clip}>
+                  <div className={`stack ${styles.formContent}`}>
+                    <form
+                      className="form-grid"
+                      id={id}
+                      noValidate
+                      onSubmit={submit}
+                    >
+                      <div className="form-full">
+                        <Field
+                          id={`${id}-name`}
+                          label="Nome do acesso"
+                          placeholder="Ex.: Caixa 2"
+                          value={name}
+                          maxLength={100}
+                          required
+                          disabled={creating}
+                          error={fields?.name}
+                          onChange={(e) => setName(e.target.value)}
+                        />
+                      </div>
+                      <DateField
+                        name="expiresOn"
+                        id={`${id}-date`}
+                        label="Data de vencimento"
+                        value={date}
+                        onValueChange={setDate}
+                        disabled={creating}
+                        error={fields?.expiresAt}
+                      />
+                      <Field
+                        id={`${id}-time`}
+                        aria-invalid={!!fields?.expiresAt}
+                        aria-describedby={
+                          fields?.expiresAt ? `${id}-date-error` : undefined
+                        }
+                        type="time"
+                        label="Horário de vencimento (Brasília)"
+                        value={time}
+                        required
+                        disabled={creating}
+                        onChange={(e) => setTime(e.target.value)}
+                      />
+                    </form>
+                    <div className="action-group">
+                      <Button type="submit" form={id} busy={creating}>
+                        Criar acesso
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+            {accesses.length ? (
+              <ul className="record-list">
+                {accesses.map((a) => (
+                  <li key={a.id} className="record-row">
+                    <div>
+                      <p>{a.name}</p>
+                      <p className="muted record-meta">
+                        {a.revokedAt
+                          ? "Revogado"
+                          : a.expiresAt * 1000 <= Date.now()
+                            ? "Encerrado"
+                            : a.activatedAt
+                              ? "Ativado"
+                              : "Aguardando ativação"}{" "}
+                        ·{" "}
+                        {formatDateTime(
+                          new Date(a.expiresAt * 1000).toISOString(),
+                        )}
+                      </p>
+                    </div>
+                    {!a.revokedAt && a.expiresAt * 1000 > Date.now() && (
+                      <Button
+                        variant="danger"
+                        disabled={pending || creating}
+                        onClick={() => setRevoking(a)}
+                      >
+                        Revogar
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="muted">Nenhum acesso temporário criado.</p>
             )}
-          </>
-        }
-      >
-        {link ? (
+          </div>
+        </Modal>
+      )}
+      {link && (
+        <Modal
+          open
+          title="Acesso criado"
+          onClose={closeResult}
+          footer={
+            <Button variant="danger" onClick={closeResult}>
+              Fechar
+            </Button>
+          }
+        >
           <div className="stack">
             <p>
-              Quem possuir este link poderá ativá-lo primeiro. Ele funciona
-              somente no navegador que o ativar.
+              Copie e guarde este link: ele aparece só agora e funciona apenas
+              no primeiro navegador que o ativar.
             </p>
+            <div className={styles.qrCode}>
+              <QRCodeSVG
+                value={link}
+                size={256}
+                marginSize={4}
+                title="QR code do acesso temporário"
+              />
+            </div>
             <Field
               id={`${id}-link`}
               label="Link temporário"
@@ -231,61 +339,41 @@ function CreateAccessModal({
                 Copiar link
               </Button>
             </div>
-            <p role="status">
-              {copied
-                ? "Link copiado."
-                : "Guarde o link agora. Ele não será exibido novamente."}
-            </p>
+            <span className="sr-only" role="status">
+              {copied ? "Link copiado." : ""}
+            </span>
           </div>
-        ) : (
-          <form className="form-grid" id={id} noValidate onSubmit={submit}>
-            <div className="form-full">
-              <Field
-                id={`${id}-name`}
-                label="Nome do acesso"
-                placeholder="Ex.: Caixa 2"
-                value={name}
-                maxLength={100}
-                required
-                disabled={pending}
-                error={fields?.name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <DateField
-              name="expiresOn"
-              id={`${id}-date`}
-              label="Data de vencimento"
-              value={date}
-              onValueChange={setDate}
-              disabled={pending}
-              error={fields?.expiresAt}
-            />
-            <Field
-              id={`${id}-time`}
-              aria-invalid={!!fields?.expiresAt}
-              aria-describedby={
-                fields?.expiresAt ? `${id}-date-error` : undefined
-              }
-              type="time"
-              label="Horário de vencimento (Brasília)"
-              value={time}
-              required
-              disabled={pending}
-              onChange={(e) => setTime(e.target.value)}
-            />
-          </form>
-        )}
-      </Modal>
+        </Modal>
+      )}
+      {revoking && (
+        <ConfirmationModal
+          title="Revogar acesso?"
+          message={`O acesso ${revoking.name} será encerrado neste navegador.`}
+          confirmLabel="Revogar"
+          onCancel={() => setRevoking(null)}
+          onConfirm={() =>
+            execute(
+              () =>
+                revokeAccessAction(eventId, revoking.id, crypto.randomUUID()),
+              () => {
+                setRevoking(null);
+                router.refresh();
+              },
+            )
+          }
+          busy={pending}
+        />
+      )}
       {discard && (
         <ConfirmationModal
           title="Descartar alterações?"
           message="As alterações ainda não foram salvas."
           confirmLabel="Descartar"
           onCancel={() => setDiscard(false)}
-          onConfirm={onClose}
+          onConfirm={finishClose}
         />
       )}
+      <ErrorModal error={createError} onClose={closeCreateError} />
       <ErrorModal error={error} onClose={closeError} />
     </>
   );

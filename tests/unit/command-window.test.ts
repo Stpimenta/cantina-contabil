@@ -25,7 +25,7 @@ const page = (items: Command[]): CommandPage => ({
   page: 1,
   pageSize: 15,
   query: "",
-  collected: false,
+  collected: "waiting",
 });
 describe("sincronização da janela de comandas", () => {
   it("retirada remove o pedido e busca somente o ID que passa a preencher a página", async () => {

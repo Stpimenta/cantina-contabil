@@ -34,7 +34,7 @@ export default async function CommandsPage({
           ...q,
           q: q.q ?? "",
           page: q.page ?? 1,
-          collected: q.collected ?? "waiting",
+          collected: q.collected ?? "all",
         }),
         accesses: await c.accesses.execute(session, id),
       };
@@ -56,6 +56,11 @@ export default async function CommandsPage({
       <PageHeader
         icon="calendar"
         title="Comandas"
+        actions={
+          result.ok ? (
+            <TemporaryAccesses eventId={id} accesses={result.value.accesses} />
+          ) : undefined
+        }
         description={
           result.ok
             ? `Evento: ${result.value.commands.eventName}`
@@ -68,7 +73,6 @@ export default async function CommandsPage({
             initial={result.value.commands}
             basePath={`/events/${id}/commands`}
           />
-          <TemporaryAccesses eventId={id} accesses={result.value.accesses} />
         </>
       ) : (
         <PageFailure error={result.error} />

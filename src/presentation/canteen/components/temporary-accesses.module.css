@@ -1,0 +1,62 @@
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.heading h3 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.arrow {
+  display: inline-flex;
+  flex-shrink: 0;
+  transition: transform var(--duration-fast) ease;
+}
+.expanded {
+  transform: rotate(180deg);
+}
+.disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows var(--duration-fast) ease,
+    visibility var(--duration-fast) step-end;
+}
+.open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition:
+    grid-template-rows var(--duration-fast) ease,
+    visibility 0s;
+}
+.clip {
+  min-height: 0;
+  overflow: hidden;
+  margin-inline: calc(-1 * (var(--focus-width) + var(--focus-offset)));
+  padding-inline: calc(var(--focus-width) + var(--focus-offset));
+}
+.formContent {
+  padding-top: var(--space-6);
+  padding-bottom: calc(var(--focus-width) + var(--focus-offset));
+}
+@media (prefers-reduced-motion: reduce) {
+  .arrow,
+  .disclosure,
+  .open {
+    transition: none;
+  }
+}
+
+.qrCode {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+.qrCode svg {
+  display: block;
+  width: min(100%, calc(var(--control-height) * 6));
+  height: auto;
+}

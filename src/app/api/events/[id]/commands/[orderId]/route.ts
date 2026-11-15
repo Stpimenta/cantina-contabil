@@ -23,7 +23,7 @@ export async function GET(
           ? createCanteen().window.execute(identity, id, orderId, {
               q: url.searchParams.get("q") ?? "",
               page: url.searchParams.get("page") ?? 1,
-              collected: url.searchParams.get("collected") ?? "waiting",
+              collected: url.searchParams.get("collected") ?? "all",
             })
           : createCanteen().get.execute(identity, id, orderId);
       },

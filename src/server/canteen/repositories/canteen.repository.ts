@@ -3,7 +3,7 @@ import type {
   CommandIdentity,
   CommandActor,
 } from "../models/command-actor.model";
-import type { CommandPage } from "../models/command.model";
+import type { CommandPage, CommandFilter } from "../models/command.model";
 export interface CanteenRepository {
   accessByCredential(hash: string): Promise<TemporaryAccess | null>;
   accessByLink(hash: string): Promise<TemporaryAccess | null>;
@@ -15,7 +15,7 @@ export interface CanteenRepository {
     eventId: string,
     query: string,
     page: number,
-    collected: boolean,
+    collected: CommandFilter,
   ): Promise<CommandPage>;
 }
 export interface CredentialCodec {

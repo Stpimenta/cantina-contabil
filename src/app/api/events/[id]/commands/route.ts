@@ -21,7 +21,7 @@ export async function GET(
         createCanteen().list.execute(await commandIdentity(), id, {
           q: url.searchParams.get("q") ?? "",
           page: url.searchParams.get("page") ?? 1,
-          collected: url.searchParams.get("collected") ?? "waiting",
+          collected: url.searchParams.get("collected") ?? "all",
         }),
     ),
   );

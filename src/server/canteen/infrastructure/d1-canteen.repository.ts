@@ -2,7 +2,7 @@ import { and, asc, count, desc, eq, isNull, sql } from "drizzle-orm";
 import type { Database } from "@/shared/infrastructure/database";
 import type { CanteenRepository } from "../repositories/canteen.repository";
 import type { TemporaryAccess } from "../models/temporary-access.model";
-import type { Command } from "../models/command.model";
+import type { Command, CommandFilter } from "../models/command.model";
 import { canteenAccess as accesses } from "./canteen-access.schema";
 import { eventOrders as orders } from "@/server/events/infrastructure/event-order.schema";
 import { hasDatabaseError } from "@/shared/infrastructure/database-error";
@@ -95,14 +95,16 @@ export class D1CanteenRepository implements CanteenRepository {
     eventId: string,
     query: string,
     page: number,
-    collected: boolean,
+    collected: CommandFilter,
   ) {
     const search = `%${query.replace(/[!%_]/g, "!$&")}%`;
     const condition = and(
       eq(orders.eventId, eventId),
       isNull(orders.deletedAt),
       sql`${orders.customerName} LIKE ${search} ESCAPE '!'`,
-      sql`coalesce(json_extract(${orders.payloadJson},'$.collected'),0)=${collected ? 1 : 0}`,
+      collected === "all"
+        ? undefined
+        : sql`coalesce(json_extract(${orders.payloadJson},'$.collected'),0)=${collected === "collected" ? 1 : 0}`,
     );
     const total =
       (
@@ -125,7 +127,11 @@ export class D1CanteenRepository implements CanteenRepository {
       })
       .from(orders)
       .where(condition)
-      .orderBy(asc(orders.createdAt), asc(orders.id))
+      .orderBy(
+        asc(sql`coalesce(json_extract(${orders.payloadJson},'$.collected'),0)`),
+        asc(orders.createdAt),
+        asc(orders.id),
+      )
       .limit(15)
       .offset((current - 1) * 15)
       .all();
@@ -133,7 +139,7 @@ export class D1CanteenRepository implements CanteenRepository {
       const p = JSON.parse(payload);
       return {
         ...r,
-        collected,
+        collected: p.collected ?? false,
         items: p.items.map(
           (i: { name: string; quantity: number; icon: string }) => ({
             name: i.name,

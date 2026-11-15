@@ -24,7 +24,7 @@ export const commandPageSchema = z.object({
   page: z.number().int().positive(),
   pageSize: z.literal(15),
   query: z.string(),
-  collected: z.boolean(),
+  collected: z.enum(["all", "waiting", "collected"]),
 });
 export const commandWindowSchema = z.object({
   order: commandResponseSchema.nullable(),

@@ -35,7 +35,7 @@ export default async function TabletCommands({
         ...q,
         q: q.q ?? "",
         page: q.page ?? 1,
-        collected: q.collected ?? "waiting",
+        collected: q.collected ?? "all",
       });
     },
   );

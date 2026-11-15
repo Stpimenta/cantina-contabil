@@ -223,7 +223,7 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
               <div className={eventStyles.summary}>
                 <BalancePlaceholder />
                 <div className={`muted record-meta ${eventStyles.payments}`}>
-                  {["Dinheiro", "Pix", "Insumos"].map((label) => (
+                  {["Dinheiro", "Pix"].map((label) => (
                     <p key={label}>
                       <span>{label}:</span> <Skeleton shape="amount" />
                     </p>
@@ -288,6 +288,11 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
         </>
       ) : (
         <>
+          {area === "insumos" && (
+            <p className="muted record-meta">
+              Total em compras: <Skeleton shape="amount" />
+            </p>
+          )}
           {search && (
             <SearchForm
               action={

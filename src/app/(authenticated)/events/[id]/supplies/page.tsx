@@ -60,6 +60,7 @@ export default async function SuppliesPage({
           <SupplyList
             eventId={id}
             eventName={result.value.event.name}
+            supplyCostCents={result.value.event.supplyCostCents}
             cashBoxes={result.value.cashBoxes}
             supplies={result.value.supplies.items.map(
               ({

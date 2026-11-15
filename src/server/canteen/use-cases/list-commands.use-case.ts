@@ -29,12 +29,7 @@ export class ListCommandsUseCase {
     if (!event) return eventMissing();
     if (!event.canteenEnabled)
       throwBusinessError({ code: "CANTEEN_REQUIRED", category: "conflict" });
-    const result = await this.repo.commands(
-      id,
-      q.q,
-      q.page,
-      q.collected === "collected",
-    );
+    const result = await this.repo.commands(id, q.q, q.page, q.collected);
     return { ...result, eventName: event.name };
   }
 }

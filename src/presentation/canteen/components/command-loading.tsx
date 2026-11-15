@@ -1,7 +1,7 @@
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { PageHeader } from "@/components/layout/page-header";
 import { SearchForm } from "@/components/ui/search-form";
-import { SelectField } from "@/components/ui/select-field";
+import { Icon } from "@/components/ui/icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import styles from "./command-board.module.css";
@@ -26,21 +26,30 @@ export function CommandLoading({
           ]}
         />
       )}
-      <PageHeader icon="calendar" title="Comandas" description={<Skeleton />} />
+      <PageHeader
+        icon="calendar"
+        title="Comandas"
+        description={<Skeleton />}
+        actions={
+          !restricted ? (
+            <Button variant="neutral" disabled>
+              Gerenciar acessos
+            </Button>
+          ) : undefined
+        }
+      />
       <div className={styles.page}>
         <span className="sr-only">Sincronização pendente</span>
         <SearchForm
           action="/events"
           label="Buscar pelo nome"
           query=""
-          disabled
-        />
-        <SelectField
-          id="command-status-loading"
-          label="Situação"
-          value="waiting"
-          options={[{ value: "waiting", label: "Aguardando retirada" }]}
-          onValueChange={() => {}}
+          actions={
+            <Button variant="neutral" disabled>
+              <Icon name="filter" />
+              Filtros
+            </Button>
+          }
           disabled
         />
         <ul className="record-list" aria-hidden="true">
@@ -58,17 +67,6 @@ export function CommandLoading({
           ))}
         </ul>
       </div>
-      {!restricted && (
-        <section className="stack">
-          <div className="spread-row">
-            <h2>Acessos temporários</h2>
-            <Button variant="neutral" disabled>
-              Criar acesso
-            </Button>
-          </div>
-          <Skeleton />
-        </section>
-      )}
     </section>
   );
 }

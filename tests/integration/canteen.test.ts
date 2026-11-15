@@ -261,6 +261,45 @@ describe("Cantina, acesso temporário e entrega durável", () => {
       ).total,
     ).toBe(1);
   });
+  it("sem filtro inclui todos, prioriza não retirados antes da paginação e reordena ao desfazer", async () => {
+    const s = await setup();
+    for (let i = 0; i < 17; i++)
+      await createOrder(s.event, `Pessoa ${String(i).padStart(2, "0")}`);
+    const before = await s.list.execute(identity(), s.event.id, {});
+    expect(before.collected).toBe("all");
+    expect(before.total).toBe(17);
+    const first = before.items[0];
+    const updated = await s.collect.execute(identity(), s.event.id, first.id, {
+      requestId: uuid(),
+      version: first.version,
+      collected: true,
+    });
+    const page1 = await s.list.execute(identity(), s.event.id, {});
+    expect(page1.total).toBe(17);
+    expect(page1.items).toHaveLength(15);
+    expect(page1.items.every((item) => !item.collected)).toBe(true);
+    expect(page1.items[0].customerName).toBe("Pessoa 01");
+    const page2 = await s.list.execute(identity(), s.event.id, { page: 2 });
+    expect(
+      page2.items.map((item) => [item.customerName, item.collected]),
+    ).toEqual([
+      ["Pessoa 16", false],
+      ["Pessoa 00", true],
+    ]);
+    const searched = await s.list.execute(identity(), s.event.id, {
+      q: "Pessoa 00",
+    });
+    expect(searched.total).toBe(1);
+    expect(searched.items[0].collected).toBe(true);
+    await s.collect.execute(identity(), s.event.id, first.id, {
+      requestId: uuid(),
+      version: updated.version,
+      collected: false,
+    });
+    expect(
+      (await s.list.execute(identity(), s.event.id, {})).items[0],
+    ).toMatchObject({ id: first.id, collected: false });
+  });
   it("apenas uma retirada concorrente vence e operação velha não altera versão", async () => {
     const s = await setup(),
       o = await createOrder(s.event);
