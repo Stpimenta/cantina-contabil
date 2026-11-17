@@ -37,3 +37,15 @@
     display: none;
   }
 }
+
+@media (max-width: 37.499rem) {
+  .root.below {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: stretch;
+  }
+  .below > .actions {
+    width: 100%;
+  }
+}

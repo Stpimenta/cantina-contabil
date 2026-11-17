@@ -1,3 +1,4 @@
+import { cashBoxReadScope } from "@/shared/auth/check-cash-box-access";
 import { DEFAULT_PAGE_SIZE } from "@/shared/pagination";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
@@ -7,12 +8,13 @@ import { parseInput } from "@/shared/validation/input";
 export class ListCashBoxesUseCase {
   constructor(private readonly boxes: CashBoxRepository) {}
   async execute(session: Session | null, input: unknown) {
-    checkAccess(session);
+    const allowedIds = cashBoxReadScope(session);
     const filters = parseInput(validateListCashBoxes(input));
     return await this.boxes.list(
       filters.query,
       filters.page,
       DEFAULT_PAGE_SIZE,
+      allowedIds,
     );
   }
 }

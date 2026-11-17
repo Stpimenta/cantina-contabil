@@ -14,7 +14,7 @@ import { setTestBucket } from "./cloudflare";
 import { session } from "./data";
 import { CreateCashBoxUseCase } from "@/server/cash-boxes/use-cases/create-cash-box.use-case";
 
-export async function harness(withCommands = false) {
+export async function harness(withCommands = false, throughMigration?: string) {
   const commandBundle = withCommands
     ? await (
         await import("esbuild")
@@ -138,7 +138,10 @@ export async function harness(withCommands = false) {
     const d1 = await mf.getD1Database("TEST_DB");
     const directory = new URL("../../migrations/", import.meta.url);
     for (const file of (await readdir(directory))
-      .filter((f) => f.endsWith(".sql"))
+      .filter(
+        (f) =>
+          f.endsWith(".sql") && (!throughMigration || f <= throughMigration),
+      )
       .sort()) {
       const sql = await readFile(new URL(file, directory), "utf8");
       // Use Wrangler's parser so trigger bodies and migration transactions stay intact.
@@ -173,6 +176,35 @@ export async function harness(withCommands = false) {
     setTestBucket(bucket);
     const boxes = new D1CashBoxRepository(db);
     const actor = session();
+    if (withCommands) {
+      const inserted = await d1
+        .prepare(
+          "INSERT INTO local_accounts(external_user_id,auth_subject,name,email,email_key,role,state,created_at,updated_at,activated_at) VALUES(1,?,'Pessoa de teste','teste@example.invalid','teste@example.invalid','admin','active',?,?,?) RETURNING id",
+        )
+        .bind(
+          crypto.randomUUID(),
+          new Date().toISOString(),
+          new Date().toISOString(),
+          new Date().toISOString(),
+        )
+        .first<{ id: number }>();
+      actor.accountId = inserted!.id;
+      actor.accountSessionId = crypto.randomUUID();
+      actor.role = "admin";
+      await d1
+        .prepare(
+          "INSERT INTO account_sessions(id,account_id,credential_hash,encrypted_tokens,provider_expires_at,created_at,last_active_at) VALUES(?,?,?,'synthetic-unused',?,?,?)",
+        )
+        .bind(
+          actor.accountSessionId,
+          actor.accountId,
+          crypto.randomUUID(),
+          actor.expiresAt,
+          actor.issuedAt,
+          actor.issuedAt,
+        )
+        .run();
+    }
     return {
       d1,
       db,

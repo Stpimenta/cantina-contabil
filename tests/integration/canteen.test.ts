@@ -164,7 +164,7 @@ describe("Cantina, acesso temporário e entrega durável", () => {
     await expect(
       s.get.execute(a.identity, uuid(), order.id),
     ).rejects.toMatchObject({ details: { code: "TEMP_ACCESS_ENDED" } });
-    await new RevokeAccessUseCase(s.repo, h.publications!).execute(
+    await new RevokeAccessUseCase(s.repo, h.publications!, h.events).execute(
       h.actor,
       s.event.id,
       a.access.id,
@@ -347,7 +347,7 @@ describe("Cantina, acesso temporário e entrega durável", () => {
     await expect
       .poll(() => messages, { timeout: 6000 })
       .toContainEqual({ type: "order", id: order.id, version: 1 });
-    await new RevokeAccessUseCase(s.repo, h.publications!).execute(
+    await new RevokeAccessUseCase(s.repo, h.publications!, h.events).execute(
       h.actor,
       s.event.id,
       a.access.id,

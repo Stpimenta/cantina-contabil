@@ -68,7 +68,7 @@ export default async function OrdersPage({
     <div className="stack">
       <Breadcrumbs
         items={[
-          { label: "Home", href: "/" },
+          ...(session.role === "operator" ? [] : [{ label: "Home", href: "/" }]),
           { label: "Eventos", href: "/events" },
           {
             label: result.ok ? result.value.event.name : "Evento",

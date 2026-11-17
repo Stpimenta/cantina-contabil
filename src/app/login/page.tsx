@@ -20,7 +20,7 @@ export default async function LoginPage({
         <Brand variant="login" />
         <div className="stack-small">
           <h1 id="login-title">Entre na sua conta</h1>
-          <p className="muted">Use seu e-mail e senha da Palavra Viva.</p>
+          <p className="muted">Use seu e-mail e senha para entrar.</p>
         </div>
         <LoginForm />
       </section>

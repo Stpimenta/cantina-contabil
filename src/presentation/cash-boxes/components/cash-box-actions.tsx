@@ -1,4 +1,5 @@
 "use client";
+import { useCashBoxAccess } from "@/components/ui/cash-box-access";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CashBox } from "@/server/cash-boxes/models/cash-box.model";
@@ -36,6 +37,8 @@ export function CashBoxActions({ box }: { box?: CashBox }) {
     );
   }
 
+  const { isAdmin, canWrite } = useCashBoxAccess();
+  if (box ? !canWrite(box.id) : !isAdmin) return null;
   return (
     <>
       <div className="action-group">

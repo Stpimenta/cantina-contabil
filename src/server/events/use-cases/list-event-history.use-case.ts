@@ -1,3 +1,4 @@
+import { checkEventRead } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
 import { parseInput } from "@/shared/validation/input";
@@ -14,7 +15,9 @@ export class ListEventHistoryUseCase {
     checkAccess(session);
     const id = parseInput(validateEventId(idInput));
     const data = parseInput(validateEventQuery(input));
-    if (!(await this.events.find(id))) return eventMissing();
+    const event = await this.events.find(id);
+    if (!event) return eventMissing();
+    checkEventRead(session, event);
     return this.events.history(id, data.page, DEFAULT_PAGE_SIZE);
   }
 }

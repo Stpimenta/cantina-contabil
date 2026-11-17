@@ -1,4 +1,5 @@
 "use client";
+import { useCashBoxAccess } from "@/components/ui/cash-box-access";
 import { OrderStatusModal } from "./order-status-modal";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import styles from "./order-list.module.css";
@@ -37,6 +38,8 @@ export function OrderList({
   });
   const router = useRouter();
   const notify = useToast();
+  const { canWriteEvent } = useCashBoxAccess();
+  const writable = canWriteEvent(event);
   return (
     <>
       <PageHeader
@@ -46,7 +49,7 @@ export function OrderList({
         actions={
           <Button
             mobileIcon={<Icon name="plus" />}
-            disabled={pending || event.products.length === 0}
+            disabled={pending || !writable || event.products.length === 0}
             aria-label="Adicionar pedido"
             title="Adicionar pedido"
             onClick={() => setSelected("new")}
@@ -98,7 +101,7 @@ export function OrderList({
               {(!order.paid || event.deliveryEnabled) && (
                 <Button
                   variant="neutral"
-                  disabled={pending}
+                  disabled={pending || !writable}
                   iconOnly
                   aria-label={`Atualizar situação do pedido de ${order.customerName}`}
                   title="Atualizar situação"
@@ -108,7 +111,7 @@ export function OrderList({
                 </Button>
               )}
               <Button
-                disabled={pending}
+                disabled={pending || !writable}
                 variant="neutral"
                 iconBreakpoint="tablet"
                 mobileIcon={<Icon name="edit" />}
@@ -120,7 +123,7 @@ export function OrderList({
               </Button>
               <Button
                 variant="danger"
-                disabled={pending}
+                disabled={pending || !writable}
                 iconBreakpoint="tablet"
                 mobileIcon={<Icon name="trash" />}
                 aria-label={`Excluir pedido de ${order.customerName}`}

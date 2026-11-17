@@ -1,3 +1,4 @@
+import { checkAdminAccess } from "@/shared/auth/check-cash-box-access";
 import { parseInput } from "@/shared/validation/input";
 import { validateSaveCashBox } from "../inputs/save-cash-box.input";
 import type { Session } from "@/server/auth/models/session.model";
@@ -8,7 +9,7 @@ import { mapWriteOutcome } from "../models/cash-box-rules";
 export class CreateCashBoxUseCase {
   constructor(private readonly boxes: CashBoxRepository) {}
   async execute(session: Session | null, input: unknown) {
-    const access = checkAccess(session);
+    const access = checkAdminAccess(session);
     const data = parseInput(validateSaveCashBox(input));
     const now = new Date().toISOString();
     const actor = access.user;

@@ -21,8 +21,8 @@ export interface DonationRepository {
     donation: Donation,
   ): Promise<"saved" | "box_unavailable" | "exists" | "balance_limit">;
   find(id: string): Promise<Donation | null>;
-  list(filters: DonationFilters, pageSize: number): Promise<DonationList>;
-  options(): Promise<{
+  list(filters: DonationFilters, pageSize: number, allowedIds?: string[]): Promise<DonationList>;
+  options(allowedIds?: string[]): Promise<{
     cashBoxes: { id: string; name: string }[];
     years: number[];
   }>;

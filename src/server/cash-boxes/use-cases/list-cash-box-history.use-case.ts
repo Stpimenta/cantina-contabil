@@ -1,3 +1,4 @@
+import { checkCashBoxRead } from "@/shared/auth/check-cash-box-access";
 import { validateListCashBoxHistory } from "../inputs/list-cash-box-history.input";
 import { parseInput } from "@/shared/validation/input";
 import { DEFAULT_PAGE_SIZE } from "@/shared/pagination";
@@ -18,6 +19,7 @@ export class ListCashBoxHistoryUseCase {
     const filters = parseInput(
       validateListCashBoxHistory({ id, page, category }),
     );
+    checkCashBoxRead(session, filters.id);
     if (!(await this.boxes.find(filters.id))) return cashBoxMissing();
     return await this.boxes.history(
       filters.id,

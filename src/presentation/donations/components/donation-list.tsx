@@ -1,4 +1,5 @@
 "use client";
+import { useCashBoxAccess } from "@/components/ui/cash-box-access";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import styles from "./donation-list.module.css";
 import { Modal } from "@/components/modals/modal";
@@ -37,6 +38,8 @@ export function DonationList({
     connectionMessage:
       "Não foi possível confirmar a exclusão. Confira a lista de doações antes de tentar novamente.",
   });
+  const { canWrite } = useCashBoxAccess();
+  cashBoxes = cashBoxes.filter((box) => canWrite(box.id));
   return (
     <>
       {items.length === 0 && (
@@ -69,6 +72,7 @@ export function DonationList({
                 <RecordActionsMenu
                   name={`doação de ${formatCurrency(donation.amountCents)}`}
                   disabled={pending}
+                  writable={canWrite(donation.cashBoxId)}
                   onEdit={() => setEditing(donation)}
                   onDelete={() => setDeleting(donation)}
                 />

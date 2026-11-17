@@ -67,7 +67,7 @@ export default async function EventPage({
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: "Home", href: "/" },
+          ...(session.role === "operator" ? [] : [{ label: "Home", href: "/" }]),
           { label: "Eventos", href: "/events" },
           { label: result.ok ? result.value.event.name : "Evento" },
         ]}
@@ -79,24 +79,28 @@ export default async function EventPage({
           <PageHeader
             icon="calendar"
             compactActionsOnMobile
-            title={result.value.event.name}
+            actionsBelowOnMobile
+            title={<span className={styles.mobileTitle} title={result.value.event.name}>{result.value.event.name}</span>}
             description="Detalhes do evento"
+            hideDescriptionOnMobile
             actions={
-              <>
+              <div className={styles.headerActions}>
                 {result.value.event.canteenEnabled && (
                   <Link
                     href={`/events/${id}/commands`}
-                    className={buttonClassName({ variant: "neutral" })}
+                    className={buttonClassName({ variant: "neutral", className: styles.commandsAction })}
                   >
                     Comandas
                   </Link>
                 )}
+                <div className={styles.editActions}>
                 <EventActions
                   event={result.value.event}
                   cashBoxes={result.value.cashBoxes}
                   today={currentDateInSaoPaulo()}
                 />
-              </>
+                </div>
+              </div>
             }
           />
           <section

@@ -1,3 +1,7 @@
+import {
+  checkEventRead,
+  checkEventAccessWrite,
+} from "@/shared/auth/check-cash-box-access";
 import type { CommandAuthorization } from "../repositories/canteen.repository";
 import type { EventRepository } from "@/server/events/repositories/event.repository";
 import type { CommandIdentity } from "../models/command-actor.model";
@@ -15,6 +19,7 @@ export class AuthorizeConnectionUseCase {
       e = await this.events.find(id);
     if (!e?.canteenEnabled)
       throwBusinessError({ code: "CANTEEN_REQUIRED", category: "forbidden" });
+    if (identity.kind === "user") checkEventRead(identity.session, e!);
     return actor;
   }
 }

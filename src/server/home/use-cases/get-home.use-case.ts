@@ -1,3 +1,7 @@
+import {
+  cashBoxReadScope,
+  eventReadScope,
+} from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import type { CashBoxRepository } from "@/server/cash-boxes/repositories/cash-box.repository";
 import type { EventRepository } from "@/server/events/repositories/event.repository";
@@ -12,8 +16,8 @@ export class GetHomeUseCase {
   async execute(session: Session | null) {
     checkAccess(session);
     const [boxes, upcoming] = await Promise.all([
-      this.boxes.overview(),
-      this.events.upcoming(currentDateInSaoPaulo()),
+      this.boxes.overview(cashBoxReadScope(session)),
+      this.events.upcoming(currentDateInSaoPaulo(), eventReadScope(session)),
     ]);
     let real = 0n;
     let pending = 0n;

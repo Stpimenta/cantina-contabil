@@ -12,6 +12,8 @@ const armSchema = z.object({ eventId: z.uuid(), operation: z.uuid() });
 const actorSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("user"),
+    accountId: z.number().int().positive().optional(),
+    accountSessionId: z.uuid().optional(),
     id: z.number().int(),
     name: z.string(),
     expiresAt: z.number().int(),
@@ -123,7 +125,14 @@ export class CommandHub {
   }
   private async valid(actor: CommandActor, eventId: string) {
     if (actor.expiresAt <= Math.floor(Date.now() / 1000)) return false;
-    if (actor.kind === "user") return true;
+    if (actor.kind === "user") {
+      if (!actor.accountId || !actor.accountSessionId) return false;
+      return !!(await this.env.DB.prepare(
+        "SELECT s.id FROM account_sessions s JOIN local_accounts a ON a.id=s.account_id WHERE s.id=? AND a.id=? AND a.state='active' AND s.revoked_at IS NULL AND s.last_active_at>unixepoch()-43200 AND EXISTS(SELECT 1 FROM events e WHERE e.id=? AND e.deleted_at IS NULL AND (coalesce(a.access_role,a.role)='admin' OR (a.access_role='finance' AND e.cash_box_id IN(SELECT value FROM json_each(a.cash_box_ids_json))) OR (a.access_role='operator' AND e.id IN(SELECT value FROM json_each(a.access_json,'$.eventIds')))))",
+      )
+        .bind(actor.accountSessionId, actor.accountId, eventId)
+        .first());
+    }
     if (actor.eventId !== eventId) return false;
     return !!(await this.env.DB.prepare(
       "SELECT id FROM canteen_access WHERE id=? AND event_id=? AND revoked_at IS NULL AND expires_at>unixepoch() AND session_hash IS NOT NULL",

@@ -1,3 +1,4 @@
+import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
 import { parseInput } from "@/shared/validation/input";
@@ -23,11 +24,13 @@ export class DeleteOrderUseCase {
     const eventId = parseInput(validateEventId(rawEventId));
     const id = parseInput(validateEventId(rawId));
     const expectedVersion = parseInput(validateEventVersion(rawVersion));
+    const authorizedEvent = await this.events.find(eventId);
+    if (!authorizedEvent) return eventMissing();
+    checkEventAccessWrite(session, authorizedEvent);
     const current = await this.events.findOrder(id);
     if (!current || current.eventId !== eventId) return eventMissing();
     if (current.version !== expectedVersion) return eventChanged();
-    const event = await this.events.find(eventId);
-    if (!event) return eventMissing();
+    const event = authorizedEvent;
     checkEventWrite(
       await this.events.softDeleteOrder({
         id,

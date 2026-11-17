@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import type { Database } from "@/shared/infrastructure/database";
 import { hasDatabaseError } from "@/shared/infrastructure/database-error";
 import type { Movement } from "../models/movement.model";
@@ -26,11 +26,11 @@ export class D1MovementRepository implements MovementRepository {
       throw cause;
     }
   }
-  async options() {
+  async options(allowedIds?: string[]) {
     return this.db
       .select({ id: cashBoxes.id, name: cashBoxes.name })
       .from(cashBoxes)
-      .where(isNull(cashBoxes.deletedAt))
+      .where(and(isNull(cashBoxes.deletedAt), allowedIds === undefined ? undefined : sql`${cashBoxes.id} IN (SELECT value FROM json_each(${JSON.stringify(allowedIds)}))`))
       .orderBy(cashBoxes.name)
       .all();
   }
@@ -43,8 +43,8 @@ export class D1MovementRepository implements MovementRepository {
         .get()) ?? null
     );
   }
-  async list(page: number, pageSize: number) {
-    const condition = isNull(movements.deletedAt);
+  async list(page: number, pageSize: number, allowedIds?: string[]) {
+    const condition = and(isNull(movements.deletedAt), allowedIds === undefined ? undefined : sql`${movements.cashBoxId} IN (SELECT value FROM json_each(${JSON.stringify(allowedIds)}))`);
     const total =
       (
         await this.db

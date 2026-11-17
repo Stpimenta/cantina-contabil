@@ -1,3 +1,4 @@
+import { cashBoxReadScope } from "@/shared/auth/check-cash-box-access";
 import { DEFAULT_PAGE_SIZE } from "@/shared/pagination";
 import { parseInput } from "@/shared/validation/input";
 import { validateListDonations } from "../inputs/list-donations.input";
@@ -7,8 +8,8 @@ import type { DonationRepository } from "../repositories/donation.repository";
 export class ListDonationsUseCase {
   constructor(private readonly donations: DonationRepository) {}
   async execute(session: Session | null, input: unknown) {
-    checkAccess(session);
+    const allowedIds = cashBoxReadScope(session);
     const filters = parseInput(validateListDonations(input));
-    return await this.donations.list(filters, DEFAULT_PAGE_SIZE);
+    return await this.donations.list(filters, DEFAULT_PAGE_SIZE, allowedIds);
   }
 }

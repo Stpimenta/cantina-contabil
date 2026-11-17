@@ -1,4 +1,5 @@
 "use client";
+import { useCashBoxAccess } from "@/components/ui/cash-box-access";
 import { deleteEventAction } from "@/server/events/actions/delete-event.action";
 import { useServerAction } from "@/shared/hooks/use-server-action";
 import {
@@ -30,6 +31,11 @@ export function EventActions({
   });
   const router = useRouter();
   const notify = useToast();
+  const { canWrite, canWriteEvent } = useCashBoxAccess();
+  cashBoxes = cashBoxes.filter((box) =>
+    event ? box.id === event.cashBoxId : canWrite(box.id),
+  );
+  if (event ? !canWriteEvent(event) : cashBoxes.length === 0) return null;
   return (
     <>
       <Button

@@ -23,6 +23,8 @@ export class ResolveCommandAuthorization implements CommandAuthorization {
       const s = checkAccess(identity.session);
       return {
         kind: "user",
+        accountId: s.accountId,
+        accountSessionId: s.accountSessionId,
         id: s.user.id,
         name: s.user.name,
         expiresAt: s.expiresAt,

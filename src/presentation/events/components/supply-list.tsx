@@ -1,4 +1,5 @@
 "use client";
+import { useCashBoxAccess } from "@/components/ui/cash-box-access";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import { deleteSupplyAction } from "@/server/events/actions/delete-supply.action";
 import {
@@ -31,12 +32,14 @@ export type SupplyListEntry = Omit<
 };
 export function SupplyList({
   eventId,
+  eventCashBoxId,
   eventName,
   supplyCostCents,
   supplies,
   cashBoxes,
 }: {
   eventId: string;
+  eventCashBoxId?: string;
   eventName: string;
   supplyCostCents: number;
   supplies: SupplyListEntry[];
@@ -52,6 +55,10 @@ export function SupplyList({
     connectionMessage:
       "Não foi possível confirmar a operação. Confira os insumos antes de repetir.",
   });
+  const { canWriteEvent } = useCashBoxAccess();
+  const accessEvent = { id: eventId, cashBoxId: eventCashBoxId ?? "" };
+  const writable = canWriteEvent(accessEvent);
+  cashBoxes = cashBoxes.filter((box) => canWriteEvent(accessEvent, box.id));
   return (
     <>
       <PageHeader
@@ -63,7 +70,7 @@ export function SupplyList({
             mobileIcon={<Icon name="plus" />}
             aria-label="Adicionar insumo"
             title="Adicionar insumo"
-            disabled={pending}
+            disabled={pending || !writable}
             onClick={() => setOpen(true)}
           >
             Adicionar insumo
@@ -118,13 +125,16 @@ export function SupplyList({
                 name={supply.name}
                 disabled={pending}
                 onDetails={() => setDetails(supply)}
+                writable={
+                  writable && canWriteEvent(accessEvent, supply.cashBoxId)
+                }
                 onEdit={() => setEditing(supply)}
                 onDelete={() => setDeleting(supply)}
               />
               {supply.source === "donation" && !supply.received && (
                 <Button
                   variant="neutral"
-                  disabled={pending}
+                  disabled={pending || !writable}
                   mobileIcon={<Icon name="check" />}
                   aria-label={`Marcar ${supply.name} como recebido`}
                   title="Marcar recebido"

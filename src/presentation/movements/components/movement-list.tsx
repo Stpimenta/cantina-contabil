@@ -1,4 +1,5 @@
 "use client";
+import { useCashBoxAccess } from "@/components/ui/cash-box-access";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import { ReceiptLink } from "@/components/ui/receipt-link";
 import Link from "next/link";
@@ -46,6 +47,8 @@ export function MovementList({
     connectionMessage:
       "Não foi possível confirmar a exclusão. Confira a lista antes de tentar novamente.",
   });
+  const { canWrite } = useCashBoxAccess();
+  cashBoxes = cashBoxes.filter((box) => canWrite(box.id));
   return (
     <>
       <PageHeader
@@ -59,7 +62,7 @@ export function MovementList({
             mobileIcon={<Icon name="plus" />}
             aria-label="Nova movimentação"
             title="Nova movimentação"
-            disabled={pending}
+            disabled={pending || !cashBoxes.length}
             onClick={() => setEditing("new")}
           >
             Nova movimentação
@@ -98,6 +101,7 @@ export function MovementList({
               name={`movimentação de ${formatCurrency(item.amountCents)}`}
               disabled={pending}
               onDetails={() => setDetails(item)}
+              writable={canWrite(item.cashBoxId)}
               onEdit={() => setEditing(item)}
               onDelete={() => setDeleting(item)}
             />

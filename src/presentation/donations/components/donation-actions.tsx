@@ -1,4 +1,5 @@
 "use client";
+import { useCashBoxAccess } from "@/components/ui/cash-box-access";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,9 @@ export function DonationActions({
   const [open, setOpen] = useState(false);
   const notify = useToast();
   const router = useRouter();
+  const { canWrite } = useCashBoxAccess();
+  cashBoxes = cashBoxes.filter((box) => canWrite(box.id));
+  if (!cashBoxes.length) return null;
   return (
     <>
       <Button onClick={() => setOpen(true)}>Nova doação</Button>

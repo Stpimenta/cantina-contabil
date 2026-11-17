@@ -15,8 +15,8 @@
   z-index: var(--z-modal);
 }
 .root[open] {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 @media (min-width: 64rem) {
   .wide {
@@ -30,9 +30,6 @@
   }
   .wide {
     height: min(var(--modal-height-wide), calc(100dvh - var(--space-8)));
-  }
-  .wide .body {
-    flex: 1;
   }
 }
 .root::backdrop {
@@ -56,8 +53,10 @@
   user-select: text;
   -webkit-touch-callout: default;
   padding: 0 var(--space-6) var(--space-6);
-  overflow: auto;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
   min-height: 0;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 .footer {

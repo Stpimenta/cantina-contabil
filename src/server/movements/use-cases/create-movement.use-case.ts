@@ -1,3 +1,4 @@
+import { checkCashBoxWrite } from "@/shared/auth/check-cash-box-access";
 import type { ReceiptRepository } from "@/server/events/repositories/receipt.repository";
 import { receiptMetadata } from "@/shared/receipts/receipt-input";
 import {
@@ -35,6 +36,7 @@ export class CreateMovementUseCase {
           : input,
       ),
     );
+    checkCashBoxWrite(session, data.cashBoxId);
     const hashes = await inspectMovementReceipts(files);
     const fingerprint = JSON.stringify({
       ...data,

@@ -1,3 +1,8 @@
+import {
+  checkEventRead,
+  checkEventAccessWrite,
+} from "@/shared/auth/check-cash-box-access";
+import { checkCashBoxWrite } from "@/shared/auth/check-cash-box-access";
 import type { EventRepository } from "@/server/events/repositories/event.repository";
 import {
   eventMissing,
@@ -29,6 +34,8 @@ export class CollectCommandUseCase {
     const actor = await this.auth.resolve(identity, eventId);
     const event = await this.events.find(eventId);
     if (!event) return eventMissing();
+    if (identity.kind === "user")
+      checkEventAccessWrite(identity.session, event);
     if (!event.canteenEnabled)
       throwBusinessError({ code: "CANTEEN_REQUIRED", category: "conflict" });
     const current = await this.events.findOrder(id);

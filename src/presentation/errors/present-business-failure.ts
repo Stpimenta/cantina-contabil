@@ -6,6 +6,13 @@ import type {
 } from "@/shared/errors/business-failure";
 
 const messages: Record<BusinessCode, string> = {
+  ACCOUNT_LINK_INVALID:
+    "Este link foi utilizado, cancelado ou expirou. Solicite um novo acesso.",
+  INVALID_ACCOUNT_INPUT: "Confira os dados do usuário e os caixas permitidos.",
+  ACCOUNT_CHANGED:
+    "Os dados de acesso foram alterados. Atualize a página e tente novamente.",
+  ACCOUNT_ACCESS_DENIED:
+    "Sua conta não está habilitada ou foi bloqueada. Procure um administrador.",
   EVENT_MODALITY_LOCKED:
     "Este evento possui pedidos preservados. Não é possível trocar a modalidade.",
   CANTEEN_REQUIRED:
@@ -77,6 +84,8 @@ const messages: Record<BusinessCode, string> = {
   ACCESS_DENIED: "Seu perfil não tem permissão para esta operação.",
 };
 const issueMessages: Record<ValidationIssue, string> = {
+  INVALID_ACCOUNT_ACCESS: "Confira o perfil e os acessos selecionados.",
+  PASSWORD_MISMATCH: "As senhas precisam ser iguais.",
   INVALID_ACCESS_NAME: "Informe o nome do acesso, com até 100 caracteres.",
   INVALID_ACCESS_EXPIRY: "Informe data e horário futuros para o vencimento.",
   INVALID_ORDER_STATUS: "Escolha uma alteração para salvar.",

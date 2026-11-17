@@ -1,3 +1,4 @@
+import { checkCashBoxWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import type { CashBoxRepository } from "@/server/cash-boxes/repositories/cash-box.repository";
 import { checkAccess } from "@/shared/auth/check-access";
@@ -19,6 +20,7 @@ export class DeleteDonationUseCase {
     const { id, version } = parseInput(validateDonationReference(reference));
     const current = await this.donations.find(id);
     if (!current || current.version !== version) return donationChanged();
+    checkCashBoxWrite(session, current.cashBoxId);
     const box = await this.boxes.find(current.cashBoxId);
     if (!box) return donationChanged();
     checkDonationBalance(box.balanceCents, -BigInt(current.amountCents));

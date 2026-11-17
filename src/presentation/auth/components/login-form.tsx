@@ -5,6 +5,8 @@ import { presentBusinessFailure } from "@/presentation/errors/present-business-f
 import fieldStyles from "@/components/ui/field.module.css";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
+import styles from "./login-form.module.css";
 import { loginAction } from "@/server/auth/actions/login.action";
 import { useServerAction } from "@/shared/hooks/use-server-action";
 import { Button } from "@/components/ui/button";
@@ -13,6 +15,7 @@ import { Icon } from "@/components/ui/icon";
 import { ErrorModal } from "@/components/modals/error-modal";
 
 export function LoginForm() {
+  const [sentEmail, setSentEmail] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
   const [showPassword, setShowPassword] = useState(false);
@@ -43,9 +46,23 @@ export function LoginForm() {
     event.preventDefault();
     if (!ready) return;
     const data = new FormData(event.currentTarget);
-    execute(() => loginAction(data));
+    execute(
+      () => loginAction(data),
+      (value) => {
+        if (value && "email" in value) setSentEmail(value.email);
+      },
+    );
   }
 
+  if (sentEmail)
+    return (
+      <div className={styles.confirmation} role="status" aria-atomic="true">
+        <p className={styles.confirmationTitle}>Confira seu e-mail</p>
+        <p className={styles.confirmationEmail}>{sentEmail}</p>
+        <p>Abra o link para criar sua senha.</p>
+        <p className={styles.confirmationExpiry}>Link válido por 72 horas.</p>
+      </div>
+    );
   return (
     <>
       <form
@@ -72,31 +89,36 @@ export function LoginForm() {
           error={fields?.gmail}
           disabled={pending}
         />
-        <Field
-          id="senha"
-          name="senha"
-          type={showPassword ? "text" : "password"}
-          label="Senha"
-          autoComplete="current-password"
-          required
-          maxLength={1024}
-          error={fields?.senha}
-          disabled={pending}
-          trailing={
-            <Button
-              type="button"
-              variant="ghost"
-              iconOnly
-              className={fieldStyles.trailing}
-              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-              aria-pressed={showPassword}
-              onClick={() => setShowPassword(!showPassword)}
-              disabled={pending}
-            >
-              <Icon name={showPassword ? "eyeOff" : "eye"} />
-            </Button>
-          }
-        />
+        <div className={styles.passwordGroup}>
+          <Field
+            id="senha"
+            name="senha"
+            type={showPassword ? "text" : "password"}
+            label="Senha"
+            autoComplete="current-password"
+            required
+            maxLength={1024}
+            error={fields?.senha}
+            disabled={pending}
+            trailing={
+              <Button
+                type="button"
+                variant="ghost"
+                iconOnly
+                className={fieldStyles.trailing}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={pending}
+              >
+                <Icon name={showPassword ? "eyeOff" : "eye"} />
+              </Button>
+            }
+          />
+          <Link className={`text-link ${styles.recovery}`} href="/auth/recover">
+            Esqueci minha senha
+          </Link>
+        </div>
         <Button
           type="submit"
           className="full-width"
@@ -104,11 +126,11 @@ export function LoginForm() {
           disabled={!ready}
         >
           {pending ? "Entrando…" : "Entrar"}
-          <Icon name="arrow" />
+          {pending ? <span className={styles.spinner} aria-hidden="true" /> : <Icon name="arrow" />}
         </Button>
-        <span className="sr-only" role="status">
-          {pending ? "Verificando seu acesso" : ""}
-        </span>
+        <p className={styles.progress} role="status" aria-atomic="true">
+          {pending ? "Verificando seu acesso. Aguarde um instante." : ""}
+        </p>
       </form>
       <ErrorModal error={error} onClose={closeError} />
     </>

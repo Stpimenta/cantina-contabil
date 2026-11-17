@@ -1,5 +1,12 @@
 export type CommandActor =
-  | { kind: "user"; id: number; name: string; expiresAt: number }
+  | {
+      kind: "user";
+      id: number;
+      name: string;
+      expiresAt: number;
+      accountId?: number;
+      accountSessionId?: string;
+    }
   | {
       kind: "access";
       id: string;
