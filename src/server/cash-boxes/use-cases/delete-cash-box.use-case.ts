@@ -1,3 +1,4 @@
+import { checkCashBoxWrite } from "@/shared/auth/check-cash-box-access";
 import { parseInput } from "@/shared/validation/input";
 import { validateCashBoxReference } from "../inputs/cash-box-reference.input";
 import type { Session } from "@/server/auth/models/session.model";
@@ -17,6 +18,7 @@ export class DeleteCashBoxUseCase {
     );
     const current = await this.boxes.find(id);
     if (!current) return cashBoxMissing();
+    checkCashBoxWrite(session, current.id);
     if (current.version !== version) return cashBoxConflict();
     // O trigger D1 bloqueia atomicamente a exclusão de caixas com doações,
     // inclusive se uma entrada for registrada depois desta leitura.

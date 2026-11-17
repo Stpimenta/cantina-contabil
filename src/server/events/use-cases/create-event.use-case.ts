@@ -1,3 +1,4 @@
+import { checkCashBoxWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
 import { parseInput } from "@/shared/validation/input";
@@ -21,6 +22,7 @@ export class CreateEventUseCase {
   async execute(session: Session | null, input: unknown) {
     const access = checkAccess(session);
     const data = parseInput(validateSaveEvent(input));
+    checkCashBoxWrite(session, data.cashBoxId);
     const id = data.requestId;
 
     const current = await this.events.find(id);

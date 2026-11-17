@@ -38,6 +38,14 @@ describe("login before hydration", () => {
     expect(submit).toContain('disabled=""');
     expect(html).toContain('name="gmail"');
     expect(html).toContain('name="senha"');
+    expect(html).not.toContain("GestPV");
+    expect(html).not.toContain("/auth/activate");
+    expect(html.indexOf('name="senha"')).toBeLessThan(
+      html.indexOf('href="/auth/recover"'),
+    );
+    expect(html.indexOf('href="/auth/recover"')).toBeLessThan(
+      html.indexOf('type="submit"'),
+    );
   });
 });
 

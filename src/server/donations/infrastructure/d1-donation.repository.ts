@@ -79,8 +79,9 @@ export class D1DonationRepository implements DonationRepository {
         .get()) ?? null
     );
   }
-  async list(filters: DonationFilters, pageSize: number) {
+  async list(filters: DonationFilters, pageSize: number, allowedIds?: string[]) {
     const conditions: SQL[] = [isNull(donations.deletedAt)];
+    if (allowedIds !== undefined) conditions.push(sql`${donations.cashBoxId} IN (SELECT value FROM json_each(${JSON.stringify(allowedIds)}))`);
     if (filters.query) {
       const search = `%${filters.query.replace(/[!%_]/g, "!$&")}%`;
       conditions.push(sql`${donations.donorName} LIKE ${search} ESCAPE '!'`);
@@ -120,18 +121,18 @@ export class D1DonationRepository implements DonationRepository {
       .all();
     return { items, total, page, pageSize, filters: { ...filters, page } };
   }
-  async options() {
+  async options(allowedIds?: string[]) {
     const boxes = await this.db
       .select({ id: cashBoxes.id, name: cashBoxes.name })
       .from(cashBoxes)
-      .where(isNull(cashBoxes.deletedAt))
+      .where(and(isNull(cashBoxes.deletedAt), allowedIds === undefined ? undefined : sql`${cashBoxes.id} IN (SELECT value FROM json_each(${JSON.stringify(allowedIds)}))`))
       .orderBy(asc(cashBoxes.nameKey), asc(cashBoxes.id))
       .all();
     const year = sql<number>`CAST(substr(${donations.donatedOn},1,4) AS INTEGER)`;
     const years = await this.db
       .selectDistinct({ year })
       .from(donations)
-      .where(isNull(donations.deletedAt))
+      .where(and(isNull(donations.deletedAt), allowedIds === undefined ? undefined : sql`${donations.cashBoxId} IN (SELECT value FROM json_each(${JSON.stringify(allowedIds)}))`))
       .orderBy(desc(year))
       .all();
     return { cashBoxes: boxes, years: years.map((row) => row.year) };

@@ -1,4 +1,5 @@
 "use client";
+import { createRequestId } from "@/shared/identifiers/request-id";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
@@ -53,7 +54,7 @@ export function TemporaryAccesses({
   const [initial, setInitial] = useState(suggested),
     [discard, setDiscard] = useState(false);
   const id = useId(),
-    [requestId, setRequestId] = useState(() => crypto.randomUUID()),
+    [requestId, setRequestId] = useState(() => createRequestId()),
     [name, setName] = useState(""),
     [date, setDate] = useState(initial.date),
     [time, setTime] = useState(initial.time),
@@ -168,7 +169,7 @@ export function TemporaryAccesses({
                     else {
                       const next = suggested();
                       setInitial(next);
-                      setRequestId(crypto.randomUUID());
+                      setRequestId(createRequestId());
                       setDate(next.date);
                       setTime(next.time);
                       setOpen(true);
@@ -354,7 +355,7 @@ export function TemporaryAccesses({
           onConfirm={() =>
             execute(
               () =>
-                revokeAccessAction(eventId, revoking.id, crypto.randomUUID()),
+                revokeAccessAction(eventId, revoking.id, createRequestId()),
               () => {
                 setRevoking(null);
                 router.refresh();

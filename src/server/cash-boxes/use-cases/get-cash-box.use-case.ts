@@ -1,3 +1,4 @@
+import { checkCashBoxRead } from "@/shared/auth/check-cash-box-access";
 import { validateCashBoxId } from "../inputs/cash-box-reference.input";
 import { parseInput } from "@/shared/validation/input";
 import type { Session } from "@/server/auth/models/session.model";
@@ -9,6 +10,7 @@ export class GetCashBoxUseCase {
   async execute(session: Session | null, rawId: unknown) {
     checkAccess(session);
     const id = parseInput(validateCashBoxId(rawId));
+    checkCashBoxRead(session, id);
     const box = await this.boxes.find(id);
     return box ? box : cashBoxMissing();
   }

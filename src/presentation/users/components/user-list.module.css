@@ -1,0 +1,77 @@
+.identity {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.permissions {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.permissions h3 {
+  font-size: var(--font-sm);
+  font-weight: var(--weight-semibold);
+}
+.accessList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.accessRow {
+  container-type: inline-size;
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border);
+  min-width: 0;
+}
+.resourceHeading {
+  border-inline-start: var(--focus-width) solid transparent;
+  background: var(--color-background);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.resourceHeading[data-authorized] {
+  border-inline-start-color: var(--color-primary);
+}
+.resourceHeading > svg {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+.accessName {
+  min-width: 0;
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+.accessChoices {
+  display: none;
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.summary {
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  overflow-wrap: anywhere;
+}
+.summary {
+  background: var(--color-background);
+  border-radius: var(--radius-control);
+  padding: var(--space-3) var(--space-4);
+}
+
+/* A troca acompanha o espaço do item dentro do modal, não o dispositivo. */
+@container (min-width: 22rem) {
+  .accessSelect { display: none; }
+  .accessChoices { display: flex; }
+}
+
+.resourceHeading[data-authorized] > svg {
+  color: var(--color-primary);
+}

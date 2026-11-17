@@ -89,22 +89,7 @@ dl.eventDetails {
     gap: var(--space-4);
   }
   .payments {
-    grid-column: 1;
-    grid-row: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-3);
-  }
-  .payments p {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: var(--space-1) var(--space-3);
-  }
-  .payments p > span:last-child {
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
+    display: none;
   }
   .statistics {
     grid-column: 1;
@@ -123,5 +108,34 @@ dl.eventDetails {
     align-items: baseline;
     justify-content: space-between;
     gap: var(--space-2);
+  }
+}
+
+.headerActions,
+.editActions {
+  display: contents;
+}
+@media (max-width: 37.499rem) {
+  .mobileTitle {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  .headerActions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    width: 100%;
+  }
+  .editActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+  }
+  .editActions:empty {
+    display: none;
   }
 }

@@ -1,3 +1,4 @@
+import { checkEventRead } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
 import { parseInput } from "@/shared/validation/input";
@@ -24,7 +25,9 @@ export class GetSupplyReceiptUseCase {
     const id = parseInput(validateEventId(rawId));
     const receiptId =
       rawReceiptId === null ? null : parseInput(validateEventId(rawReceiptId));
-    if (!(await this.events.find(eventId))) return eventMissing();
+    const event = await this.events.find(eventId);
+    if (!event) return eventMissing();
+    checkEventRead(session, event);
     const supply = await this.supplies.find(id);
     const attachment =
       supply?.eventId === eventId

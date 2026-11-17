@@ -5,12 +5,14 @@ import { Icon } from "@/components/ui/icon";
 import styles from "./record-actions-menu.module.css";
 export function RecordActionsMenu({
   name,
+  writable = true,
   disabled,
   onDetails,
   onEdit,
   onDelete,
 }: {
   name: string;
+  writable?: boolean;
   disabled: boolean;
   onDetails?: () => void;
   onEdit: () => void;
@@ -65,6 +67,7 @@ export function RecordActionsMenu({
       buttons[next]?.focus();
     }
   }
+  if (!writable && !onDetails) return null;
   return (
     <div
       ref={root}
@@ -131,7 +134,7 @@ export function RecordActionsMenu({
         <Button
           type="button"
           variant="ghost"
-          disabled={disabled}
+          disabled={disabled || !writable}
           onClick={() => {
             close(true);
             onEdit();
@@ -145,7 +148,7 @@ export function RecordActionsMenu({
         <Button
           type="button"
           variant="ghost"
-          disabled={disabled}
+          disabled={disabled || !writable}
           onClick={() => {
             close(true);
             onDelete();

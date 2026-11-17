@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { throwBusinessError } from "@/shared/errors/business-error";
-import { isAllowedRole, type Role } from "./role.model";
+import { externalRoles, type Role } from "./role.model";
 const sidClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid";
 const identityClaimsSchema = z.object({
   [sidClaim]: z
@@ -49,10 +49,10 @@ export function readExternalIdentity(
   const claims = result.data;
   const userId = claims[sidClaim];
   if (claims.exp <= Math.floor(now / 1000)) return invalid();
-  if (!isAllowedRole(claims.status))
+  if (!externalRoles.some((role) => role === claims.status))
     throwBusinessError({
       code: "LOGIN_ACCESS_DENIED",
       category: "forbidden",
     });
-  return { userId, role: claims.status, expiresAt: claims.exp };
+  return { userId, role: claims.status as Role, expiresAt: claims.exp };
 }

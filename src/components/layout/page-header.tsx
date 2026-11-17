@@ -8,6 +8,7 @@ export function PageHeader({
   hideDescriptionOnMobile = false,
   actions,
   compactActionsOnMobile = false,
+  actionsBelowOnMobile = false,
 }: {
   title: ReactNode;
   icon?: ComponentProps<typeof Icon>["name"];
@@ -15,10 +16,11 @@ export function PageHeader({
   hideDescriptionOnMobile?: boolean;
   actions?: ReactNode;
   compactActionsOnMobile?: boolean;
+  actionsBelowOnMobile?: boolean;
 }) {
   return (
     <div
-      className={`spread-row ${styles.root}${compactActionsOnMobile ? ` ${styles.compact}` : ""}`}
+      className={`spread-row ${styles.root}${compactActionsOnMobile ? ` ${styles.compact}` : ""}${actionsBelowOnMobile ? ` ${styles.below}` : ""}`}
     >
       <div className={`stack-small ${styles.identity}`}>
         <div className={styles.title}>
@@ -37,7 +39,7 @@ export function PageHeader({
           </p>
         )}
       </div>
-      {actions && <div className="action-group">{actions}</div>}
+      {actions && <div className={`action-group ${styles.actions}`}>{actions}</div>}
     </div>
   );
 }

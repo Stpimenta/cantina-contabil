@@ -1,6 +1,10 @@
 import type { ErrorCategory } from "./application-error";
 
 export type BusinessCode =
+  | "ACCOUNT_ACCESS_DENIED"
+  | "ACCOUNT_LINK_INVALID"
+  | "ACCOUNT_CHANGED"
+  | "INVALID_ACCOUNT_INPUT"
   | "EVENT_MODALITY_LOCKED"
   | "CANTEEN_REQUIRED"
   | "TEMP_ACCESS_USED"
@@ -50,6 +54,8 @@ export type BusinessCode =
   | "ACCESS_DENIED";
 
 export type ValidationIssue =
+  | "PASSWORD_MISMATCH"
+  | "INVALID_ACCOUNT_ACCESS"
   | "INVALID_ACCESS_EXPIRY"
   | "INVALID_ACCESS_NAME"
   | "INVALID_ORDER_STATUS"

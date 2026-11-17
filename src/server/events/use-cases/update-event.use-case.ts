@@ -1,3 +1,4 @@
+import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
 import { parseInput } from "@/shared/validation/input";
@@ -34,6 +35,7 @@ export class UpdateEventUseCase {
     const expected = parseInput(validateEventVersion(versionInput));
 
     const current = await this.events.find(id);
+    if (current) checkEventAccessWrite(session, current);
     const fingerprint = JSON.stringify(data);
     if (checkRepeat(current, data.requestId, fingerprint, access.user.id))
       return current!;

@@ -29,7 +29,7 @@ export function createCanteen() {
     collect: new CollectCommandUseCase(events, auth),
     createAccess: new CreateAccessUseCase(repo, events, credentialCodec),
     activate: new ActivateAccessUseCase(repo, credentialCodec),
-    accesses: new ListAccessUseCase(repo),
-    revoke: new RevokeAccessUseCase(repo, publications),
+    accesses: new ListAccessUseCase(repo, events),
+    revoke: new RevokeAccessUseCase(repo, publications, events),
   };
 }

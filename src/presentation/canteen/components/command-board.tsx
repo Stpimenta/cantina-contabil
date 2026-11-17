@@ -1,4 +1,5 @@
 "use client";
+import { createRequestId } from "@/shared/identifiers/request-id";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/ui/icon";
@@ -30,9 +31,11 @@ import styles from "./command-board.module.css";
 export function CommandBoard({
   initial,
   basePath,
+  canCollect = true,
 }: {
   initial: CommandPage;
   basePath: string;
+  canCollect?: boolean;
 }) {
   const [data, setData] = useState(initial),
     [connection, setConnection] = useState<
@@ -300,12 +303,12 @@ export function CommandBoard({
                 <Button
                   variant="neutral"
                   busy={pending}
-                  disabled={connection !== "connected"}
+                  disabled={connection !== "connected" || !canCollect}
                   onClick={() =>
                     execute(
                       () =>
                         collectCommandAction(initial.eventId, order.id, {
-                          requestId: crypto.randomUUID(),
+                          requestId: createRequestId(),
                           version: order.version,
                           collected: !order.collected,
                         }),

@@ -10,7 +10,11 @@ import { D1CanteenRepository } from "./d1-canteen.repository";
 import { ResolveCommandAuthorization } from "./command-authorization";
 import { credentialCodec } from "./credential-codec";
 import { AuthorizeConnectionUseCase } from "../use-cases/authorize-connection.use-case";
-import { verifySession } from "@/server/auth/infrastructure/session-codec";
+import { GetAccountSessionUseCase } from "@/server/auth/use-cases/get-account-session.use-case";
+import { D1LocalAccountRepository } from "@/server/users/infrastructure/d1-local-account.repository";
+import { D1AccountSessionRepository } from "@/server/auth/infrastructure/d1-account-session.repository";
+import { AccountCredentialCodec } from "@/server/auth/infrastructure/account-credential-codec";
+import { SupabaseAuthRepository } from "@/server/auth/infrastructure/supabase-auth.repository";
 import { handleFailure } from "@/shared/errors/handle-failure";
 import type { CommandIdentity } from "../models/command-actor.model";
 import { commandResponse } from "./http-response";
@@ -18,6 +22,8 @@ interface SocketEnvironment {
   DB: D1Database;
   COMMANDS: DurableObjectNamespace;
   SESSION_SECRET: string;
+  SUPABASE_URL?: string;
+  SUPABASE_PUBLISHABLE_KEY?: string;
   APP_ENV?: string;
 }
 export async function workerSocket(
@@ -55,11 +61,23 @@ export async function workerSocket(
       ? { kind: "access", credential }
       : {
           kind: "user",
-          session: await verifySession(
-            read(production ? "__Host-cantina-session" : "cantina-session") ??
-              "",
-            env.SESSION_SECRET,
-          ),
+          session: await (async () => {
+            const value = read(
+              production ? "__Host-cantina-account" : "cantina-account",
+            );
+            if (!value) return null;
+            const database = drizzle(env.DB);
+            return new GetAccountSessionUseCase(
+              new SupabaseAuthRepository(
+                env.SUPABASE_URL ?? "",
+                env.SUPABASE_PUBLISHABLE_KEY ?? "",
+              ),
+              new D1LocalAccountRepository(database),
+              new D1AccountSessionRepository(database),
+              new AccountCredentialCodec(env.SESSION_SECRET),
+              { read: async () => value },
+            ).execute();
+          })(),
         };
     const db = drizzle(env.DB),
       auth = new ResolveCommandAuthorization(

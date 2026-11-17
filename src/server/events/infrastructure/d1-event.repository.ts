@@ -20,6 +20,7 @@ import type { Database } from "@/shared/infrastructure/database";
 import { hasDatabaseError } from "@/shared/infrastructure/database-error";
 import type {
   EventRepository,
+  EventReadScope,
   EventWriteOutcome,
 } from "../repositories/event.repository";
 import type { Event } from "../models/event.model";
@@ -110,12 +111,25 @@ function metadata(v: Event | EventOrder) {
     fingerprint: v.fingerprint,
   };
 }
+function eventScope(scope?: EventReadScope) {
+  return scope?.eventIds
+    ? sql`${events.id} IN (SELECT value FROM json_each(${JSON.stringify(scope.eventIds)}))`
+    : scope?.cashBoxIds
+      ? sql`${events.cashBoxId} IN (SELECT value FROM json_each(${JSON.stringify(scope.cashBoxIds)}))`
+      : undefined;
+}
 export class D1EventRepository implements EventRepository {
-  async upcoming(today: string) {
+  async upcoming(today: string, scope?: EventReadScope) {
     return this.db
       .select({ id: events.id, name: events.name, occursOn: events.occursOn })
       .from(events)
-      .where(and(isNull(events.deletedAt), gte(events.occursOn, today)))
+      .where(
+        and(
+          isNull(events.deletedAt),
+          gte(events.occursOn, today),
+          eventScope(scope),
+        ),
+      )
       .orderBy(asc(events.occursOn), asc(events.name), asc(events.id))
       .limit(5)
       .all();
@@ -171,10 +185,16 @@ export class D1EventRepository implements EventRepository {
       throw cause;
     }
   }
-  async list(query: string, page: number, pageSize: number) {
+  async list(
+    query: string,
+    page: number,
+    pageSize: number,
+    scope?: EventReadScope,
+  ) {
     const search = `%${query.replace(/[!%_]/g, "!$&")}%`;
     const condition = and(
       isNull(events.deletedAt),
+      eventScope(scope),
       sql`${events.name} LIKE ${search} ESCAPE '!'`,
     );
     const result = await this.db

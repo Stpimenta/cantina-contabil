@@ -1,3 +1,4 @@
+import { checkCashBoxRead } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import type { ReceiptRepository } from "@/server/events/repositories/receipt.repository";
 import type { MovementRepository } from "../repositories/movement.repository";
@@ -16,6 +17,7 @@ export class GetMovementReceiptUseCase {
       validateMovementReceiptReference(input),
     );
     const movement = await this.movements.find(id);
+    if (movement) checkCashBoxRead(session, movement.cashBoxId);
     const attachment =
       movement && !movement.deletedAt
         ? movement.receipts.find((receipt) => receipt.id === receiptId)

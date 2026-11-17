@@ -44,7 +44,7 @@ export default async function SuppliesPage({
     <div className="stack">
       <Breadcrumbs
         items={[
-          { label: "Home", href: "/" },
+          ...(session.role === "operator" ? [] : [{ label: "Home", href: "/" }]),
           { label: "Eventos", href: "/events" },
           {
             label: result.ok ? result.value.event.name : "Evento",
@@ -59,6 +59,7 @@ export default async function SuppliesPage({
         <>
           <SupplyList
             eventId={id}
+            eventCashBoxId={result.value.event.cashBoxId}
             eventName={result.value.event.name}
             supplyCostCents={result.value.event.supplyCostCents}
             cashBoxes={result.value.cashBoxes}

@@ -1,3 +1,4 @@
+import { checkCashBoxWrite } from "@/shared/auth/check-cash-box-access";
 import { checkMovementBalance, movementEffect } from "../models/movement-rules";
 import type { CashBoxRepository } from "@/server/cash-boxes/repositories/cash-box.repository";
 import type { Session } from "@/server/auth/models/session.model";
@@ -17,6 +18,7 @@ export class DeleteMovementUseCase {
     const current = await this.movements.find(id);
     if (!current || current.deletedAt || current.version !== version)
       return movementChanged();
+    checkCashBoxWrite(session, current.cashBoxId);
     const box = await this.boxes.find(current.cashBoxId);
     if (!box) return movementChanged();
     checkMovementBalance(

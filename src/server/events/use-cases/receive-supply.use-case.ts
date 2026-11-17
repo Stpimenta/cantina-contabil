@@ -1,3 +1,4 @@
+import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
 import { parseInput } from "@/shared/validation/input";
@@ -24,7 +25,9 @@ export class ReceiveSupplyUseCase {
     const eventId = parseInput(validateEventId(rawEventId));
     const id = parseInput(validateEventId(rawId));
     const version = parseInput(validateEventVersion(rawVersion));
-    if (!(await this.events.find(eventId))) return eventMissing();
+    const event = await this.events.find(eventId);
+    if (!event) return eventMissing();
+    checkEventAccessWrite(session, event);
     const current = await this.supplies.find(id);
     if (!current || current.deletedAt || current.eventId !== eventId)
       throwBusinessError({ code: "SUPPLY_NOT_FOUND", category: "not_found" });

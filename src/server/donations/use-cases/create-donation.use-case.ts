@@ -1,3 +1,4 @@
+import { checkCashBoxWrite } from "@/shared/auth/check-cash-box-access";
 import { throwBusinessError } from "@/shared/errors/business-error";
 import type { Session } from "@/server/auth/models/session.model";
 import type { CashBoxRepository } from "@/server/cash-boxes/repositories/cash-box.repository";
@@ -22,6 +23,7 @@ export class CreateDonationUseCase {
     const access = checkAccess(session);
     const requestId = parseInput(validateDonationRequest(rawRequestId));
     const data = parseInput(validateDonation(input));
+    checkCashBoxWrite(session, data.cashBoxId);
     const now = new Date().toISOString();
     const donation: Donation = {
       version: 1,

@@ -2,11 +2,12 @@ import type { Movement } from "../models/movement.model";
 export type MovementWrite =
   "saved" | "changed" | "insufficient" | "limit" | "box_unavailable";
 export interface MovementRepository {
-  options(): Promise<{ id: string; name: string }[]>;
+  options(allowedIds?: string[]): Promise<{ id: string; name: string }[]>;
   find(id: string): Promise<Movement | null>;
   list(
     page: number,
     pageSize: number,
+    allowedIds?: string[],
   ): Promise<{
     items: Movement[];
     total: number;

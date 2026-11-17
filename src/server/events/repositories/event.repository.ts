@@ -25,8 +25,15 @@ export type EventWriteOutcome =
   | "box_unavailable"
   | "limit"
   | "catalog_changed";
+export interface EventReadScope {
+  eventIds?: string[];
+  cashBoxIds?: string[];
+}
 export interface EventRepository {
-  upcoming(today: string): Promise<Pick<Event, "id" | "name" | "occursOn">[]>;
+  upcoming(
+    today: string,
+    scope?: EventReadScope,
+  ): Promise<Pick<Event, "id" | "name" | "occursOn">[]>;
   softDeleteOrder(deletion: OrderDeletion): Promise<EventWriteOutcome>;
   softDelete(deletion: EventDeletion): Promise<EventWriteOutcome>;
   cashBoxes(): Promise<{ id: string; name: string }[]>;
@@ -34,6 +41,7 @@ export interface EventRepository {
     query: string,
     page: number,
     pageSize: number,
+    scope?: EventReadScope,
   ): Promise<EventPage<Event>>;
   find(id: string): Promise<Event | null>;
   hasDeliveryOrders(eventId: string): Promise<boolean>;

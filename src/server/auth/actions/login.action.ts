@@ -15,7 +15,8 @@ export async function loginAction(formData: FormData) {
     async () => {
       const gmail = formData.get("gmail");
       const senha = formData.get("senha");
-      await createAuth().login.execute({ gmail, senha });
+      const result = await createAuth().login.execute({ gmail, senha });
+      if (result.kind === "email-confirmation") return { email: result.email };
       redirect("/");
     },
   );

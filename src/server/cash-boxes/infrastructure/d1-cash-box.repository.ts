@@ -60,11 +60,18 @@ export class D1CashBoxRepository implements CashBoxRepository {
       throw cause;
     }
   }
-  async overview() {
+  async overview(allowedIds?: string[]) {
     return this.db
       .select(summaryColumns)
       .from(cashBoxes)
-      .where(isNull(cashBoxes.deletedAt))
+      .where(
+        and(
+          isNull(cashBoxes.deletedAt),
+          allowedIds === undefined
+            ? undefined
+            : sql`${cashBoxes.id} IN (SELECT value FROM json_each(${JSON.stringify(allowedIds)}))`,
+        ),
+      )
       .orderBy(desc(cashBoxes.createdAt), desc(cashBoxes.id))
       .all();
   }
@@ -72,10 +79,14 @@ export class D1CashBoxRepository implements CashBoxRepository {
     query: string,
     page: number,
     pageSize: number,
+    allowedIds?: string[],
   ): Promise<CashBoxList> {
     const search = `%${nameKey(query).replace(/[!%_]/g, "!$&")}%`;
     const condition = and(
       isNull(cashBoxes.deletedAt),
+      allowedIds === undefined
+        ? undefined
+        : sql`${cashBoxes.id} IN (SELECT value FROM json_each(${JSON.stringify(allowedIds)}))`,
       sql`${cashBoxes.nameKey} LIKE ${search} ESCAPE '!'`,
     );
     const result = await this.db

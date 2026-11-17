@@ -63,9 +63,9 @@ export function createOpenApiDocument(version: string) {
         appSession: {
           type: "apiKey",
           in: "cookie",
-          name: "__Host-cantina-session",
+          name: "__Host-cantina-account",
           description:
-            "Sessão HMAC do login normal (cantina-session em desenvolvimento).",
+            "Sessão opaca do login normal (cantina-account em desenvolvimento), validada no D1 com 12h de inatividade.",
         },
         commandAccess: {
           type: "apiKey",

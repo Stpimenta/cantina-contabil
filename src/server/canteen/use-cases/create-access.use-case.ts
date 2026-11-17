@@ -1,3 +1,4 @@
+import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
 import { parseInput } from "@/shared/validation/input";
@@ -24,6 +25,7 @@ export class CreateAccessUseCase {
       data = parseInput(validateTemporaryAccess(input));
     const e = await this.events.find(id);
     if (!e) return eventMissing();
+    checkEventAccessWrite(session, e);
     if (!e.canteenEnabled)
       throwBusinessError({ code: "CANTEEN_REQUIRED", category: "conflict" });
     const secret = this.codec.random();

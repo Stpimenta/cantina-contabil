@@ -1,3 +1,4 @@
+import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
 import { parseInput } from "@/shared/validation/input";
@@ -20,6 +21,7 @@ export class DeleteEventUseCase {
     const expectedVersion = parseInput(validateEventVersion(rawVersion));
     const current = await this.events.find(id);
     if (!current) return eventMissing();
+    checkEventAccessWrite(session, current);
     if (current.version !== expectedVersion) return eventChanged();
     const orders = await this.events.listOrders(id, "", 1, 1);
     if (orders.total)

@@ -1,3 +1,4 @@
+import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import { inspectSupplyReceipts, storeSupplyReceipts } from "./supply-receipts";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
@@ -45,7 +46,14 @@ export class CreateSupplyUseCase {
         code: "SUPPLY_REQUEST_CONFLICT",
         category: "conflict",
       });
-    if (!(await this.events.find(eventId))) return eventMissing();
+    const event = await this.events.find(eventId);
+    if (!event) return eventMissing();
+    checkEventAccessWrite(session, event);
+    checkEventAccessWrite(
+      session,
+      event,
+      data.source === "purchase" ? data.cashBoxId : null,
+    );
     const existing = await this.supplies.find(data.requestId);
     if (existing) return same(existing) ? existing : conflict();
     const box =

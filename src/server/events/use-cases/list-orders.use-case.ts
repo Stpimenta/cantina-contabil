@@ -1,3 +1,4 @@
+import { checkEventRead } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
 import { parseInput } from "@/shared/validation/input";
@@ -16,6 +17,7 @@ export class ListOrdersUseCase {
     const data = parseInput(validateOrderQuery(input));
     const event = await this.events.find(id);
     if (!event) return eventMissing();
+    checkEventRead(session, event);
     return this.events.listOrders(
       id,
       data.query,

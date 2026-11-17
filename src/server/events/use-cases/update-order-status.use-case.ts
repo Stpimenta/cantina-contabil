@@ -1,3 +1,4 @@
+import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { throwBusinessError } from "@/shared/errors/business-error";
 import { checkAccess } from "@/shared/auth/check-access";
@@ -35,6 +36,9 @@ export class UpdateOrderStatusUseCase {
       expected,
       ...data,
     });
+    const authorizedEvent = await this.events.find(eventId);
+    if (!authorizedEvent) return eventMissing();
+    checkEventAccessWrite(session, authorizedEvent);
     const current = await this.events.findOrder(id);
     if (!current || current.eventId !== eventId) return eventMissing();
     if (checkRepeat(current, data.requestId, fingerprint, actor.id))
@@ -42,8 +46,7 @@ export class UpdateOrderStatusUseCase {
     if (current.version !== expected || (data.payment && current.paid))
       return eventChanged();
     parseInput(validateUpdateOrderStatus(input, current.totalCents));
-    const event = await this.events.find(eventId);
-    if (!event) return eventMissing();
+    const event = authorizedEvent;
     if (data.fulfilled !== undefined) {
       if (!event.deliveryEnabled)
         throwBusinessError({

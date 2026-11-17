@@ -1,3 +1,4 @@
+import { checkCashBoxWrite } from "@/shared/auth/check-cash-box-access";
 import type { ReceiptRepository } from "@/server/events/repositories/receipt.repository";
 import { receiptMetadata } from "@/shared/receipts/receipt-input";
 import {
@@ -31,6 +32,7 @@ export class UpdateMovementUseCase {
     const current = await this.movements.find(fields.id);
     if (!current || current.deletedAt || current.version !== fields.version)
       return movementChanged();
+    checkCashBoxWrite(session, current.cashBoxId, fields.cashBoxId);
     const retained = fields.retainedReceiptIds.map((id) =>
       current.receipts.find((receipt) => receipt.id === id),
     );

@@ -1,3 +1,4 @@
+import { checkCashBoxWrite } from "@/shared/auth/check-cash-box-access";
 import { validateCashBoxReference } from "../inputs/cash-box-reference.input";
 import { parseInput } from "@/shared/validation/input";
 import { validateSaveCashBox } from "../inputs/save-cash-box.input";
@@ -24,6 +25,7 @@ export class UpdateCashBoxUseCase {
     const data = parseInput(validateSaveCashBox(input));
     const current = await this.boxes.find(id);
     if (!current) return cashBoxMissing();
+    checkCashBoxWrite(session, current.id);
     if (current.version !== version) return cashBoxConflict();
     const box = {
       ...current,

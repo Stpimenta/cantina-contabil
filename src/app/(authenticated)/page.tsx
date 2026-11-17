@@ -10,6 +10,7 @@ import { HomeOverview } from "@/presentation/home/components/home-overview";
 export default async function HomePage() {
   const session = await createAuth().getSession.execute();
   if (!session) redirect("/login");
+  if (session.role === "operator") redirect("/events");
   const result = await executeOperation(
     {
       operation: "home.get",

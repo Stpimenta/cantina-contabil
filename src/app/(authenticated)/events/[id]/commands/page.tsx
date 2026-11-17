@@ -1,3 +1,5 @@
+import { canAlterEvent } from "@/shared/auth/access-policy";
+import { createEvents } from "@/server/events/composition";
 import { redirect } from "next/navigation";
 import { createAuth } from "@/server/auth/composition";
 import { createCanteen } from "@/server/canteen/composition";
@@ -29,6 +31,7 @@ export default async function CommandsPage({
     },
     async () => {
       const c = createCanteen();
+      const event = await createEvents().get.execute(session, id);
       return {
         commands: await c.list.execute({ kind: "user", session }, id, {
           ...q,
@@ -36,7 +39,10 @@ export default async function CommandsPage({
           page: q.page ?? 1,
           collected: q.collected ?? "all",
         }),
-        accesses: await c.accesses.execute(session, id),
+        accesses: !canAlterEvent(session, event)
+          ? []
+          : await c.accesses.execute(session, id),
+        writable: canAlterEvent(session, event),
       };
     },
   );
@@ -44,7 +50,7 @@ export default async function CommandsPage({
     <div className="stack">
       <Breadcrumbs
         items={[
-          { label: "Home", href: "/" },
+          ...(session.role === "operator" ? [] : [{ label: "Home", href: "/" }]),
           { label: "Eventos", href: "/events" },
           {
             label: result.ok ? result.value.commands.eventName : "Evento",
@@ -57,7 +63,7 @@ export default async function CommandsPage({
         icon="calendar"
         title="Comandas"
         actions={
-          result.ok ? (
+          result.ok && result.value.writable ? (
             <TemporaryAccesses eventId={id} accesses={result.value.accesses} />
           ) : undefined
         }
@@ -71,6 +77,7 @@ export default async function CommandsPage({
         <>
           <CommandBoard
             initial={result.value.commands}
+            canCollect={result.value.writable}
             basePath={`/events/${id}/commands`}
           />
         </>

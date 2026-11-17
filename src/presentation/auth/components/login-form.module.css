@@ -1,0 +1,58 @@
+.passwordGroup {
+  display: grid;
+  gap: var(--space-2);
+}
+.recovery {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+.confirmation {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-inline-start: var(--space-1) solid var(--color-primary);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+.confirmationTitle {
+  color: var(--color-primary);
+  font-size: var(--font-lg);
+  font-weight: var(--weight-semibold);
+}
+.confirmationEmail {
+  font-weight: var(--weight-semibold);
+}
+.confirmationExpiry {
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+.spinner {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex-shrink: 0;
+  border: var(--focus-width) solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: login-spin var(--duration-brand) linear infinite;
+}
+.progress {
+  min-height: 1lh;
+  text-align: center;
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+@keyframes login-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}

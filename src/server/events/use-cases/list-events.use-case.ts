@@ -1,3 +1,4 @@
+import { eventReadScope } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
 import { parseInput } from "@/shared/validation/input";
@@ -9,6 +10,11 @@ export class ListEventsUseCase {
   async execute(session: Session | null, input: unknown) {
     checkAccess(session);
     const data = parseInput(validateEventQuery(input));
-    return this.events.list(data.query, data.page, DEFAULT_PAGE_SIZE);
+    return this.events.list(
+      data.query,
+      data.page,
+      DEFAULT_PAGE_SIZE,
+      eventReadScope(session),
+    );
   }
 }

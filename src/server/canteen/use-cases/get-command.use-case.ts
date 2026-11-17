@@ -1,3 +1,7 @@
+import {
+  checkEventRead,
+  checkEventAccessWrite,
+} from "@/shared/auth/check-cash-box-access";
 import type { EventRepository } from "@/server/events/repositories/event.repository";
 import { eventMissing } from "@/server/events/models/event-rules";
 import { parseInput } from "@/shared/validation/input";
@@ -21,6 +25,7 @@ export class GetCommandUseCase {
     await this.auth.resolve(identity, eventId);
     const event = await this.events.find(eventId);
     if (!event) return eventMissing();
+    if (identity.kind === "user") checkEventRead(identity.session, event);
     if (!event.canteenEnabled)
       throwBusinessError({ code: "CANTEEN_REQUIRED", category: "conflict" });
     const order = await this.events.findOrder(id);

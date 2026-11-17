@@ -14,8 +14,13 @@ export interface CashBoxList {
 }
 export type WriteOutcome = "saved" | "duplicate" | "stale" | "linked";
 export interface CashBoxRepository {
-  overview(): Promise<CashBoxSummary[]>;
-  list(query: string, page: number, pageSize: number): Promise<CashBoxList>;
+  overview(allowedIds?: string[]): Promise<CashBoxSummary[]>;
+  list(
+    query: string,
+    page: number,
+    pageSize: number,
+    allowedIds?: string[],
+  ): Promise<CashBoxList>;
   find(id: string): Promise<CashBoxSummary | null>;
   create(box: CashBox): Promise<WriteOutcome>;
   update(box: CashBox, expectedVersion: number): Promise<WriteOutcome>;
