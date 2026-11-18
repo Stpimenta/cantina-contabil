@@ -61,12 +61,22 @@ export function checkMigrationNames(local, applied) {
       "Migrações locais e de produção divergem. Aplicar/conferir manualmente as migrações autorizadas antes de publicar.",
     );
 }
+// Manually confirmed by the owner after configuration/secret updates on 2026-11-18.
+// Applies only to this immutable Cloudflare version; never infer a baseline for others.
+export const confirmedUntaggedBaseline = Object.freeze({
+  versionId: "65db048d-2402-4b61-8955-80651fabcacd",
+  tag: "v0.6.10",
+});
 export function deploymentDecision(targetTag, sha, currentVersion, tagCommit) {
   if (tagCommit && tagCommit !== sha)
     throw new ReleaseError(
       "Tag Git já pertence a outro commit; nunca será movida.",
     );
-  const currentTag = currentVersion.annotations?.["workers/tag"];
+  const activeTag = currentVersion.annotations?.["workers/tag"];
+  const currentTag =
+    !activeTag && currentVersion.id === confirmedUntaggedBaseline.versionId
+      ? confirmedUntaggedBaseline.tag
+      : activeTag;
   const current = releaseVersionSchema.safeParse(currentTag?.replace(/^v/, ""));
   if (!current.success)
     throw new ReleaseError(

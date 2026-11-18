@@ -4,6 +4,9 @@ Retomada curta. Use o [mapa de leitura](README.md) para abrir somente os contrat
 
 ## Local de trabalho e limites
 
+- Recuperação de deploy autorizada em 18/11: exceção local restrita à versão Cloudflare sem tag 65db048d-2402-4b61-8955-80651fabcacd, conferida pelo responsável após alterações de variáveis/segredos, com base v0.6.10. Guardas e confirmação remota mantidos; uso aparece no relatório/resumo. 38 testes de publicação aprovados. Sem deploy, migração, commit/push ou mudança remota. Correção precisa de nova entrega por PR, com versão incrementada desde a main atualizada; a referência origin/main desta pasta ainda aponta 0.6.11 e não confirma a main remota atual.
+
+
 - Suíte enxugada a pedido do responsável: 383 → 353 testes, removendo 30 casos de composição visual (breadcrumbs, Home/saldo, roteamento de skeleton/fallback) e codec de cookie legado. Proteções de negócio, segurança atual e publicação preservadas; sem renomear/agrupar testes para reduzir contagem. Execução completa final: 353 aprovados em 33 arquivos; TypeScript aprovado, diff sem erros. Nenhum código produtivo, migração ou dependência alterado neste corte. Build anterior preservado e não repetido por mudança somente em testes/documentação.
 
 
