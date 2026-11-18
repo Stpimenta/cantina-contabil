@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { z } from "zod";
-import { requestJson } from "../../scripts/ci-api.mjs";
+import { requestJson, checkDashboardMetadata } from "../../scripts/ci-api.mjs";
 const url = "https://api.github.com/repos/synthetic/project/git/ref/heads/main";
 const schema = z.object({ value: z.string() });
 const socketError = (code = "UND_ERR_SOCKET") =>
@@ -86,4 +86,60 @@ it("does not retry invalid JSON or a rejected response contract", async () => {
     ).rejects.toThrow();
     expect(request).toHaveBeenCalledOnce();
   }
+});
+
+it("identifica a consulta de metadados recusada sem expor o corpo privado", async () => {
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce(
+      Response.json({
+        success: true,
+        result: {
+          default_environment: {
+            environment: "production",
+            script: { last_deployed_from: "dash" },
+          },
+        },
+      }),
+    )
+    .mockResolvedValueOnce(Response.json({ success: true, result: [] }))
+    .mockResolvedValueOnce(
+      Response.json(
+        { errors: [{ message: "private binding value" }] },
+        { status: 403 },
+      ),
+    );
+  await expect(
+    checkDashboardMetadata(
+      { account_id: "synthetic", name: "cantina-contabil" },
+      "private-token",
+      request,
+    ),
+  ).rejects.toThrow(/routes.*HTTP 403/);
+  expect(request).toHaveBeenCalledTimes(3);
+});
+it("confere todas as consultas do painel somente com GET e não repete escritas", async () => {
+  const request = vi
+    .fn()
+    .mockImplementation(async (url) =>
+      Response.json({
+        success: true,
+        result: String(url).endsWith("/services/cantina-contabil")
+          ? {
+              default_environment: {
+                environment: "production",
+                script: { last_deployed_from: "dash" },
+              },
+            }
+          : [],
+      }),
+    );
+  await checkDashboardMetadata(
+    { account_id: "synthetic", name: "cantina-contabil" },
+    "synthetic-token",
+    request,
+  );
+  expect(request).toHaveBeenCalledTimes(7);
+  for (const [, options] of request.mock.calls)
+    expect(options.method).toBe("GET");
 });

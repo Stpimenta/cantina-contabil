@@ -1,4 +1,8 @@
-import { ReleaseError } from "./release-error.mjs";
+import {
+  ReleaseError,
+  releaseFailure,
+  releaseFailureMessage,
+} from "./release-error.mjs";
 import { z } from "zod";
 const envelope = z.object({ success: z.literal(true), result: z.unknown() });
 export async function requestJson(
@@ -144,4 +148,47 @@ export function cloudflareClient(config, token, request) {
       return results[0].results.map((row) => row.name);
     },
   };
+}
+
+// Read-only preflight for the dashboard reconciliation performed by Wrangler.
+// Never log bindings, provider bodies, headers or credentials.
+export async function checkDashboardMetadata(config, token, request) {
+  const base = `https://api.cloudflare.com/client/v4/accounts/${config.account_id}/workers`;
+  const name = encodeURIComponent(config.name);
+  async function check(label, path, schema = z.unknown()) {
+    try {
+      return await requestJson(`${base}${path}`, token, schema, {}, request);
+    } catch (cause) {
+      throw new ReleaseError(
+        `Consulta de metadados ${label}: ${releaseFailureMessage(releaseFailure(cause))}`,
+      );
+    }
+  }
+  const service = await check(
+    "service",
+    `/services/${name}`,
+    z.object({
+      default_environment: z.object({
+        environment: z.string().min(1),
+        script: z.object({ last_deployed_from: z.string().optional() }),
+      }),
+    }),
+  );
+  if (service.default_environment.script.last_deployed_from !== "dash") return;
+  const environment = encodeURIComponent(
+    service.default_environment.environment,
+  );
+  const prefix = `/services/${name}/environments/${environment}`;
+  for (const [label, path] of [
+    ["bindings", `${prefix}/bindings`],
+    ["routes", `${prefix}/routes?show_zonename=true`],
+    [
+      "domains",
+      `/domains/records?page=0&per_page=5&service=${name}&environment=${environment}`,
+    ],
+    ["subdomain", `${prefix}/subdomain`],
+    ["environment", prefix],
+    ["schedules", `/scripts/${name}/schedules`],
+  ])
+    await check(label, path);
 }

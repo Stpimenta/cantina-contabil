@@ -179,6 +179,14 @@ describe("falhas e repetição da publicação sem serviços reais", () => {
     expect(h.upload).toHaveBeenCalledTimes(1);
     expect(h.github.createTag).toHaveBeenCalledWith(h.release.tag, sha);
   });
+  it("falha de metadados bloqueia antes de compilar ou enviar", async () => {
+    const h = setup();
+    h.cloudflare.metadata = vi.fn().mockRejectedValue(new Error("synthetic"));
+    await expect(publishRelease(h)).rejects.toThrow();
+    expect(h.record.phase).toBe("check-dashboard-metadata");
+    expect(h.prepare).not.toHaveBeenCalled();
+    expect(h.upload).not.toHaveBeenCalled();
+  });
   it("confirma versão ativa antes de criar tag e limpa pacote", async () => {
     const h = setup();
     h.cloudflare.active
