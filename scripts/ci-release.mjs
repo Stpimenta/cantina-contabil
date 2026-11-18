@@ -22,6 +22,7 @@ import {
   releaseMessage,
   checkMigrationNames,
   deploymentDecision,
+  confirmedUntaggedBaseline,
 } from "./release-rules.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -175,6 +176,15 @@ export async function publishRelease({
     live.version,
     await github.tag(release.tag),
   );
+  if (
+    live.version.id === confirmedUntaggedBaseline.versionId &&
+    !live.version.annotations?.["workers/tag"]
+  ) {
+    record.confirmedUntaggedBaseline = confirmedUntaggedBaseline;
+    summary(
+      `Base sem tag conferida manualmente: versão ${confirmedUntaggedBaseline.versionId}, referência ${confirmedUntaggedBaseline.tag}.`,
+    );
+  }
   if (decision === "deploy") {
     record.phase = "check-migrations";
     checkMigrationNames(migrationNames, await cloudflare.migrations());

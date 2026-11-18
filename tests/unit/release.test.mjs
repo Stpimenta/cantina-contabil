@@ -5,6 +5,7 @@ import {
   releaseMessage,
   checkMigrationNames,
   deploymentDecision,
+  confirmedUntaggedBaseline,
 } from "../../scripts/release-rules.mjs";
 import { publishRelease } from "../../scripts/ci-release.mjs";
 import { cloudflareClient, requestJson } from "../../scripts/ci-api.mjs";
@@ -112,6 +113,33 @@ describe("identificação da publicação", () => {
       "already-live",
     );
   });
+  it("aceita somente a versão sem tag conferida pelo responsável e conserva as travas", () => {
+    const version = {
+      id: confirmedUntaggedBaseline.versionId,
+      annotations: {},
+    };
+    expect(deploymentDecision("v0.6.13", sha, version, null)).toBe("deploy");
+    expect(() =>
+      deploymentDecision("v0.6.13", sha, { ...version, id: "outra" }, null),
+    ).toThrow(/sem tag/);
+    expect(() =>
+      deploymentDecision(
+        "v0.6.13",
+        sha,
+        { ...version, annotations: { "workers/tag": "incorreta" } },
+        null,
+      ),
+    ).toThrow(/sem tag/);
+    expect(() => deploymentDecision("v0.6.9", sha, version, null)).toThrow(
+      /antigo bloqueado/,
+    );
+    expect(() => deploymentDecision("v0.6.13", sha, version, otherSha)).toThrow(
+      /outro commit/,
+    );
+    expect(() => deploymentDecision("v0.6.13", sha, version, sha)).toThrow(
+      /Tag já existe/,
+    );
+  });
   it("rejeita migração pendente, remota extra ou repetida", () => {
     expect(() =>
       checkMigrationNames(["0001_a.sql", "0002_b.sql"], ["0001_a.sql"]),
@@ -131,6 +159,26 @@ describe("identificação da publicação", () => {
   });
 });
 describe("falhas e repetição da publicação sem serviços reais", () => {
+  it("recuperação da versão sem tag exige migrações e confirmação da publicação", async () => {
+    const h = setup();
+    h.release = { ...release, tag: "v0.6.13" };
+    const previous = {
+      ...live(),
+      version: { id: confirmedUntaggedBaseline.versionId, annotations: {} },
+    };
+    h.cloudflare.active
+      .mockResolvedValueOnce(previous)
+      .mockResolvedValueOnce(previous)
+      .mockResolvedValueOnce(live(h.release.tag, h.release.message, "nova"));
+    await publishRelease(h);
+    expect(h.record.status).toBe("deployed");
+    expect(h.record.confirmedUntaggedBaseline).toEqual(
+      confirmedUntaggedBaseline,
+    );
+    expect(h.cloudflare.migrations).toHaveBeenCalledTimes(2);
+    expect(h.upload).toHaveBeenCalledTimes(1);
+    expect(h.github.createTag).toHaveBeenCalledWith(h.release.tag, sha);
+  });
   it("confirma versão ativa antes de criar tag e limpa pacote", async () => {
     const h = setup();
     h.cloudflare.active
