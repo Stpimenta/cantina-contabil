@@ -16,7 +16,11 @@ export const supabaseTokensSchema = z.object({
 
 export const supabaseErrorSchema = z.object({
   error_code: z.string().optional(),
-  code: z.string().optional(),
+  // Some provider responses use code for the HTTP status, not the error name.
+  code: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((code) => (typeof code === "string" ? code : undefined)),
 });
 
 export const supabaseUserListSchema = z.object({

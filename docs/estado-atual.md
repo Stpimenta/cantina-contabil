@@ -4,6 +4,8 @@ Retomada curta. Use o [mapa de leitura](README.md) para abrir somente os contrat
 
 ## Local de trabalho e limites
 
+- Login — correção local em 18/11 na branch fix/invalid-login-credentials, criada sobre origin/main sincronizada: schema Supabase aceita code numérico sem perder error_code textual; INVALID_CREDENTIALS usa “E-mail ou senha inválidos” e o fluxo de negócio existente, sem log interno. Convite, senha e refresh revisados; cenários sintéticos atualizados, não executados. Causa do payload real ainda não confirmada. Somente revisão estática; sem testes/typecheck/build, commit/envio, migração local/remota ou publicação. Versão local 0.6.15 preparada no pacote/lockfile e validada com validatePackageVersion contra origin/main 0.6.14; commit e envio pendentes pelo responsável.
+
 - Diagnóstico de publicação em 18/11: após repetição da falha genérica do Wrangler, código local acrescenta GETs de conferência dos metadados de painel antes do build produtivo. Falhas identificam serviço/consulta e HTTP controlado, sem valores de bindings ou credenciais. 53 testes dirigidos de API/publicação aprovados. Não houve alteração remota, publicação, migração, dependência ou permissões. Causa remota ainda não confirmada; diagnóstico precisa entrar por novo PR com versão incrementada a partir da main atualizada. Reexecutar job antigo não usa este código.
 
 

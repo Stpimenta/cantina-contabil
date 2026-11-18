@@ -31,7 +31,9 @@ LoginForm declara method=post e action=/login, além de impedir o submit nativo 
 
 Schemas Zod de respostas do GestPV ficam na infraestrutura de cada dono: user-profile.schema.ts e login-response.schema.ts. safeParse verifica estrutura/tipos/limites sem registrar mensagens ou objetos brutos do Zod. Repository verifica também identidade (ID do perfil igual ao solicitado), HTTP e status de login com if e falhas técnicas apropriadas. Preservar as regras existentes: nome não vazio após trim e até 200 caracteres, email string até 254 (sem impor novo formato); nascimento/telefone opcionais mantêm normalização anterior. Login status=false continua INVALID_CREDENTIALS mesmo sem token, status=true exige token string não vazio. 401, timeout de 12s e redirect manual preservados.
 
-Respostas Supabase são validadas na infraestrutura. Sessão diária usa credencial opaca e estado autoritativo no D1, conforme Autenticação independente. session-payload.schema.ts e codec HMAC anteriores permanecem apenas como código legado/testes, sem participação na composição atual. Claims GestPV continuam sujeitos à validação estrutural e verificações semânticas de expiração/perfil no primeiro ingresso.
+Respostas Supabase são validadas na infraestrutura. Nos erros, error_code textual tem precedência sobre code textual; code numérico é aceito como metadado HTTP e não identifica erro de negócio. No login, invalid_credentials em HTTP 400/401/422 resulta em INVALID_CREDENTIALS e “E-mail ou senha inválidos”, sem log de falha interna. HTTP isolado ou código desconhecido não prova senha incorreta e permanece falha de infraestrutura. A mesma leitura preserva os tratamentos existentes de convite, definição de senha e renovação, sem registrar corpo bruto ou credenciais.
+
+Sessão diária usa credencial opaca e estado autoritativo no D1, conforme Autenticação independente. session-payload.schema.ts e codec HMAC anteriores permanecem apenas como código legado/testes, sem participação na composição atual. Claims GestPV continuam sujeitos à validação estrutural e verificações semânticas de expiração/perfil no primeiro ingresso.
 
 ### Primeiro ingresso pelo GestPV
 

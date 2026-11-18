@@ -94,8 +94,7 @@ const messages: Record<BusinessCode, string> = {
   INVALID_DONATION_INPUT: "Confira os dados da doação.",
   INVALID_LOGIN_INPUT: "Confira os campos indicados para entrar.",
   LOGIN_SESSION_EXPIRED: "Seu acesso expirou. Entre novamente.",
-  INVALID_CREDENTIALS:
-    "E-mail ou senha incorretos. Confira os dados e tente novamente.",
+  INVALID_CREDENTIALS: "E-mail ou senha inválidos",
   INVALID_AUTH_RESPONSE:
     "Não foi possível confirmar seu acesso. Entre novamente.",
   LOGIN_ACCESS_DENIED:
