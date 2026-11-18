@@ -20,7 +20,7 @@ Leia ao alterar comportamento, navegação, buscas, paginação ou resumos. [Map
 
 ## Paginação, navegação e foco
 
-- DEFAULT_PAGE_SIZE=15; LIMIT/OFFSET no servidor, ajuste de página fora do intervalo, sem scroll infinito. Anterior/Próxima, Página X de Y e contagem; controles de troca quando há mais de uma página. Total zero não gera rodapé redundante.
+- DEFAULT_PAGE_SIZE=15; LIMIT/OFFSET no servidor, ajuste de página fora do intervalo, sem scroll infinito nas listas gerais. Exceção aprovada: lançamentos no modal de estoque de Produtos usam rolagem contínua por cursor, conforme o contrato da área. Anterior/Próxima, Página X de Y e contagem; controles de troca quando há mais de uma página. Total zero não gera rodapé redundante.
 - Página/filtros ficam na URL. Paginar no celular volta ao início do documento após resolver; histórico usa scroll=false e preserva o fundo. Modais aninhados fecham somente a camada superior e devolvem foco ao gatilho; cancelar não propaga ao pai.
 - Breakpoints de controles/layout e nomes acessíveis em [DESIGN](DESIGN.md). Não remover funcionalidade para compactar. Confirmações mantêm texto, mesmo onde as ações diretas viram ícone.
 - Histórico do caixa tem duas linhas (ação/autor), categoria automática/reverter e detalhes separados; consultar [Caixas e saldos](../funcionalidades/caixas-e-saldos.md), sem espalhar seus filtros por todas as telas.

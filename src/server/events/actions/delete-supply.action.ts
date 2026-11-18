@@ -29,6 +29,7 @@ export async function deleteSupplyAction(
       revalidatePath(`/events/${eventId}`);
       revalidatePath(`/events/${eventId}/supplies`);
       revalidatePath("/cash-boxes", "layout");
+      revalidatePath("/products", "layout");
       return value;
     },
   );

@@ -16,6 +16,7 @@ const productSchema = z.object({
 export const saveEventInputSchema = z
   .object({
     requestId: z.uuid(),
+    kind: z.enum(["event", "product_category"]).default("event"),
     deliveryEnabled: z.boolean().default(false),
     canteenEnabled: z.boolean().default(false),
     cashBoxId: z.string().trim().min(1),
@@ -28,7 +29,7 @@ export const saveEventInputSchema = z
       .string()
       .trim()
       .refine((v) => v.length <= 500),
-    occursOn: z.string().refine(isDateOnly),
+    occursOn: z.string(),
     products: z
       .array(productSchema)
       .max(100)
@@ -36,6 +37,19 @@ export const saveEventInputSchema = z
         (rows) => new Set(rows.map((row) => row.id)).size === rows.length,
       ),
   })
+  .refine(
+    (data) =>
+      data.kind === "product_category"
+        ? data.occursOn === ""
+        : isDateOnly(data.occursOn),
+    { path: ["occursOn"] },
+  )
+  .refine(
+    (data) =>
+      data.kind !== "product_category" ||
+      (!data.deliveryEnabled && !data.canteenEnabled),
+    { path: ["kind"] },
+  )
   .refine((data) => !(data.deliveryEnabled && data.canteenEnabled), {
     path: ["canteenEnabled"],
   });

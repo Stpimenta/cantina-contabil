@@ -47,6 +47,10 @@ export default async function OrdersPage({
     async () => {
       const useCases = createEvents();
       const event = await useCases.get.execute(session, id);
+      if (event.kind === "product_category")
+        redirect(
+          `/products/${id}/orders${Object.keys(query).length ? `?${new URLSearchParams(Object.entries(query).filter((entry): entry is [string, string] => typeof entry[1] === "string"))}` : ""}`,
+        );
       const fulfillment = event.deliveryEnabled ? requestedFulfillment : "all";
       const orders = await useCases.orders.execute(session, id, {
         query: typeof query.q === "string" ? query.q : "",
@@ -68,7 +72,9 @@ export default async function OrdersPage({
     <div className="stack">
       <Breadcrumbs
         items={[
-          ...(session.role === "operator" ? [] : [{ label: "Home", href: "/" }]),
+          ...(session.role === "operator"
+            ? []
+            : [{ label: "Home", href: "/" }]),
           { label: "Eventos", href: "/events" },
           {
             label: result.ok ? result.value.event.name : "Evento",
@@ -86,6 +92,7 @@ export default async function OrdersPage({
             orders={result.value.orders.items}
             search={
               <SearchForm
+                key="order-search"
                 action={basePath}
                 filters={filters}
                 actions={

@@ -1,4 +1,6 @@
 "use client";
+import { checkProductRemovalAction } from "@/server/products/actions/check-product-removal.action";
+import { createRequestId } from "@/shared/identifiers/request-id";
 import styles from "./event-form-modal.module.css";
 import { validateSaveEvent } from "@/server/events/inputs/save-event.input";
 import { presentBusinessFailure } from "@/presentation/errors/present-business-failure";
@@ -26,24 +28,27 @@ import { Icon } from "@/components/ui/icon";
 import { productIconLabel } from "@/shared/products/product-icons";
 export function EventFormModal({
   event,
+  recurring = event?.kind === "product_category",
   cashBoxes,
   today,
   onClose,
   onSaved,
 }: {
   event?: CantinaEvent;
+  recurring?: boolean;
   cashBoxes: { id: string; name: string }[];
   today: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const id = useId();
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => createRequestId());
   const initial: Omit<SaveEventInput, "requestId"> = {
+    kind: recurring ? "product_category" : "event",
     cashBoxId: event?.cashBoxId ?? "",
     name: event?.name ?? "",
     description: event?.description ?? "",
-    occursOn: event?.occursOn ?? today,
+    occursOn: recurring ? "" : (event?.occursOn ?? today),
     deliveryEnabled: event?.deliveryEnabled ?? false,
     canteenEnabled: event?.canteenEnabled ?? false,
     products:
@@ -72,17 +77,30 @@ export function EventFormModal({
   fieldIds.products = input.products.length
     ? `${id}-product-0-name`
     : `${id}-products-add`;
-  const { execute, pending, isPending, error, fields, closeError } =
-    useServerAction({
-      validationKey: JSON.stringify(input),
-      validate: () => {
-        const result = validateSaveEvent({ ...input, requestId });
-        return result.ok ? null : presentBusinessFailure(result.error);
-      },
-      connectionMessage:
-        "Não foi possível confirmar a gravação. Confira os eventos antes de repetir.",
-      fieldIds,
-    });
+  const {
+    execute,
+    pending: saving,
+    isPending: isSaving,
+    error,
+    fields,
+    closeError,
+  } = useServerAction({
+    validationKey: JSON.stringify(input),
+    validate: () => {
+      const result = validateSaveEvent({ ...input, requestId });
+      return result.ok ? null : presentBusinessFailure(result.error);
+    },
+    connectionMessage:
+      "Não foi possível confirmar a gravação. Confira os eventos antes de repetir.",
+    fieldIds,
+  });
+  const removal = useServerAction({
+    connectionMessage: "Não foi possível verificar o produto. Tente novamente.",
+  });
+  const pending = saving || removal.pending;
+  function isPending() {
+    return isSaving() || removal.isPending();
+  }
   const groupError = Object.keys(fields ?? {}).some((key) =>
     key.startsWith("products."),
   )
@@ -104,6 +122,17 @@ export function EventFormModal({
     );
   }
   function removeProduct(index: number) {
+    if (isPending()) return;
+    const selected = input.products[index];
+    if (!selected) return;
+    if (recurring && event?.products.some((p) => p.id === selected.id)) {
+      removal.execute(
+        () => checkProductRemovalAction(event.id, selected.id),
+        () => removeProductRow(index),
+      );
+    } else removeProductRow(index);
+  }
+  function removeProductRow(index: number) {
     const products = input.products.filter((_, i) => i !== index);
     change("products", products);
     requestAnimationFrame(() => {
@@ -120,6 +149,7 @@ export function EventFormModal({
   }
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (isPending()) return;
     execute(
       () =>
         event
@@ -133,7 +163,15 @@ export function EventFormModal({
       <Modal
         size="formCompact"
         open
-        title={event ? "Editar evento" : "Novo evento"}
+        title={
+          recurring
+            ? event
+              ? "Editar grupo de produtos"
+              : "Novo grupo de produtos"
+            : event
+              ? "Editar evento"
+              : "Novo evento"
+        }
         onClose={close}
         footer={
           <>
@@ -146,20 +184,18 @@ export function EventFormModal({
               busy={pending}
               disabled={!cashBoxes.length}
             >
-              Salvar evento
+              {recurring ? "Salvar grupo" : "Salvar evento"}
             </Button>
           </>
         }
       >
         <form id={id} className="stack" noValidate onSubmit={submit}>
-          {!cashBoxes.length && (
-            <p>Cadastre um caixa antes de criar um evento.</p>
-          )}
+          {!cashBoxes.length && <p>Cadastre um caixa antes de continuar.</p>}
           <div className="form-grid">
             <div className="form-full">
               <Field
                 id={`${id}-name`}
-                label="Nome do evento"
+                label={recurring ? "Nome do grupo" : "Nome do evento"}
                 value={input.name}
                 onChange={(e) => change("name", e.target.value)}
                 maxLength={100}
@@ -183,40 +219,44 @@ export function EventFormModal({
                 error={fields?.cashBoxId}
               />
             </div>
-            <DateField
-              id={`${id}-date`}
-              name="occursOn"
-              label="Data do evento"
-              value={input.occursOn}
-              onValueChange={(v) => change("occursOn", v)}
-              required
-              disabled={pending}
-              error={fields?.occursOn}
-            />
-            <SelectField
-              id={`${id}-delivery-enabled`}
-              label="Modalidade"
-              value={
-                input.canteenEnabled
-                  ? "canteen"
-                  : input.deliveryEnabled
-                    ? "yes"
-                    : "no"
-              }
-              onValueChange={(v) =>
-                setInput((current) => ({
-                  ...current,
-                  deliveryEnabled: v === "yes",
-                  canteenEnabled: v === "canteen",
-                }))
-              }
-              disabled={pending}
-              options={[
-                { value: "no", label: "Padrão" },
-                { value: "yes", label: "Entregas" },
-                { value: "canteen", label: "Cantina" },
-              ]}
-            />
+            {!recurring && (
+              <>
+                <DateField
+                  id={`${id}-date`}
+                  name="occursOn"
+                  label="Data do evento"
+                  value={input.occursOn}
+                  onValueChange={(v) => change("occursOn", v)}
+                  required
+                  disabled={pending}
+                  error={fields?.occursOn}
+                />
+                <SelectField
+                  id={`${id}-delivery-enabled`}
+                  label="Modalidade"
+                  value={
+                    input.canteenEnabled
+                      ? "canteen"
+                      : input.deliveryEnabled
+                        ? "yes"
+                        : "no"
+                  }
+                  onValueChange={(v) =>
+                    setInput((current) => ({
+                      ...current,
+                      deliveryEnabled: v === "yes",
+                      canteenEnabled: v === "canteen",
+                    }))
+                  }
+                  disabled={pending}
+                  options={[
+                    { value: "no", label: "Padrão" },
+                    { value: "yes", label: "Entregas" },
+                    { value: "canteen", label: "Cantina" },
+                  ]}
+                />
+              </>
+            )}
             <div className="form-full">
               <TextareaField
                 id={`${id}-description`}
@@ -307,7 +347,7 @@ export function EventFormModal({
                   change("products", [
                     ...input.products,
                     {
-                      id: crypto.randomUUID(),
+                      id: createRequestId(),
                       name: "",
                       icon: "meal",
                       price: "",
@@ -326,7 +366,13 @@ export function EventFormModal({
           </span>
         </form>
       </Modal>
-      <ErrorModal error={error} onClose={closeError} />
+      <ErrorModal
+        error={error ?? removal.error}
+        onClose={() => {
+          closeError();
+          removal.closeError();
+        }}
+      />
       {discard && (
         <ConfirmationModal
           title="Descartar alterações?"

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isDateOnly } from "@/shared/dates/date-only";
 import { validateInput } from "@/shared/validation/input";
 import type { ValidationIssue } from "@/shared/errors/business-failure";
 import { moneyInputSchema } from "@/shared/validation/money-input";
@@ -10,6 +11,10 @@ const detailsSchema = z.object({
     .trim()
     .min(1)
     .refine((v) => v.length <= 100),
+  pickupOn: z
+    .string()
+    .refine((v) => !v || isDateOnly(v))
+    .default(""),
   note: z
     .string()
     .trim()
@@ -72,6 +77,7 @@ const propertyIssues: Record<string, ValidationIssue> = {
   fulfilled: "INVALID_FULFILLMENT_STATUS",
   customerName: "INVALID_CUSTOMER_NAME",
   note: "NOTE_TOO_LONG",
+  pickupOn: "INVALID_DATE",
   items: "INVALID_ORDER_ITEMS",
   total: "INVALID_ORDER_TOTAL",
   cash: "INVALID_ORDER_PAYMENT",

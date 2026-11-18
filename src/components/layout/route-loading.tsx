@@ -1,3 +1,4 @@
+import { ProductsLoading } from "@/presentation/products/components/products-loading";
 import commandStyles from "@/presentation/canteen/components/command-board.module.css";
 import { ApiDocumentationLoading } from "@/presentation/api/api-documentation-loading";
 import { CommandLoading } from "@/presentation/canteen/components/command-loading";
@@ -17,6 +18,27 @@ import balanceStyles from "@/presentation/cash-boxes/components/cash-box-balance
 import styles from "./route-loading.module.css";
 
 const areas = {
+  produtos: { title: "Produtos", icon: "box", description: undefined },
+  grupoProdutos: {
+    title: "Grupo de produtos",
+    icon: "box",
+    description: undefined,
+  },
+  pedidosProdutos: {
+    title: "Pedidos",
+    icon: undefined,
+    description: undefined,
+  },
+  insumosProdutos: {
+    title: "Insumos",
+    icon: undefined,
+    description: undefined,
+  },
+  estoqueProdutos: {
+    title: "Entradas de estoque",
+    icon: undefined,
+    description: undefined,
+  },
   home: {
     title: "Home",
     icon: "home",
@@ -70,6 +92,12 @@ export function loadingAreaForPath(pathname: string): LoadingArea {
   if (segments[0] === "commands") return "comandasTemporarias";
   if (segments[0] === "api-docs") return "apiDocs";
   if (segments[2] === "commands") return "comandas";
+  if (segments[0] === "products") {
+    if (segments[2] === "orders") return "pedidosProdutos";
+    if (segments[2] === "supplies") return "insumosProdutos";
+    if (segments[2] === "stock") return "estoqueProdutos";
+    return segments[1] ? "grupoProdutos" : "produtos";
+  }
   if (segments[0] === "events") {
     if (segments[2] === "orders") return "pedidos";
     if (segments[2] === "supplies") return "insumos";
@@ -91,6 +119,11 @@ const creation = {
 
 function LoadingActions({ area }: { area: LoadingArea }) {
   if (
+    area === "produtos" ||
+    area === "grupoProdutos" ||
+    area === "pedidosProdutos" ||
+    area === "insumosProdutos" ||
+    area === "estoqueProdutos" ||
     area === "home" ||
     area === "comandas" ||
     area === "comandasTemporarias" ||
@@ -145,6 +178,11 @@ function BalancePlaceholder() {
 }
 
 export function RouteLoading({ area }: { area: LoadingArea }) {
+  if (area === "produtos") return <ProductsLoading section="list" />;
+  if (area === "grupoProdutos") return <ProductsLoading section="detail" />;
+  if (area === "pedidosProdutos") return <ProductsLoading section="orders" />;
+  if (area === "insumosProdutos") return <ProductsLoading section="supplies" />;
+  if (area === "estoqueProdutos") return <ProductsLoading section="stock" />;
   if (area === "comandas") return <CommandLoading />;
   if (area === "comandasTemporarias")
     return (

@@ -8,13 +8,38 @@ import { Button } from "@/components/ui/button";
 import { HistoryRecordList } from "@/components/ui/history-record-list";
 import { Pagination } from "@/components/ui/pagination";
 import { EventAuditDetails } from "./event-audit-details";
-const label = (entry: EventAudit) =>
-  `${entry.resourceType === "event" ? "Evento" : entry.resourceType === "supply" ? "Insumo" : "Pedido"} ${entry.after.deletedAt ? "excluído" : entry.action === "create" ? "criado" : "atualizado"}`;
+function label(entry: EventAudit) {
+  if (entry.resourceType === "stock" && entry.after.deletedAt)
+    return "Entrada de estoque excluída";
+  if (entry.resourceType === "stock")
+    return entry.action === "create"
+      ? "Entrada de estoque registrada"
+      : "Entrada de estoque corrigida";
+  if (
+    entry.resourceType === "order" &&
+    entry.action === "update" &&
+    !entry.after.deletedAt &&
+    JSON.stringify(entry.before?.withdrawals) !==
+      JSON.stringify(entry.after.withdrawals)
+  )
+    return "Retirada registrada ou corrigida";
+  const resource =
+    entry.resourceType === "event"
+      ? entry.after.kind === "product_category"
+        ? "Grupo"
+        : "Evento"
+      : entry.resourceType === "supply"
+        ? "Insumo"
+        : "Pedido";
+  return `${resource} ${entry.after.deletedAt ? "excluído" : entry.action === "create" ? "criado" : "atualizado"}`;
+}
 export function EventHistory({
   eventId,
   result,
+  recurring = false,
 }: {
   eventId: string;
+  recurring?: boolean;
   result: EventPage<EventAudit> | null;
 }) {
   const params = useSearchParams();
@@ -22,7 +47,7 @@ export function EventHistory({
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<EventAudit | null>(null);
   const open = !!params.get("history");
-  const basePath = `/events/${eventId}`;
+  const basePath = `${recurring ? "/products" : "/events"}/${eventId}`;
   function navigate(show: boolean) {
     if (pending) return;
     const next = new URLSearchParams(params.toString());
@@ -51,7 +76,7 @@ export function EventHistory({
       {open && result && (
         <Modal
           open
-          title="Histórico do evento"
+          title={recurring ? "Histórico do grupo" : "Histórico do evento"}
           onClose={() => navigate(false)}
           footer={
             <Button
@@ -64,7 +89,7 @@ export function EventHistory({
           }
         >
           <HistoryRecordList
-            label="Histórico do evento"
+            label={recurring ? "Histórico do grupo" : "Histórico do evento"}
             disabled={pending}
             entries={result.items.map((entry) => ({
               id: entry.id,

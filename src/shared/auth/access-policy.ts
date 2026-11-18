@@ -16,7 +16,7 @@ export function canWriteBox(s: Session, id: string) {
 }
 export function canReadEvent(
   s: Session,
-  event: { id: string; cashBoxId: string },
+  event: { id: string; cashBoxId: string; kind?: string },
 ) {
   return (
     isAccessAdmin(s) ||
@@ -27,7 +27,7 @@ export function canReadEvent(
 }
 export function canAlterEvent(
   s: Session,
-  event: { id: string; cashBoxId: string },
+  event: { id: string; cashBoxId: string; kind?: string },
 ) {
   return (
     isAccessAdmin(s) ||

@@ -18,11 +18,11 @@ export function Field({
   trailing?: ReactNode;
   labelAction?: ReactNode;
   hideLabel?: boolean;
-  appearance?: "standard" | "search";
+  appearance?: "standard" | "search" | "quantityNative" | "quantityStepper";
 }) {
   return (
     <div
-      className={`${styles.root}${appearance === "search" ? ` ${styles.search}` : ""}`}
+      className={`${styles.root}${appearance !== "standard" ? ` ${styles[appearance]}` : ""}`}
     >
       {labelAction ? (
         <div className={styles.labelRow}>

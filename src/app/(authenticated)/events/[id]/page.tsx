@@ -53,6 +53,10 @@ export default async function EventPage({
     async () => {
       const useCases = createEvents();
       const event = await useCases.get.execute(session, id);
+      if (event.kind === "product_category")
+        redirect(
+          `/products/${id}${Object.keys(query).length ? `?${new URLSearchParams(Object.entries(query).filter((entry): entry is [string, string] => typeof entry[1] === "string"))}` : ""}`,
+        );
       const history = query.history
         ? await useCases.history.execute(session, id, {
             page: Number(query.history),
@@ -67,7 +71,9 @@ export default async function EventPage({
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          ...(session.role === "operator" ? [] : [{ label: "Home", href: "/" }]),
+          ...(session.role === "operator"
+            ? []
+            : [{ label: "Home", href: "/" }]),
           { label: "Eventos", href: "/events" },
           { label: result.ok ? result.value.event.name : "Evento" },
         ]}
@@ -80,7 +86,14 @@ export default async function EventPage({
             icon="calendar"
             compactActionsOnMobile
             actionsBelowOnMobile
-            title={<span className={styles.mobileTitle} title={result.value.event.name}>{result.value.event.name}</span>}
+            title={
+              <span
+                className={styles.mobileTitle}
+                title={result.value.event.name}
+              >
+                {result.value.event.name}
+              </span>
+            }
             description="Detalhes do evento"
             hideDescriptionOnMobile
             actions={
@@ -88,17 +101,20 @@ export default async function EventPage({
                 {result.value.event.canteenEnabled && (
                   <Link
                     href={`/events/${id}/commands`}
-                    className={buttonClassName({ variant: "neutral", className: styles.commandsAction })}
+                    className={buttonClassName({
+                      variant: "neutral",
+                      className: styles.commandsAction,
+                    })}
                   >
                     Comandas
                   </Link>
                 )}
                 <div className={styles.editActions}>
-                <EventActions
-                  event={result.value.event}
-                  cashBoxes={result.value.cashBoxes}
-                  today={currentDateInSaoPaulo()}
-                />
+                  <EventActions
+                    event={result.value.event}
+                    cashBoxes={result.value.cashBoxes}
+                    today={currentDateInSaoPaulo()}
+                  />
                 </div>
               </div>
             }

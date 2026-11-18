@@ -34,6 +34,7 @@ export function SupplyList({
   eventId,
   eventCashBoxId,
   eventName,
+  recurring = false,
   supplyCostCents,
   supplies,
   cashBoxes,
@@ -41,6 +42,7 @@ export function SupplyList({
   eventId: string;
   eventCashBoxId?: string;
   eventName: string;
+  recurring?: boolean;
   supplyCostCents: number;
   supplies: SupplyListEntry[];
   cashBoxes: { id: string; name: string }[];
@@ -56,14 +58,18 @@ export function SupplyList({
       "Não foi possível confirmar a operação. Confira os insumos antes de repetir.",
   });
   const { canWriteEvent } = useCashBoxAccess();
-  const accessEvent = { id: eventId, cashBoxId: eventCashBoxId ?? "" };
+  const accessEvent = {
+    id: eventId,
+    cashBoxId: eventCashBoxId ?? "",
+    kind: recurring ? "product_category" : "event",
+  };
   const writable = canWriteEvent(accessEvent);
   cashBoxes = cashBoxes.filter((box) => canWriteEvent(accessEvent, box.id));
   return (
     <>
       <PageHeader
         title="Insumos"
-        description={`Evento: ${eventName}`}
+        description={`${recurring ? "Grupo" : "Evento"}: ${eventName}`}
         compactActionsOnMobile
         actions={
           <Button

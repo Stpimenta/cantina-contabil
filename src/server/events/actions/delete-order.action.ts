@@ -30,6 +30,7 @@ export async function deleteOrderAction(
       revalidatePath(`/events/${value.eventId}`);
       revalidatePath(`/events/${value.eventId}/orders`);
       revalidatePath("/cash-boxes", "layout");
+      revalidatePath("/products", "layout");
       return value;
     },
   );

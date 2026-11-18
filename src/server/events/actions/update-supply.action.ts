@@ -46,6 +46,7 @@ export async function updateSupplyAction(
       revalidatePath(`/events/${eventId}`);
       revalidatePath(`/events/${eventId}/supplies`);
       revalidatePath("/cash-boxes", "layout");
+      revalidatePath("/products", "layout");
       return { id: value.id };
     },
   );

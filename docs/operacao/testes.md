@@ -12,11 +12,15 @@ Decisão do responsável em 17/11/2026: não executar automaticamente testes, ty
 
 Os comandos e requisitos abaixo descrevem essa etapa final, não uma obrigação de execução a cada edição. As verificações já configuradas no CI permanecem preservadas.
 
+## Critério para manter testes
+
+Priorizar regras observáveis que protegem dinheiro, estoque, autorização, autenticação atual, exclusão/auditoria e concorrência. Validações de formato/limites permanecem quando representam riscos distintos; não agrupar casos apenas para diminuir a contagem. Não adicionar testes apenas de textos, classes, skeleton, estrutura de HTML ou navegação simples. Uso de HTML para verificar prevenção de vazamento de senha/segredo continua válido. Composição visual fica na revisão funcional do responsável. Testes de mecanismos legados fora da composição atual são removidos quando a proteção vigente já está coberta. Guardas de publicação continuam por protegerem produção, sem serviços reais.
+
 ## Objetivo e limite
 
 Proteger as principais regras financeiras e de acesso com uma suíte pequena e determinística. Testar entradas, resultados e efeitos observáveis, sem reproduzir o código nos testes ou exigir chamadas internas em uma ordem específica. Não há garantia de ausência de erros: a cobertura protege os cenários explicitados abaixo.
 
-A suíte não inclui navegador, comparação visual, carga ou cobertura percentual obrigatória. A execução no GitHub Actions foi autorizada em 31/10/2026 e segue [integracao-continua.md](integracao-continua.md). TypeScript continua responsável pelos tipos estáticos; testes exercitam comportamento e validação de dados durante a execução. Revisão funcional da interface permanece com o responsável.
+A suíte não inclui testes apenas de composição de HTML/skeleton/breadcrumbs, navegador, comparação visual, carga ou cobertura percentual obrigatória. A execução no GitHub Actions foi autorizada em 31/10/2026 e segue [integracao-continua.md](integracao-continua.md). TypeScript continua responsável pelos tipos estáticos; testes exercitam comportamento e validação de dados durante a execução. Revisão funcional da interface permanece com o responsável.
 
 ## Organização aprovada
 
@@ -56,7 +60,7 @@ Cada linha representa um grupo pequeno de cenários independentes, não um únic
 | Movimentações               | Entrada/saída, edição de valor/tipo/caixa e exclusão produzem o saldo esperado. Bloquear saída excessiva, redução/exclusão de entrada utilizada e troca de caixa que deixaria qualquer caixa afetado negativo.                                                                                          |
 | Concorrência e repetição    | Duas edições da mesma versão: apenas uma prevalece. Mesmo cadastro repetido não duplica registro, saldo ou auditoria; mesmo identificador com conteúdo incompatível retorna conflito. Aplicar aos fluxos com esses contratos.                                                                           |
 | Atomicidade financeira      | Duas compras ou saídas de R$ 70 após ambas observarem R$ 100: somente uma grava, saldo final R$ 30 e uma auditoria de sucesso. A guarda do D1 deve funcionar mesmo sem a proteção prévia do use case.                                                                                                   |
-| Exclusão e vínculos         | Excluídos saem das listas/saldos e não aceitam edição; snapshots/autoria permanecem. Evento com pedidos ou insumos preservados não pode ser excluído; caixa com vínculos protegidos também não. Incluir vínculo já excluído logicamente.                                                                |
+| Exclusão e vínculos         | Excluídos saem das listas/saldos e não aceitam edição; snapshots/autoria permanecem. Evento com pedidos ou insumos ativos não pode ser excluído; caixa com vínculos ativos protegidos também não. Dependências excluídas permitem excluir o principal, preservando os registros e a auditoria.                                                                |
 | Histórico e Home            | Criar/editar/excluir preserva antes/depois, autor e versão; troca de caixa aparece no histórico dos dois sem somar auditoria ao saldo. Home agrega todos os caixas ativos, sem depender da primeira página, e não inclui caixas excluídos.                                                              |
 | Comprovantes privados       | Salvar e ler bytes pelo use case com vínculo válido; manter/remover anexos na edição preserva objetos históricos. Rejeitar receiptId de outro registro, sessão ausente e perfil proibido. Retornos destinados à interface não expõem chaves privadas.                                                   |
 | Acesso e contratos externos | Leituras/gravações representativas recusam sessão ausente ou papel proibido sem efeitos. Login/perfil com resposta inválida, credenciais recusadas ou identidade divergente não concluem autenticação; respostas válidas permitem o fluxo esperado, sem chamar o serviço real.                          |
@@ -78,9 +82,6 @@ O emulador precisa de processos e sockets locais em portas aleatórias de loopba
 Arquivos donos da cobertura:
 
 - `tests/unit/order-steps.test.ts`: validação independente por grupo, etapa do erro final e parcela de pagamento; integração de Pix/dinheiro/misto, preservação e legado em deliveries.test.ts.
-- `tests/unit/breadcrumbs.test.ts`: destinos do Voltar em detalhes de caixa/evento e pedidos/insumos, preservação do caminho e retorno desabilitado no fallback.
-- `tests/unit/balance-visibility.test.ts`: máscara no HTML inicial, ação acessível e uso de CashBoxBalance em caixas/eventos.
-- `tests/unit/home-loading.test.ts`: Home pendente mantém estrutura sem valores fictícios; resultados vazios só aparecem após os dados; valores começam mascarados e barras permanecem visíveis.
 
 - `tests/unit/dev-origins.test.ts`: origens de loopback/rede no desenvolvimento, sem wildcard ou inclusão em produção; inicialização Cloudflare simulada.
 
@@ -111,7 +112,7 @@ Os testes não validam visual, interação no navegador, cabeçalhos HTTP das ro
 
 `tests/integration/canteen.test.ts` amplia o harness opcionalmente com o CommandHub real, empacotado por esbuild da stack existente. Mesmo D1 sintético e DO SQLite descartáveis no Miniflare, sem app Next, .env, banco local/remoto ou servidor do responsável. Testa retirada/desfazer independente do pagamento, versão/idempotência/concorrência, autoria acesso/criador, ativação única em corrida e repetição do navegador original, hash sem segredo persistido, escopo/revogação/expiração, modalidade bloqueada com pedido preservado/excluído, paginação e recuperação por alarme com socket conectado/hibernado. Fechar sockets/emulador e remover somente diretório temporário ao terminar.
 
-`tests/unit/canteen-contracts.test.ts` valida exclusividade das modalidades, vencimento futuro sem máximo arbitrário, credencial aleatória/hash, OpenAPI 3.1/cookies/erros/resposta mínima e fallback sem vazio fictício. A descrição é gerada antes de build/typecheck; o build isolado verifica também o custom Worker e binding COMMANDS. A suíte não comprova interação/visual no navegador, encaminhamento real de upgrade pela porta 5174 ou consumo efetivo de cotas Free. Esses testes funcionais permanecem com o responsável.
+`tests/unit/canteen-contracts.test.ts` valida exclusividade das modalidades, vencimento futuro sem máximo arbitrário, credencial aleatória/hash, OpenAPI 3.1/cookies/erros/resposta mínima. A descrição é gerada antes de build/typecheck; o build isolado verifica também o custom Worker e binding COMMANDS. A suíte não comprova interação/visual no navegador, encaminhamento real de upgrade pela porta 5174 ou consumo efetivo de cotas Free. Esses testes funcionais permanecem com o responsável.
 
 `tests/unit/temporary-access-link.test.ts` reproduz a repetição do efeito de montagem após a limpeza do fragmento: a chave sintética continua em memória, o botão é habilitado sem expor o segredo no HTML e a ausência de chave mantém o bloqueio. Sem navegador ou novo armazenamento persistente.
 
@@ -123,7 +124,7 @@ A configuração real do ambiente Next é conferida em `tests/unit/local-proxy-c
 
 `tests/integration/supabase-auth.test.ts` usa o adaptador HTTP real com transporte sintético: login, refresh token rotacionado, identidade consultada no provedor, e-mail confirmado, contratos inválidos, falhas HTTP/rede e ausência de permissões importadas de metadados. Sem conta Supabase ou envio de e-mail real.
 
-`tests/integration/local-accounts.test.ts` usa D1/Drizzle descartáveis com a migração 0026: habilitação inicial por root/admin/tesouraria com transporte GestPV sintético, perfil/e-mail inválidos, conta bloqueada, preservação de autorias existentes, repetição/concorrência, colisão de e-mail sem associação automática, identidade imutável e faixa negativa dos convidados. Testa a política isolada admin/operador. O grupo independent-auth complementa sessão, convites e autorização de gravações; consultas financeiras continuam gerais por decisão explícita. Testes funcionais de UI ficam com o responsável.
+`tests/integration/local-accounts.test.ts` usa D1/Drizzle descartáveis com a migração 0026: habilitação inicial por root/admin/tesouraria com transporte GestPV sintético, perfil/e-mail inválidos, conta bloqueada, preservação de autorias existentes, repetição/concorrência, colisão de e-mail sem associação automática, identidade imutável e faixa negativa dos convidados. Testa a política isolada admin/operador. O grupo independent-auth complementa a sessão atual, convites e autorização de gravações; consultas financeiras continuam gerais por decisão explícita. Testes funcionais de UI ficam com o responsável.
 
 ## Autenticação independente
 
@@ -150,3 +151,7 @@ Na revisão final solicitada: executar os grupos afetados e o build completo Clo
 Migrações exigem cuidado com preservação: backup local privado antes, quick_check, foreign_key_check e comparação dos registros/colunas antigos; snapshots novos conferidos quando houver backfill. Não imprimir dados pessoais completos ou segredos.
 
 Testes unitários e de integração foram autorizados em 30/10/2026 e implementados em `tests/`, com Vitest e D1/R2 descartáveis no Miniflare. Casos de uso e repositories reais protegem as regras financeiras; dados e serviços externos são sintéticos, sem bypass no app. Cobertura, isolamento e limites em [testes.md](testes.md); comandos em [ambiente-local.md](testes.md#verificação-autorizada). Concentrar os grupos afetados e o build completo Cloudflare/TypeScript na revisão final solicitada, conforme Quando executar. Não recriar verification/, testes visuais, carga ou cobertura percentual sem novo pedido. Notas de releases conservam verificações históricas, não substituem este contrato.
+
+## Produtos recorrentes
+
+`tests/integration/recurring-products.test.ts` usa D1 descartável com todas as migrações: escopo do operador por grupo, Consulta sem gravação, Alteração no estoque, grupo bloqueado por entrada ativa e liberado após exclusão, cursor sem salto após excluir lançamento e rollback integral de correções concorrentes. `finance.test.ts` confere exclusão de eventos/caixas após excluir os dependentes, com auditoria armazenada. Não aplica migrações em bancos do aplicativo nem valida a interação visual do modal.

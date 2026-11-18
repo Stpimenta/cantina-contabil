@@ -40,7 +40,8 @@ export class UpdateEventUseCase {
     if (checkRepeat(current, data.requestId, fingerprint, access.user.id))
       return current!;
     if (!current) return eventMissing();
-    if (current.version !== expected) return eventChanged();
+    if (current.version !== expected || (current.kind ?? "event") !== data.kind)
+      return eventChanged();
     if (
       current.deliveryEnabled &&
       !data.deliveryEnabled &&

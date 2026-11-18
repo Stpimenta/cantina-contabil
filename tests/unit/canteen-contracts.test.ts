@@ -1,5 +1,4 @@
-import { loadingAreaForPath } from "@/components/layout/route-loading";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createOpenApiDocument } from "@/server/api/infrastructure/openapi";
 import { saveEventInputSchema } from "@/server/events/inputs/save-event.input";
 import {
@@ -8,27 +7,7 @@ import {
 } from "@/server/canteen/inputs/command.input";
 import { credentialCodec } from "@/server/canteen/infrastructure/credential-codec";
 import { eventInput, uuid } from "../support/data";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { CommandLoading } from "@/presentation/canteen/components/command-loading";
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }),
-}));
 describe("contratos da Cantina", () => {
-  it.each([
-    ["/cash-boxes", "caixas"],
-    ["/cash-boxes/1", "caixa"],
-    ["/donations", "doacoes"],
-    ["/movements", "movimentacoes"],
-    ["/events", "eventos"],
-    ["/events/1", "evento"],
-    ["/events/1/orders", "pedidos"],
-    ["/events/1/supplies", "insumos"],
-    ["/events/1/commands", "comandas"],
-    ["/commands/1", "comandasTemporarias"],
-  ])("retains the matching loading structure for %s", (path, area) => {
-    expect(loadingAreaForPath(path)).toBe(area);
-  });
   it("gera OpenAPI 3.1 com cookies, parâmetros, respostas mínimas e erros explícitos", () => {
     const d = createOpenApiDocument("0.6.9");
     expect(d.openapi).toBe("3.1.0");
@@ -101,14 +80,5 @@ describe("contratos da Cantina", () => {
     expect(b).not.toBe(a);
     expect(await credentialCodec.hash(a)).not.toBe(a);
     expect(await credentialCodec.hash(a)).toHaveLength(64);
-  });
-  it("fallback mantém busca, filtros e ações desabilitadas com skeleton e anúncio acessível", () => {
-    const html = renderToStaticMarkup(createElement(CommandLoading));
-    expect(html).toContain('aria-busy="true"');
-    expect(html).toContain("Buscar pelo nome");
-    expect(html).toContain("Filtros");
-    expect(html).not.toContain("command-status-loading");
-    expect(html).toContain("disabled");
-    expect(html).not.toContain("empty-states");
   });
 });

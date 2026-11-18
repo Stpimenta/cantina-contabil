@@ -12,6 +12,8 @@ export interface EventOrder {
   collected?: boolean;
   updatedActor?: import("@/server/canteen/models/command-actor.model").CommandActor;
   items: OrderItem[];
+  pickupOn?: string;
+  withdrawals?: { productId: string; quantity: number }[];
   totalCents: number;
   paid: boolean;
   cashCents: number;

@@ -30,6 +30,7 @@ export function checkEventWrite(outcome: EventWriteOutcome) {
 }
 export function eventFields(data: EventData) {
   return {
+    kind: data.kind,
     cashBoxId: data.cashBoxId,
     name: data.name,
     description: data.description,
@@ -64,6 +65,8 @@ export function orderFields(
       code: "EVENT_DELIVERY_DISABLED",
       category: "conflict",
     });
+  if (event.kind !== "product_category" && data.pickupOn)
+    throwBusinessError({ code: "INVALID_ORDER_INPUT", category: "validation" });
   const items = data.items.map(({ productId, quantity }) => {
     const product =
       current?.items.find((p) => p.id === productId) ??
@@ -81,6 +84,14 @@ export function orderFields(
       quantity,
     };
   });
+  if (
+    event.kind === "product_category" &&
+    current?.withdrawals?.some(
+      (w) =>
+        w.quantity > (items.find((i) => i.id === w.productId)?.quantity ?? 0),
+    )
+  )
+    throwBusinessError({ code: "ORDER_BELOW_WITHDRAWN", category: "conflict" });
   const subtotal = items.reduce(
     (sum, item) => sum + BigInt(item.priceCents) * BigInt(item.quantity),
     0n,
@@ -89,6 +100,25 @@ export function orderFields(
     throwBusinessError({ code: "AMOUNT_LIMIT", category: "validation" });
   return {
     ...(event.canteenEnabled ? { collected: current?.collected ?? false } : {}),
+    ...(event.kind === "product_category"
+      ? {
+          pickupOn: data.pickupOn,
+          withdrawals:
+            current &&
+            current.items.every((item) =>
+              current.withdrawals?.some(
+                (w) => w.productId === item.id && w.quantity === item.quantity,
+              ),
+            )
+              ? items.map((item) => ({
+                  productId: item.id,
+                  quantity: item.quantity,
+                }))
+              : (current?.withdrawals?.filter((w) =>
+                  items.some((i) => i.id === w.productId),
+                ) ?? []),
+        }
+      : {}),
     customerName: data.customerName,
     note: data.note,
     fulfillmentMode: data.fulfillmentMode,

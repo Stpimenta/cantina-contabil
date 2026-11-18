@@ -46,3 +46,6 @@ Desktop.ini
 
 # Private OpenAPI description, regenerated before build/typecheck.
 /src/server/api/generated/
+
+# Documentação de referência local
+/docs-example/

@@ -56,7 +56,7 @@ function readEvent({ payloadJson, ...row }: EventRow): Event {
     !Number.isSafeInteger(row.pendingCents)
   )
     throw new Error("Saldo fora da precisão segura");
-  return { ...JSON.parse(payloadJson), ...row };
+  return { ...JSON.parse(payloadJson), ...row, occursOn: row.occursOn ?? "" };
 }
 function readOrder({
   payloadJson,
@@ -74,6 +74,7 @@ function readOrder({
 }
 const eventPayload = (e: Event) =>
   JSON.stringify({
+    kind: e.kind ?? "event",
     cashBoxId: e.cashBoxId,
     name: e.name,
     description: e.description,
@@ -86,6 +87,9 @@ const orderPayload = (o: EventOrder) =>
   JSON.stringify({
     ...(o.collected !== undefined ? { collected: o.collected } : {}),
     updatedActor: o.updatedActor,
+    ...(o.withdrawals !== undefined
+      ? { withdrawals: o.withdrawals, pickupOn: o.pickupOn ?? "" }
+      : {}),
     customerName: o.customerName,
     note: o.note,
     fulfillmentMode: o.fulfillmentMode,
@@ -121,12 +125,17 @@ function eventScope(scope?: EventReadScope) {
 export class D1EventRepository implements EventRepository {
   async upcoming(today: string, scope?: EventReadScope) {
     return this.db
-      .select({ id: events.id, name: events.name, occursOn: events.occursOn })
+      .select({
+        id: events.id,
+        name: events.name,
+        occursOn: sql<string>`${events.occursOn}`,
+      })
       .from(events)
       .where(
         and(
           isNull(events.deletedAt),
           gte(events.occursOn, today),
+          eq(events.kind, "event"),
           eventScope(scope),
         ),
       )
@@ -162,6 +171,19 @@ export class D1EventRepository implements EventRepository {
       const result = await execute();
       return result.meta.changes > 0 ? "saved" : "stale";
     } catch (cause) {
+      for (const code of [
+        "WITHDRAWAL_ABOVE_ORDERED",
+        "STOCK_INSUFFICIENT",
+        "ORDER_BELOW_WITHDRAWN",
+        "STOCK_PRODUCT_IN_USE",
+        "STOCK_HAS_ENTRIES",
+        "ORDER_HAS_WITHDRAWALS",
+        "INVALID_STOCK_INPUT",
+        "STOCK_LIMIT",
+      ] as const) {
+        if (hasDatabaseError(cause, code))
+          throwBusinessError({ code, category: "conflict" });
+      }
       if (hasDatabaseError(cause, "TEMP_ACCESS_ENDED"))
         throwBusinessError({
           code: "TEMP_ACCESS_ENDED",
@@ -195,6 +217,7 @@ export class D1EventRepository implements EventRepository {
     const condition = and(
       isNull(events.deletedAt),
       eventScope(scope),
+      eq(events.kind, scope?.kind ?? "event"),
       sql`${events.name} LIKE ${search} ESCAPE '!'`,
     );
     const result = await this.db
@@ -253,7 +276,8 @@ export class D1EventRepository implements EventRepository {
           cashBoxId: e.cashBoxId,
           name: e.name,
           description: e.description,
-          occursOn: e.occursOn,
+          kind: e.kind ?? "event",
+          occursOn: e.kind === "product_category" ? null : e.occursOn,
           deliveryEnabled: e.deliveryEnabled,
           canteenEnabled: e.canteenEnabled,
           ...metadata(e),
@@ -270,7 +294,8 @@ export class D1EventRepository implements EventRepository {
         .set({
           name: e.name,
           description: e.description,
-          occursOn: e.occursOn,
+          kind: e.kind ?? "event",
+          occursOn: e.kind === "product_category" ? null : e.occursOn,
           deliveryEnabled: e.deliveryEnabled,
           canteenEnabled: e.canteenEnabled,
           version: e.version,
@@ -448,7 +473,8 @@ export class D1EventRepository implements EventRepository {
   }
   async history(eventId: string, page: number, pageSize: number) {
     const source = sql`SELECT id,event_id AS eventId,resource_id AS resourceId,resource_type AS resourceType,action,actor_id AS actorId,actor_name AS actorName,occurred_at AS occurredAt,before_json AS beforeJson,after_json AS afterJson FROM event_audit WHERE event_id=${eventId}
-      UNION ALL SELECT id,event_id,supply_id,'supply',action,actor_id,actor_name,occurred_at,json_remove(before_json,'$.receiptKey','$.receipts'),json_remove(after_json,'$.receiptKey','$.receipts') FROM event_supply_audit WHERE event_id=${eventId}`;
+      UNION ALL SELECT id,event_id,supply_id,'supply',action,actor_id,actor_name,occurred_at,json_remove(before_json,'$.receiptKey','$.receipts'),json_remove(after_json,'$.receiptKey','$.receipts') FROM event_supply_audit WHERE event_id=${eventId}
+      UNION ALL SELECT id,event_id,entry_id,'stock',action,actor_id,actor_name,occurred_at,before_json,after_json FROM product_stock_audit WHERE event_id=${eventId}`;
     const total =
       (
         await this.db.get<{ total: number }>(

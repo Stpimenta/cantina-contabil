@@ -38,6 +38,10 @@ Padrão aprovado em 11/11/2026 para caixas, doações, eventos, pedidos, insumos
 - Disabled e fieldset desabilitado são respeitados. Lista longa rola por dentro; opção longa quebra linha, valor fechado pode truncar. Em navegadores com âncoras, popover não é recortado pelo modal; fallback mantém a mesma lista abaixo no fluxo.
 - Hidden input preserva name/FormData. Atualizar o valor antes de emitir input para FilterForm. Não simular ChangeEvent nativo nem adicionar roteamento ao seletor.
 
+### Quantidades inteiras
+
+Nova entrada de estoque usa QuantityStepper compartilhado: −/input number/+ compactos, mínimo 1 e limite de inteiro seguro. O Field appearance="quantityStepper" centraliza o número e oculta setas nativas duplicadas; botões são os compartilhados de 44px. Correções nas linhas usam Field appearance="quantityNative": input number centralizado em largura compacta, digitação e setas nativas. Mínimo 1 para entrada nova e 0 para correção, step inteiro, limite de inteiro seguro, nome acessível e erro associado. Servidor valida quantidade/versão e estoque. Correção ocorre nos campos dos lançamentos como rascunho, com Salvar alterações único no rodapé, sem botões de ação por linha ou modal adicional; ver [Produtos recorrentes](../funcionalidades/produtos-recorrentes.md).
+
 ### Datas, feedback e acessibilidade
 
 - Datas visíveis dd/mm/aaaa; auditoria também HH:mm em America/Sao_Paulo. DateField usa máscara/teclado numérico e valida calendário, enviando YYYY-MM-DD. Não usar input date nativo que varia de idioma.

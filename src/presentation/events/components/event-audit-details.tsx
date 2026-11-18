@@ -12,8 +12,27 @@ function Snapshot({
   type,
 }: {
   value: Record<string, unknown>;
-  type: "event" | "order" | "supply";
+  type: EventAudit["resourceType"];
 }) {
+  if (type === "stock")
+    return (
+      <dl className="details">
+        {!!value.deletedAt && (
+          <div>
+            <dt>Situação</dt>
+            <dd>Excluída</dd>
+          </div>
+        )}
+        <div>
+          <dt>Produto</dt>
+          <dd>{String(value.productName ?? "")}</dd>
+        </div>
+        <div>
+          <dt>Quantidade da entrada</dt>
+          <dd>{Number(value.quantity).toLocaleString("pt-BR")}</dd>
+        </div>
+      </dl>
+    );
   if (type === "supply")
     return (
       <dl className="details">
@@ -101,7 +120,11 @@ function Snapshot({
       {type === "event" ? (
         <>
           <div>
-            <dt>Nome do evento</dt>
+            <dt>
+              {value.kind === "product_category"
+                ? "Grupo de produtos"
+                : "Nome do evento"}
+            </dt>
             <dd>{String(value.name ?? "")}</dd>
           </div>
           <div>
@@ -116,7 +139,11 @@ function Snapshot({
           </div>
           <div>
             <dt>Data</dt>
-            <dd>{formatDateOnly(String(value.occursOn))}</dd>
+            <dd>
+              {value.occursOn
+                ? formatDateOnly(String(value.occursOn))
+                : "Sem data"}
+            </dd>
           </div>
         </>
       ) : (
@@ -181,6 +208,37 @@ function Snapshot({
                   </dd>
                 </div>
               )}
+            </>
+          )}
+          {Array.isArray(value.withdrawals) && (
+            <>
+              <div>
+                <dt>Data prevista de retirada</dt>
+                <dd>
+                  {value.pickupOn
+                    ? formatDateOnly(String(value.pickupOn))
+                    : "Não informada"}
+                </dd>
+              </div>
+              <div>
+                <dt>Quantidades retiradas</dt>
+                <dd>
+                  <ul>
+                    {(
+                      value.withdrawals as {
+                        productId: string;
+                        quantity: number;
+                      }[]
+                    ).map((w) => (
+                      <li key={w.productId}>
+                        {products?.find((p) => p.id === w.productId)?.name ??
+                          "Produto"}
+                        : {w.quantity.toLocaleString("pt-BR")}
+                      </li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
             </>
           )}
           <div>

@@ -29,6 +29,8 @@ import { Field } from "@/components/ui/field";
 import { BrazilianMaskedField } from "@/components/ui/brazilian-masked-field";
 import { PostalCodeField } from "@/presentation/addresses/components/postal-code-field";
 import { mergePostalAddress } from "@/presentation/addresses/merge-postal-address";
+import { DateField } from "@/components/ui/date-field";
+import { createRequestId } from "@/shared/identifiers/request-id";
 import { MoneyField } from "@/components/ui/money-field";
 import { TextareaField } from "@/components/ui/textarea-field";
 import { SelectField } from "@/components/ui/select-field";
@@ -46,7 +48,8 @@ export function OrderFormModal({
   onSaved: () => void;
 }) {
   const id = useId();
-  const phased = event.deliveryEnabled;
+  const recurring = event.kind === "product_category";
+  const phased = event.deliveryEnabled || recurring;
   const [step, setStep] = useState(0);
   const stepTitle = useRef<HTMLHeadingElement>(null);
   const previousStep = useRef(step);
@@ -58,7 +61,7 @@ export function OrderFormModal({
       skipStepFocus.current = false;
     }
   }, [step]);
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => createRequestId());
   const [customerName, setCustomerName] = useState(order?.customerName ?? "");
   const [fulfillmentMode, setFulfillmentMode] = useState(
     order?.fulfillmentMode ?? "",
@@ -69,6 +72,7 @@ export function OrderFormModal({
   const [contactPhone, setContactPhone] = useState(order?.contactPhone ?? "");
   const [fulfilled, setFulfilled] = useState(order?.fulfilled ?? false);
   const mapsUrl = orderMapsUrl(address);
+  const [pickupOn, setPickupOn] = useState(order?.pickupOn ?? "");
   const [note, setNote] = useState(order?.note ?? "");
   const [items, setItems] = useState(
     order?.items.map((p) => ({
@@ -155,6 +159,7 @@ export function OrderFormModal({
       fieldIds[`address.${field}`] = `${id}-address-${field}`;
     fieldIds.address = `${id}-address-street`;
   }
+  fieldIds.pickupOn = `${id}-pickup-on`;
   fieldIds.note = `${id}-note`;
   const input = {
     requestId,
@@ -166,6 +171,7 @@ export function OrderFormModal({
     contactPhone: event.deliveryEnabled ? contactPhone : "",
     fulfilled: event.deliveryEnabled ? fulfilled : false,
     customerName,
+    pickupOn,
     note,
     items: items.map(({ productId, quantity }) => ({
       productId,
@@ -234,6 +240,7 @@ export function OrderFormModal({
     contactPhone,
     fulfilled,
     customerName,
+    pickupOn,
     note,
     items,
     total,
@@ -277,7 +284,7 @@ export function OrderFormModal({
       if (failure) showError(failure);
       else {
         resetValidation();
-        setStep(step + 1);
+        setStep(recurring ? 2 : step + 1);
       }
       return;
     }
@@ -322,7 +329,7 @@ export function OrderFormModal({
                 onClick={() => {
                   if (!isPending()) {
                     resetValidation();
-                    setStep(step - 1);
+                    setStep(recurring ? 0 : step - 1);
                   }
                 }}
               >
@@ -344,7 +351,11 @@ export function OrderFormModal({
               className={styles.stepTitle}
               aria-live="polite"
             >
-              {step + 1} de 3 · {orderSteps[step]}
+              {recurring
+                ? step === 0
+                  ? "1 de 2 · Pedido"
+                  : "2 de 2 · Pagamento"
+                : `${step + 1} de 3 · ${orderSteps[step]}`}
             </h2>
           )}
           <div hidden={phased && step !== 0}>
@@ -455,6 +466,19 @@ export function OrderFormModal({
                   ? "Valor acima do limite"
                   : formatCurrency(subtotal)}
               </p>
+              {recurring && (
+                <div className={styles.pickupDate}>
+                  <DateField
+                    id={`${id}-pickup-on`}
+                    name="pickupOn"
+                    label="Data prevista de retirada (opcional)"
+                    value={pickupOn}
+                    onValueChange={setPickupOn}
+                    disabled={pending}
+                    error={fields?.pickupOn}
+                  />
+                </div>
+              )}
               {phased && (
                 <>
                   {" "}

@@ -482,7 +482,7 @@ describe("pedidos, catálogo e insumos", () => {
     expect(await h.events.find(e.id)).toMatchObject({ supplyCostCents: 0 });
   });
   it.each(["pedido", "insumo"])(
-    "vínculo de %s excluído ainda impede excluir evento",
+    "vínculo de %s excluído permite excluir evento e caixa preservando auditoria",
     async (kind) => {
       const a = await h.box();
       const e = await event(a.id);
@@ -502,26 +502,24 @@ describe("pedidos, catálogo e insumos", () => {
           1,
         );
       }
-      await unchanged(
-        () => new DeleteEventUseCase(h.events).execute(h.actor, e.id, 1),
-        kind === "pedido" ? "EVENT_HAS_ORDERS" : "EVENT_HAS_SUPPLIES",
-      );
-      await unchanged(
-        () => new DeleteCashBoxUseCase(h.boxes).execute(h.actor, a.id, 1),
-        "CASH_BOX_HAS_MOVEMENTS",
-      );
+      await new DeleteEventUseCase(h.events).execute(h.actor, e.id, 1);
+      await new DeleteCashBoxUseCase(h.boxes).execute(h.actor, a.id, 1);
+      expect(await h.events.find(e.id)).toBeNull();
+      expect(await h.boxes.find(a.id)).toBeNull();
+      expect((await h.events.history(e.id, 1, 15)).total).toBeGreaterThan(0);
     },
   );
-  it("caixa com movimentação excluída mantém proteção e histórico", async () => {
+  it("caixa com movimentação excluída permite exclusão e preserva histórico", async () => {
     const a = await h.box();
     const m = await move(a.id);
     await new DeleteMovementUseCase(h.movements, h.boxes).execute(h.actor, {
       id: m.id,
       version: 1,
     });
-    await unchanged(
-      () => new DeleteCashBoxUseCase(h.boxes).execute(h.actor, a.id, 1),
-      "CASH_BOX_HAS_MOVEMENTS",
+    await new DeleteCashBoxUseCase(h.boxes).execute(h.actor, a.id, 1);
+    expect(await h.boxes.find(a.id)).toBeNull();
+    expect((await h.boxes.history(a.id, 1, 15, "all")).total).toBeGreaterThan(
+      0,
     );
   });
 });
