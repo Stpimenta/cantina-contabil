@@ -41,7 +41,7 @@ export function checkAdminAccess(session: Session | null) {
 }
 export function checkEventRead(
   session: Session | null,
-  event: { id: string; cashBoxId: string },
+  event: { id: string; cashBoxId: string; kind?: string },
 ) {
   const s = checkAccess(session);
   if (!canReadEvent(s, event)) return denied();
@@ -49,7 +49,7 @@ export function checkEventRead(
 }
 export function checkEventAccessWrite(
   session: Session | null,
-  event: { id: string; cashBoxId: string },
+  event: { id: string; cashBoxId: string; kind?: string },
   ...payerIds: (string | null | undefined)[]
 ) {
   const s = checkAccess(session);

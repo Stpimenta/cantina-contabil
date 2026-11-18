@@ -20,6 +20,7 @@ export async function deleteEventAction(id: string, version: number) {
       revalidatePath("/events");
       revalidatePath(`/events/${value.id}`);
       revalidatePath("/cash-boxes", "layout");
+      revalidatePath("/products", "layout");
       return value;
     },
   );

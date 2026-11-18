@@ -25,6 +25,7 @@ export async function createOrderAction(eventId: string, input: unknown) {
       revalidatePath(`/events/${eventId}`);
       revalidatePath(`/events/${eventId}/orders`);
       revalidatePath("/cash-boxes", "layout");
+      revalidatePath("/products", "layout");
       return value;
     },
   );

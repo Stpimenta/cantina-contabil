@@ -26,6 +26,19 @@ const labels: Record<CashBoxHistoryEntry["action"], string> = {
   delete: "Caixa excluído",
 };
 
+function label(entry: CashBoxHistoryEntry) {
+  if (
+    entry.eventDetails?.resourceType === "event" &&
+    entry.eventDetails.after.kind === "product_category"
+  )
+    return entry.action === "event_create"
+      ? "Grupo de produtos criado"
+      : entry.action === "event_delete"
+        ? "Grupo de produtos excluído"
+        : "Grupo de produtos atualizado";
+  return labels[entry.action];
+}
+
 export function CashBoxHistoryList({
   entries,
 }: {
@@ -38,7 +51,7 @@ export function CashBoxHistoryList({
         label="Eventos do caixa"
         entries={entries.map((entry) => ({
           id: entry.id,
-          label: labels[entry.action],
+          label: label(entry),
           actorName: entry.actorName,
         }))}
         onDetails={(id) =>
@@ -48,7 +61,7 @@ export function CashBoxHistoryList({
       {selected && (
         <CashBoxHistoryEntryModal
           entry={selected}
-          actionLabel={labels[selected.action]}
+          actionLabel={label(selected)}
           onClose={() => setSelected(null)}
         />
       )}

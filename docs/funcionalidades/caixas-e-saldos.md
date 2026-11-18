@@ -6,11 +6,13 @@ Contrato atual. Leia somente ao alterar este assunto. [Escolher outra leitura](.
 
 ### Caixas
 
+Grupos de [Produtos recorrentes](produtos-recorrentes.md) compartilham o vínculo e o financeiro dos eventos. Seus pedidos pagos/pendentes e compras de insumos participam das somas existentes uma única vez; entrada/correção de estoque e retirada física não movimentam dinheiro. Histórico identifica o cadastro do grupo sem chamá-lo de evento.
+
 - Cadastro, listagem/busca, consulta, edição e soft delete. Nome obrigatório até 100 caracteres; descrição opcional até 500.
 - Nome ativo único por chave Unicode NFKC, espaços normalizados e minúsculas pt-BR; índice único parcial garante concorrência. Edição/exclusão verificam versão.
 - created/updated/deleted preservam data, ID e nome do autor. Triggers gravam snapshots antes/depois em cash_box_audit na mesma operação; falha na auditoria desfaz a gravação.
-- Caixa com qualquer doação, evento vinculado, compra de insumo ou movimentação preservada não pode ser excluído; triggers garantem a regra mesmo em concorrência. Não presumir proteção para outros módulos futuros.
-- CashBoxSummary separa o modelo de leitura: balanceCents é o real (doações não excluídas + valores dos pedidos pagos dos eventos vinculados); pendingCents soma os valores dos pedidos pendentes. Compras de insumos são subtraídas do real do caixa de origem, inclusive quando financiam evento de outro caixa. Movimentações manuais ativas somam entradas e subtraem saídas do real, sem alterar pendente. Pedidos excluídos ficam fora de ambos os saldos. Não somar novamente a auditoria ou parcelas por forma de pagamento, não usar zero fixo nem permitir edição direta de saldo.
+- Caixa com doação, evento/grupo vinculado, compra de insumo ou movimentação ativa não pode ser excluído; triggers garantem a regra mesmo em concorrência. Não presumir proteção para outros módulos futuros.
+- CashBoxSummary separa o modelo de leitura: balanceCents é o real (doações não excluídas + valores dos pedidos pagos dos eventos e grupos de produtos vinculados); pendingCents soma os valores dos pedidos pendentes. Compras de insumos são subtraídas do real do caixa de origem, inclusive quando financiam evento de outro caixa. Movimentações manuais ativas somam entradas e subtraem saídas do real, sem alterar pendente. Pedidos excluídos ficam fora de ambos os saldos. Não somar novamente a auditoria ou parcelas por forma de pagamento, não usar zero fixo nem permitir edição direta de saldo.
 
 ### Visibilidade visual dos saldos
 
@@ -24,7 +26,7 @@ Home usa BalanceAmount para resumo Real/Pendente e textos do gráfico; barras pe
 
 - Novo caixa abre CashBoxFormModal. Sucesso fecha, mostra toast Caixa criado e atualiza lista preservando busca/página. Editar usa o mesmo formulário; sucesso atualiza os detalhes/histórico.
 - Fechar com dados alterados pede confirmação de descarte. Erro preserva formulário, aponta campo e oferece recuperação de foco. Nome duplicado ou versão concorrente são conflitos esperados.
-- Excluir pede confirmação curta no padrão compartilhado. Sucesso volta à lista com toast; falha mantém contexto. Caixa com doações, eventos, compras de insumos ou movimentações preservadas não pode ser excluído.
+- Excluir pede confirmação curta no padrão compartilhado. Sucesso volta à lista com toast; falha mantém contexto. Caixa com doações, eventos/grupos, compras de insumos ou movimentações ativas não pode ser excluído. Dependências excluídas logicamente não bloqueiam; registros e auditoria permanecem armazenados.
 - Toda a linha de um caixa é um Link semântico para seu detalhe, com Enter, nova aba e foco na linha inteira. Não usar onClick em div/li nem aninhar outro interativo no link.
 - Descrição da listagem é resumo visual: uma linha no celular abaixo de 600px, até duas nas demais telas, com reticências conforme largura disponível. Não limitar caracteres armazenados nem alterar validação; abrir o caixa mostra o texto completo.
 - Nome alinhado verticalmente ao saldo. Real e pendente aparecem na listagem e em destaque no detalhe, inclusive R$ 0,00. Criado por mostra só nome; datas e alterações ficam no histórico.

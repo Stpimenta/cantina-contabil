@@ -11,7 +11,7 @@ export interface ImportedAccountInput {
 }
 
 export interface LocalAccountRepository {
-  eventOptions(): Promise<{ id: string; name: string }[]>;
+  eventOptions(): Promise<{ id: string; name: string; kind?: string }[]>;
   list(
     query: string,
     page: number,

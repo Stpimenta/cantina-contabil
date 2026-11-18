@@ -28,6 +28,7 @@ Cada arquivo reúne regras/dados, fluxo/UX e composição visual **somente daque
 | Caixas, saldo, olhinho e histórico de caixa                  | [Caixas e saldos](funcionalidades/caixas-e-saldos.md)                 |
 | Doadores, doações e edição/exclusão                          | [Doações](funcionalidades/doacoes.md)                                 |
 | Eventos, produtos, pedidos e pagamentos                      | [Eventos e pedidos](funcionalidades/eventos-e-pedidos.md)             |
+| Produtos recorrentes, categorias, estoque e retiradas        | [Produtos recorrentes](funcionalidades/produtos-recorrentes.md)       |
 | Etapas, transporte, endereço/CEP e filtros de entrega        | [Entregas e endereços](funcionalidades/entregas-e-enderecos.md)       |
 | Compras/doações materiais, anexos e detalhes dos insumos     | [Insumos e comprovantes](funcionalidades/insumos-e-comprovantes.md)   |
 | Entradas/saídas manuais e seus comprovantes                  | [Movimentações](funcionalidades/movimentacoes.md)                     |

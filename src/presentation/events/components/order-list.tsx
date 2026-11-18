@@ -1,5 +1,6 @@
 "use client";
 import { useCashBoxAccess } from "@/components/ui/cash-box-access";
+import { formatDateOnly } from "@/shared/formatting/date-time";
 import { OrderStatusModal } from "./order-status-modal";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import styles from "./order-list.module.css";
@@ -29,6 +30,7 @@ export function OrderList({
   orders: EventOrder[];
   search?: ReactNode;
 }) {
+  const recurring = event.kind === "product_category";
   const [selected, setSelected] = useState<EventOrder | "new" | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<EventOrder | null>(null);
   const [deleting, setDeleting] = useState<EventOrder | null>(null);
@@ -44,7 +46,7 @@ export function OrderList({
     <>
       <PageHeader
         title="Pedidos"
-        description={`Evento: ${event.name}`}
+        description={`${recurring ? "Grupo" : "Evento"}: ${event.name}`}
         compactActionsOnMobile
         actions={
           <Button
@@ -66,20 +68,44 @@ export function OrderList({
             : "Nenhum pedido encontrado."}
         </SectionFeedback>
       )}
-      <ul className="record-list" aria-label="Pedidos do evento">
+      <ul
+        className="record-list"
+        aria-label={recurring ? "Pedidos do grupo" : "Pedidos do evento"}
+      >
         {orders.map((order) => (
-          <li key={order.id} className="record-row">
+          <li
+            key={order.id}
+            className={`record-row ${recurring ? styles.recurringRow : ""}`}
+          >
             <div className={`stack-small ${styles.content}`}>
               <p>{order.customerName}</p>
               <p className="muted record-meta">
                 {order.paid ? "Pago" : "Pendente"} ·{" "}
                 {formatCurrency(order.totalCents)}
               </p>
-              <p className="record-meta">
+              <p className={`record-meta ${styles.itemsSummary}`}>
                 {order.items
                   .map((p) => `${p.quantity} × ${p.name}`)
                   .join(" · ")}
               </p>
+              {recurring && (
+                <>
+                  <p className="muted record-meta">
+                    {order.items.every(
+                      (p) =>
+                        (order.withdrawals?.find((w) => w.productId === p.id)
+                          ?.quantity ?? 0) === p.quantity,
+                    )
+                      ? "Retirado"
+                      : "A retirar"}
+                  </p>
+                  {order.pickupOn && (
+                    <p className="muted record-meta">
+                      Retirada prevista: {formatDateOnly(order.pickupOn)}
+                    </p>
+                  )}
+                </>
+              )}
               {event.deliveryEnabled && (
                 <p className="muted record-meta">
                   {order.fulfillmentMode === "delivery"
@@ -98,13 +124,13 @@ export function OrderList({
               )}
             </div>
             <div className="action-group">
-              {(!order.paid || event.deliveryEnabled) && (
+              {(recurring || !order.paid || event.deliveryEnabled) && (
                 <Button
                   variant="neutral"
                   disabled={pending || !writable}
                   iconOnly
                   aria-label={`Atualizar situação do pedido de ${order.customerName}`}
-                  title="Atualizar situação"
+                  title="Mais"
                   onClick={() => setUpdatingStatus(order)}
                 >
                   <Icon name="plus" />
@@ -141,6 +167,7 @@ export function OrderList({
         <OrderStatusModal
           order={updatingStatus}
           deliveryEnabled={event.deliveryEnabled}
+          recurring={recurring}
           onClose={() => setUpdatingStatus(null)}
           onSaved={() => {
             setUpdatingStatus(null);

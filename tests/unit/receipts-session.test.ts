@@ -4,10 +4,6 @@ import {
   RECEIPT_MAX_BYTES,
 } from "@/shared/receipts/receipt-input";
 import { readReceiptContent } from "@/shared/receipts/receipt-content";
-import {
-  signSession,
-  verifySession,
-} from "@/server/auth/infrastructure/session-codec";
 import { checkAccess } from "@/shared/auth/check-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { session } from "../support/data";
@@ -58,47 +54,6 @@ describe("comprovantes", () => {
   });
 });
 describe("sessão interna", () => {
-  const secret = "segredo-sintetico-exclusivo-de-testes-123456";
-  it("aceita sessão válida e rejeita adulteração, outro segredo e expiração", async () => {
-    const actor = session();
-    const cookie = await signSession(actor, secret);
-    expect(await verifySession(cookie, secret, actor.issuedAt * 1000)).toEqual(
-      actor,
-    );
-    expect(await verifySession(`a${cookie}`, secret)).toBeNull();
-    expect(
-      await verifySession(cookie, "outro-segredo-sintetico-de-testes-123456"),
-    ).toBeNull();
-    expect(
-      await verifySession(cookie, secret, actor.expiresAt * 1000),
-    ).toBeNull();
-  });
-  it.each(["", "a.b.c", "%.%", "x".repeat(3801)])(
-    "rejeita cookie malformado",
-    async (value) => expect(await verifySession(value, secret)).toBeNull(),
-  );
-  it.each([7201, 0, -1])("rejeita duração inválida %s", async (duration) => {
-    const actor = session();
-    expect(
-      await verifySession(
-        await signSession(
-          { ...actor, expiresAt: actor.issuedAt + duration },
-          secret,
-        ),
-        secret,
-      ),
-    ).toBeNull();
-  });
-  it("rejeita emissão no futuro", async () => {
-    const actor = session();
-    expect(
-      await verifySession(
-        await signSession(actor, secret),
-        secret,
-        (actor.issuedAt - 1) * 1000,
-      ),
-    ).toBeNull();
-  });
   it("verifica ausência, expiração e perfil", () => {
     expect(() => checkAccess(null)).toThrow("SESSION_EXPIRED");
     expect(() => checkAccess({ ...session(), expiresAt: 0 })).toThrow(

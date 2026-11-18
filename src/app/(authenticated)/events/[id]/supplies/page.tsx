@@ -32,6 +32,10 @@ export default async function SuppliesPage({
     async () => {
       const useCases = createEvents();
       const event = await useCases.get.execute(session, id);
+      if (event.kind === "product_category")
+        redirect(
+          `/products/${id}/supplies${Object.keys(query).length ? `?${new URLSearchParams(Object.entries(query).filter((entry): entry is [string, string] => typeof entry[1] === "string"))}` : ""}`,
+        );
       const supplies = await useCases.supplies.execute(session, id, {
         page: Number(query.page),
       });
@@ -44,7 +48,9 @@ export default async function SuppliesPage({
     <div className="stack">
       <Breadcrumbs
         items={[
-          ...(session.role === "operator" ? [] : [{ label: "Home", href: "/" }]),
+          ...(session.role === "operator"
+            ? []
+            : [{ label: "Home", href: "/" }]),
           { label: "Eventos", href: "/events" },
           {
             label: result.ok ? result.value.event.name : "Evento",

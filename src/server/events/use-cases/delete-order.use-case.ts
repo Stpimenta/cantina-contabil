@@ -1,3 +1,4 @@
+import { throwBusinessError } from "@/shared/errors/business-error";
 import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
@@ -31,6 +32,14 @@ export class DeleteOrderUseCase {
     if (!current || current.eventId !== eventId) return eventMissing();
     if (current.version !== expectedVersion) return eventChanged();
     const event = authorizedEvent;
+    if (
+      event.kind === "product_category" &&
+      current.withdrawals?.some((w) => w.quantity > 0)
+    )
+      throwBusinessError({
+        code: "ORDER_HAS_WITHDRAWALS",
+        category: "conflict",
+      });
     checkEventWrite(
       await this.events.softDeleteOrder({
         id,

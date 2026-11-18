@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { harness, type Harness } from "../support/harness";
 import {
   eventInput,
+  pdf,
   movementInput,
   donationInput,
   supplyInput,
@@ -145,7 +146,7 @@ describe("consulta e alteração por caixa/evento", () => {
       h.receipts,
     );
     await expect(
-      create.execute(s, event.id, supplyInput(payer.id), []),
+      create.execute(s, event.id, supplyInput(payer.id), [pdf()]),
     ).rejects.toMatchObject(denied);
     expect((await h.boxes.find(payer.id))?.balanceCents).toBe(0);
   });

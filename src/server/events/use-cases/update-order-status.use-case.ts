@@ -48,18 +48,18 @@ export class UpdateOrderStatusUseCase {
     parseInput(validateUpdateOrderStatus(input, current.totalCents));
     const event = authorizedEvent;
     if (data.fulfilled !== undefined) {
-      if (!event.deliveryEnabled)
+      if (event.kind !== "product_category" && !event.deliveryEnabled)
         throwBusinessError({
           code: "EVENT_DELIVERY_DISABLED",
           category: "conflict",
         });
-      if (!current.fulfillmentMode)
+      if (event.kind !== "product_category" && !current.fulfillmentMode)
         throwBusinessError({
           code: "ORDER_FULFILLMENT_UNDEFINED",
           category: "conflict",
         });
     }
-    if (!data.payment && data.fulfilled === current.fulfilled) return current;
+    if (!data.payment && data.fulfilled === undefined) return current;
     const cashCents = !data.payment
       ? current.cashCents
       : data.payment.method === "cash"
@@ -80,7 +80,18 @@ export class UpdateOrderStatusUseCase {
           }
         : {}),
       paid: data.payment ? true : current.paid,
-      fulfilled: data.fulfilled ?? current.fulfilled,
+      fulfilled:
+        event.kind === "product_category"
+          ? false
+          : (data.fulfilled ?? current.fulfilled),
+      ...(event.kind === "product_category" && data.fulfilled !== undefined
+        ? {
+            withdrawals: current.items.map((item) => ({
+              productId: item.id,
+              quantity: data.fulfilled ? item.quantity : 0,
+            })),
+          }
+        : {}),
       cashCents,
       pixCents: data.payment
         ? current.totalCents - cashCents

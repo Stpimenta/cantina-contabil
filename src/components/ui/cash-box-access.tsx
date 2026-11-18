@@ -27,7 +27,7 @@ export function useCashBoxAccess() {
         (ids.some(Boolean) &&
           ids.every((id) => !id || canWriteBox(access, id)))),
     canWriteEvent: (
-      event: { id: string; cashBoxId: string },
+      event: { id: string; cashBoxId: string; kind?: string },
       ...payers: (string | null | undefined)[]
     ) =>
       !!access &&

@@ -1,0 +1,19 @@
+import type { StockEntryCursor } from "../models/stock-entry-cursor.model";
+import type { StockEntry } from "../models/stock-entry.model";
+import type { EventPage } from "@/server/events/repositories/event.repository";
+export interface ProductStockRepository {
+  entriesBefore(categoryId: string, productId: string, cursor: StockEntryCursor | null, limit: number): Promise<StockEntry[]>;
+  productInUse(categoryId: string, productId: string): Promise<boolean>;
+  balances(
+    categoryId: string,
+  ): Promise<{ productId: string; quantity: number }[]>;
+  entries(
+    categoryId: string,
+    productId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<EventPage<StockEntry>>;
+  findEntry(id: string): Promise<StockEntry | null>;
+  saveEntry(entry: StockEntry, expectedVersion: number): Promise<boolean>;
+  saveEntries(entries: StockEntry[], addition?: StockEntry): Promise<void>;
+}

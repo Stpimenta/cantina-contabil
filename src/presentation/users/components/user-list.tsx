@@ -45,7 +45,7 @@ export interface UserEntry {
 interface Data {
   items: UserEntry[];
   boxes: { id: string; name: string }[];
-  events: { id: string; name: string }[];
+  events: { id: string; name: string; kind?: string }[];
   query: string;
   page: number;
   pageSize: number;
@@ -210,7 +210,7 @@ export function UserList({ data }: { data?: Data }) {
                     ? "Administrador · Acesso completo"
                     : user.role === "finance"
                       ? `Financeiro · ${user.cashBoxIds.length} caixa(s)`
-                      : `Operador · ${user.eventIds.length} evento(s)`}{" "}
+                      : `Operador · ${user.eventIds.length} evento(s)/grupo(s)`}{" "}
                   ·{" "}
                   {user.state === "pending"
                     ? user.invitationState === "cancelled"
@@ -394,6 +394,12 @@ export function UserList({ data }: { data?: Data }) {
                   : "eventWriteIds";
                 const groupId = financial ? "account-boxes" : "account-events";
                 const options = (financial ? data?.boxes : data?.events) ?? [];
+                const groups = financial
+                  ? [{ id: "boxes", title: "Caixas", empty: "Nenhum caixa disponível.", items: options }]
+                  : [
+                      { id: "events", title: "Eventos", empty: "Nenhum evento disponível.", items: options.filter(option => !("kind" in option) || option.kind !== "product_category") },
+                      { id: "products", title: "Produtos", empty: "Nenhum grupo de produtos disponível.", items: options.filter(option => "kind" in option && option.kind === "product_category") },
+                    ];
                 const groupError =
                   action.fields?.[readKey] ?? action.fields?.[writeKey];
                 return (
@@ -401,21 +407,19 @@ export function UserList({ data }: { data?: Data }) {
                     className={styles.permissions}
                     id={groupId}
                     role="group"
-                    aria-labelledby={`${groupId}-label`}
+                    aria-label={financial ? "Permissões dos caixas" : "Permissões de eventos e produtos"}
                     aria-invalid={!!groupError}
                     aria-describedby={
                       groupError ? `${groupId}-error` : undefined
                     }
                     tabIndex={-1}
                   >
-                    <div className="stack-small">
-                      <h3 id={`${groupId}-label`}>
-                        {financial ? "Acesso aos caixas" : "Acesso aos eventos"}
-                      </h3>
-                    </div>
-                    {options.length ? (
+                    {groups.map(group => (
+                      <section key={group.id} className="stack-small" aria-labelledby={`${groupId}-${group.id}-label`}>
+                        <h3 id={`${groupId}-${group.id}-label`}>{group.title}</h3>
+                    {group.items.length ? (
                       <ul className={styles.accessList}>
-                        {options.map((option) => (
+                        {group.items.map((option) => (
                           <li
                             key={option.id}
                             className={styles.accessRow}
@@ -423,7 +427,7 @@ export function UserList({ data }: { data?: Data }) {
                             aria-labelledby={`resource-${option.id}`}
                           >
                             <div className={styles.resourceHeading} data-authorized={draft[readKey].includes(option.id) || undefined}>
-                              <Icon name={financial ? "box" : "calendar"} />
+                              <Icon name={financial || ("kind" in option && option.kind === "product_category") ? "box" : "calendar"} />
                               <span
                                 id={`resource-${option.id}`}
                                 className={styles.accessName}
@@ -451,17 +455,16 @@ export function UserList({ data }: { data?: Data }) {
                       </ul>
                     ) : (
                       <p className="record-meta">
-                        {financial
-                          ? "Nenhum caixa disponível."
-                          : "Nenhum evento disponível."}
+                        {group.empty}
                       </p>
                     )}
-                    <FieldError id={`${groupId}-error`} error={groupError} />
                     <p className={styles.summary}>
-                      {draft[readKey].length}{" "}
-                      {financial ? "caixa(s)" : "evento(s)"} autorizado(s) ·{" "}
-                      {draft[writeKey].length} com alteração
+                      {group.items.filter(option => draft[readKey].includes(option.id)).length} autorizado(s) ·{" "}
+                      {group.items.filter(option => draft[writeKey].includes(option.id)).length} com alteração
                     </p>
+                      </section>
+                    ))}
+                    <FieldError id={`${groupId}-error`} error={groupError} />
                   </section>
                 );
               })()

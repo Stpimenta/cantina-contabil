@@ -29,6 +29,7 @@ export async function updateEventAction(
       revalidatePath("/events");
       revalidatePath(`/events/${value.id}`);
       revalidatePath("/cash-boxes", "layout");
+      revalidatePath("/products", "layout");
       return value;
     },
   );

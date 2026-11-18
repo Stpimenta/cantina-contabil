@@ -9,6 +9,7 @@ export function RecordActionsMenu({
   disabled,
   onDetails,
   onEdit,
+  editLabel = "Editar",
   onDelete,
 }: {
   name: string;
@@ -16,6 +17,7 @@ export function RecordActionsMenu({
   disabled: boolean;
   onDetails?: () => void;
   onEdit: () => void;
+  editLabel?: string;
   onDelete: () => void;
 }) {
   const id = useId();
@@ -142,7 +144,7 @@ export function RecordActionsMenu({
         >
           <span className={styles.optionContent}>
             <Icon name="edit" />
-            <span>Editar</span>
+            <span>{editLabel}</span>
           </span>
         </Button>
         <Button

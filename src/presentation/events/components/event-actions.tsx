@@ -16,18 +16,23 @@ import { useToast } from "@/components/ui/toast-provider";
 import { EventFormModal } from "./event-form-modal";
 export function EventActions({
   event,
+  recurring = event?.kind === "product_category",
   cashBoxes,
   today,
 }: {
   event?: Event;
+  recurring?: boolean;
   cashBoxes: { id: string; name: string }[];
   today: string;
 }) {
+  const editLabel = recurring ? "Editar grupo" : "Editar evento";
+  const newLabel = recurring ? "Novo grupo" : "Novo evento";
+  const deleteLabel = recurring ? "Excluir grupo" : "Excluir evento";
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { execute, pending, isPending, error, closeError } = useServerAction({
     connectionMessage:
-      "Não foi possível confirmar a exclusão. Confira os eventos antes de tentar novamente.",
+      "Não foi possível confirmar a exclusão. Confira os registros antes de tentar novamente.",
   });
   const router = useRouter();
   const notify = useToast();
@@ -42,11 +47,11 @@ export function EventActions({
         variant={event ? "neutral" : "primary"}
         iconBreakpoint={event ? "tablet" : "mobile"}
         mobileIcon={<Icon name={event ? "edit" : "plus"} />}
-        aria-label={event ? "Editar evento" : "Novo evento"}
-        title={event ? "Editar evento" : "Novo evento"}
+        aria-label={event ? editLabel : newLabel}
+        title={event ? editLabel : newLabel}
         onClick={() => setOpen(true)}
       >
-        {event ? "Editar evento" : "Novo evento"}
+        {event ? editLabel : newLabel}
       </Button>
       {event && (
         <Button
@@ -54,19 +59,19 @@ export function EventActions({
           disabled={pending}
           iconBreakpoint="tablet"
           mobileIcon={<Icon name="trash" />}
-          aria-label="Excluir evento"
-          title="Excluir evento"
+          aria-label={deleteLabel}
+          title={deleteLabel}
           onClick={() => setConfirmDelete(true)}
         >
           <Icon name="trash" />
-          Excluir evento
+          {deleteLabel}
         </Button>
       )}
       {event && confirmDelete && (
         <ConfirmationModal
-          title="Excluir evento?"
+          title={`${deleteLabel}?`}
           message={deletionConfirmationMessage}
-          confirmLabel="Excluir evento"
+          confirmLabel={deleteLabel}
           busy={pending}
           onCancel={() => {
             if (!isPending()) setConfirmDelete(false);
@@ -76,8 +81,8 @@ export function EventActions({
               () => deleteEventAction(event.id, event.version),
               () => {
                 setConfirmDelete(false);
-                notify("Evento excluído.");
-                router.push("/events");
+                notify(recurring ? "Grupo excluído." : "Evento excluído.");
+                router.push(recurring ? "/products" : "/events");
                 router.refresh();
               },
             )
@@ -88,12 +93,21 @@ export function EventActions({
       {open && (
         <EventFormModal
           event={event}
+          recurring={recurring}
           cashBoxes={cashBoxes}
           today={today}
           onClose={() => setOpen(false)}
           onSaved={() => {
             setOpen(false);
-            notify(event ? "Evento atualizado." : "Evento criado.");
+            notify(
+              recurring
+                ? event
+                  ? "Grupo atualizado."
+                  : "Grupo criado."
+                : event
+                  ? "Evento atualizado."
+                  : "Evento criado.",
+            );
             router.refresh();
           }}
         />

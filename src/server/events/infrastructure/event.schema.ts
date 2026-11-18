@@ -5,6 +5,9 @@ export const events = sqliteTable("events", {
   deletedBy: integer("deleted_by"),
   deletedByName: text("deleted_by_name"),
   id: text("id").primaryKey(),
+  kind: text("kind", { enum: ["event", "product_category"] })
+    .notNull()
+    .default("event"),
   cashBoxId: text("cash_box_id")
     .notNull()
     .references(() => cashBoxes.id),
@@ -16,7 +19,7 @@ export const events = sqliteTable("events", {
     .notNull()
     .default(false),
   description: text("description").notNull(),
-  occursOn: text("occurs_on").notNull(),
+  occursOn: text("occurs_on"),
   version: integer("version").notNull(),
   createdAt: text("created_at").notNull(),
   createdBy: integer("created_by").notNull(),

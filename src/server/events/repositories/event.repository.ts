@@ -28,6 +28,7 @@ export type EventWriteOutcome =
 export interface EventReadScope {
   eventIds?: string[];
   cashBoxIds?: string[];
+  kind?: "event" | "product_category";
 }
 export interface EventRepository {
   upcoming(

@@ -15,7 +15,7 @@ export class D1LocalAccountRepository implements LocalAccountRepository {
 
   async eventOptions() {
     return this.db
-      .select({ id: events.id, name: events.name })
+      .select({ id: events.id, name: events.name, kind: events.kind })
       .from(events)
       .where(isNull(events.deletedAt))
       .orderBy(asc(events.name), asc(events.id))

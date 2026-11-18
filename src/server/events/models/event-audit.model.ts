@@ -2,7 +2,7 @@ export interface EventAudit {
   id: string;
   eventId: string;
   resourceId: string;
-  resourceType: "event" | "order" | "supply";
+  resourceType: "event" | "order" | "supply" | "stock";
   action: "create" | "update";
   actorId: number;
   actorName: string;

@@ -53,6 +53,15 @@ export function Navigation({ onNavigate }: { onNavigate?: () => void }) {
         <Icon name="calendar" />
         Eventos
       </Link>
+      <Link
+        className={styles.link}
+        href="/products"
+        aria-current={pathname.startsWith("/products") ? "page" : undefined}
+        onClick={onNavigate}
+      >
+        <Icon name="box" />
+        Produtos
+      </Link>
       {!isOperator && (
         <Link
           className={styles.link}

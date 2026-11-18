@@ -28,6 +28,7 @@ export async function receiveSupplyAction(
       );
       revalidatePath(`/events/${eventId}`);
       revalidatePath(`/events/${eventId}/supplies`);
+      revalidatePath("/products", "layout");
       return value;
     },
   );

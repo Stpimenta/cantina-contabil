@@ -1,5 +1,6 @@
 import type { EventProduct } from "./event-product.model";
 export interface Event {
+  kind?: "event" | "product_category";
   id: string;
   cashBoxId: string;
   name: string;

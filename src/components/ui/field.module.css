@@ -87,3 +87,20 @@
   border-end-start-radius: var(--radius-pill);
   pointer-events: none;
 }
+
+.root.quantityNative input {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.root.quantityStepper input {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.root.quantityStepper input::-webkit-inner-spin-button,
+.root.quantityStepper input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

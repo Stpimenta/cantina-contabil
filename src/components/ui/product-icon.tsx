@@ -57,6 +57,22 @@ const paths = {
       <path d="M12 12v10" />
     </>
   ),
+  sprayBottle: (
+    <>
+      <path d="M8 3h9v3h-5v3l4 4v8H5v-8l3-4V6H6V3h2ZM12 6l3 4M5 15h11M19 3h2M19 6l2 1" />
+    </>
+  ),
+  perfume: (
+    <>
+      <rect x="5" y="10" width="14" height="11" rx="2" />
+      <path d="M9 10V6h6v4M10 6V3h4v3M14 3h3M9 14h6v3H9ZM20 3h1M19 6l2 1" />
+    </>
+  ),
+  reedDiffuser: (
+    <>
+      <path d="M9 10h6v3l3 3v5H6v-5l3-3v-3ZM10 10 6 2M12 10V1M14 10l4-8M9 17h6" />
+    </>
+  ),
   milk: (
     <>
       <path d="M7 2h10v4l3 4v12H4V10l3-4V2ZM7 6h10M4 10h16M8 14h8v5H8z" />
@@ -97,6 +113,23 @@ const paths = {
   cake: (
     <>
       <path d="M3 12h18v9H3zM3 15c3 4 4-3 7 0s4-3 7 0 4 0 4 0M7 12V8h10v4M12 8V4M12 2v1" />
+    </>
+  ),
+  cakeJar: (
+    <>
+      <rect x="5" y="5" width="14" height="3" rx="1" />
+      <path d="M6 8v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8M6 12h12M6 17h12M9 5c0-3 6-3 6 0" />
+    </>
+  ),
+  cakeSlice: (
+    <>
+      <path d="m3 12 13-8 5 8v9H3v-9ZM3 12h18M3 17h18M16 4v8" />
+      <path d="M10 8c-1-3 3-5 4-2" />
+    </>
+  ),
+  cupcake: (
+    <>
+      <path d="m6 13 2 8h8l2-8H6ZM10 16l1 5M14 16l-1 5M5 13c-2-3 0-5 3-5-1-3 2-5 4-6 0 3 5 3 4 6 3 0 5 2 3 5H5Z" />
     </>
   ),
   bread: (

@@ -1,4 +1,5 @@
 "use client";
+import { createRequestId } from "@/shared/identifiers/request-id";
 import styles from "./order-form-modal.module.css";
 import { useId, useState, type FormEvent } from "react";
 import type { EventOrder } from "@/server/events/models/event-order.model";
@@ -18,28 +19,41 @@ import { MoneyField } from "@/components/ui/money-field";
 export function OrderStatusModal({
   order,
   deliveryEnabled,
+  recurring = false,
   onClose,
   onSaved,
 }: {
   order: EventOrder;
   deliveryEnabled: boolean;
+  recurring?: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const id = useId();
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => createRequestId());
   const [paid, setPaid] = useState(order.paid);
-  const [fulfilled, setFulfilled] = useState(order.fulfilled);
+  const initialFulfilled = recurring
+    ? order.items.every(
+        (p) =>
+          (order.withdrawals?.find((w) => w.productId === p.id)?.quantity ??
+            0) === p.quantity,
+      )
+    : order.fulfilled;
+  const [fulfillmentTouched, setFulfillmentTouched] = useState(false);
+  const [fulfilled, setFulfilled] = useState(initialFulfilled);
   const [method, setMethod] = useState("pix");
   const [cash, setCash] = useState("0,00");
   const [discard, setDiscard] = useState(false);
-  const hasFulfillment = deliveryEnabled && !!order.fulfillmentMode;
+  const hasFulfillment =
+    recurring || (deliveryEnabled && !!order.fulfillmentMode);
   const input = {
     requestId,
     ...(paid && !order.paid
       ? { payment: { method, cash: method === "mixed" ? cash : "0" } }
       : {}),
-    ...(hasFulfillment && fulfilled !== order.fulfilled ? { fulfilled } : {}),
+    ...(hasFulfillment && (fulfilled !== initialFulfilled || fulfillmentTouched)
+      ? { fulfilled }
+      : {}),
   };
   const changed = !!input.payment || input.fulfilled !== undefined;
   const dirty = changed || method !== "pix" || cash !== "0,00";
@@ -94,6 +108,13 @@ export function OrderStatusModal({
       >
         <form id={id} className="stack" noValidate onSubmit={submit}>
           <p>{order.customerName}</p>
+          <ul className="record-list" aria-label="Produtos do pedido">
+            {order.items.map((item) => (
+              <li key={item.id} className="record-meta">
+                {item.quantity.toLocaleString("pt-BR")} × {item.name}
+              </li>
+            ))}
+          </ul>
           <p>
             Valor do pedido:{" "}
             <span className="balance-value">
@@ -160,7 +181,10 @@ export function OrderStatusModal({
                 order.fulfillmentMode === "delivery" ? "Entrega" : "Retirada"
               }
               value={fulfilled ? "done" : "pending"}
-              onValueChange={(value) => setFulfilled(value === "done")}
+              onValueChange={(value) => {
+                setFulfillmentTouched(true);
+                setFulfilled(value === "done");
+              }}
               disabled={pending}
               error={fields?.fulfilled}
               options={
