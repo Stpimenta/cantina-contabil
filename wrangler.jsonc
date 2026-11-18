@@ -31,8 +31,10 @@
     "enabled": true,
   },
   "vars": {
-    "AUTH_API_URL": "https://gestpvapi.ibpalavraviva.com.br",
     "APP_ENV": "production",
+    "APP_URL": "https://ministerio-contabil.ibpalavraviva.com.br",
+    "AUTH_API_URL": "https://gestpvapi.ibpalavraviva.com.br",
+    "SUPABASE_URL": "https://ywgzrskofocjqlvyiyna.supabase.co",
   },
   "r2_buckets": [
     {

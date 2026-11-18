@@ -4,6 +4,8 @@ Retomada curta. Use o [mapa de leitura](README.md) para abrir somente os contrat
 
 ## Local de trabalho e limites
 
+- Sincronização de autenticação em produção: exceção explicitamente autorizada para editar a main; APP_URL e SUPABASE_URL adicionadas às vars de wrangler.jsonc, sem chaves/Secrets. Versão local 0.6.18 preparada e validada contra a referência disponível origin/main 0.6.17. Revisão estática da configuração/documentação; sem testes/build, commit/envio, migração ou publicação. Configuração remota não reconferida.
+
 - Correção local em fix/stock-shortage-tests: cenários de reposição individual e retirada bloqueada comparam o pedido persistido antes/depois, incluindo metadados de exclusão retornados pelo banco. Mantida igualdade completa e conferência de existência, sem enfraquecer a proteção de pagamento/retirada. Revisão estática e tentativa autorizada de executar vitest run tests/integration/recurring-products.test.ts: os cinco casos foram bloqueados na preparação por listen EPERM em 127.0.0.1, antes das verificações de negócio; posteriormente o responsável executou o mesmo arquivo no terminal e confirmou os cinco testes aprovados. Versão 0.6.17 sincronizada/validada contra a referência disponível origin/main 0.6.16 para esta correção. Typecheck/build não executados, sem mudança produtiva, migração aplicada ou publicação.
 
 - Entrega local fix/ui-improvements: versão 0.6.16 sincronizada no pacote/lockfile e validada com validatePackageVersion contra a referência disponível origin/main 0.6.15. Referência remota não atualizada pelo agente; executar fetch e reconferir antes do envio. Sem commit/push/PR, testes/build ou publicação. Migração 0035 continua preparada, não aplicada.

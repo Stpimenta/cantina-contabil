@@ -8,6 +8,8 @@ Configuração do provedor, não relato de implantação. Estado por ambiente em
 
 ## Configuração do servidor
 
+APP_URL e SUPABASE_URL de produção são declaradas em vars do wrangler.jsonc para manter os próximos deploys sincronizados com o painel. As chaves Supabase e SESSION_SECRET permanecem como Secrets do Worker, fora do arquivo versionado.
+
 Usar somente .env e .env.example, sem imprimir/enviar valores. APP_URL é http://localhost:5174 no local e https://ministerio-contabil.ibpalavraviva.com.br em produção. SUPABASE_URL contém origem HTTPS do projeto; SUPABASE_PUBLISHABLE_KEY usa sb_publishable_; SUPABASE_SECRET_KEY usa sb_secret_ e fica exclusivamente no servidor/Secret do Worker. SESSION_SECRET preservado cifra tokens/sustenta credenciais; AUTH_API_URL mantém GestPV para ingresso inicial. Não usar NEXT_PUBLIC_, senha PostgreSQL ou personal access token como chave do aplicativo. Resend fica somente no SMTP Supabase, sem RESEND_API_KEY no app.
 
 Responsável informou projeto, SMTP, domínio Verified e variáveis locais/Worker configurados. Sem leitura de valores ou conferência remota pelo agente. Mesmo projeto Auth no local/produção foi aprovado para o MVP; senha e e-mail de testes manuais atingem esse provedor compartilhado, mas D1/R2 financeiros locais continuam emulados. Testes automatizados são sintéticos.
