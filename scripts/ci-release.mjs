@@ -16,7 +16,12 @@ import ts from "typescript";
 import { z } from "zod";
 import { prepareDeployment } from "./deploy-build.mjs";
 import { deployPrepared } from "./deploy-worker.mjs";
-import { requestJson, cloudflareClient, gitRefSchema } from "./ci-api.mjs";
+import {
+  requestJson,
+  cloudflareClient,
+  gitRefSchema,
+  checkDashboardMetadata,
+} from "./ci-api.mjs";
 import {
   validatePackageVersion,
   releaseMessage,
@@ -186,6 +191,8 @@ export async function publishRelease({
     );
   }
   if (decision === "deploy") {
+    record.phase = "check-dashboard-metadata";
+    await cloudflare.metadata?.();
     record.phase = "check-migrations";
     checkMigrationNames(migrationNames, await cloudflare.migrations());
     try {
@@ -313,6 +320,8 @@ async function main(command) {
       migrationNames: files,
       cloudflare: {
         active: () => client.active(),
+        metadata: () =>
+          checkDashboardMetadata(config, process.env.CLOUDFLARE_API_TOKEN),
         migrations: () => client.migrations(config.d1_databases[0].database_id),
       },
       prepare: () => prepareDeployment(root),

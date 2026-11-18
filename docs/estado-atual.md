@@ -4,6 +4,9 @@ Retomada curta. Use o [mapa de leitura](README.md) para abrir somente os contrat
 
 ## Local de trabalho e limites
 
+- Diagnóstico de publicação em 18/11: após repetição da falha genérica do Wrangler, código local acrescenta GETs de conferência dos metadados de painel antes do build produtivo. Falhas identificam serviço/consulta e HTTP controlado, sem valores de bindings ou credenciais. 53 testes dirigidos de API/publicação aprovados. Não houve alteração remota, publicação, migração, dependência ou permissões. Causa remota ainda não confirmada; diagnóstico precisa entrar por novo PR com versão incrementada a partir da main atualizada. Reexecutar job antigo não usa este código.
+
+
 - Recuperação de deploy autorizada em 18/11: exceção local restrita à versão Cloudflare sem tag 65db048d-2402-4b61-8955-80651fabcacd, conferida pelo responsável após alterações de variáveis/segredos, com base v0.6.10. Guardas e confirmação remota mantidos; uso aparece no relatório/resumo. 38 testes de publicação aprovados. Sem deploy, migração, commit/push ou mudança remota. Correção precisa de nova entrega por PR, com versão incrementada desde a main atualizada; a referência origin/main desta pasta ainda aponta 0.6.11 e não confirma a main remota atual.
 
 
