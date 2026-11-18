@@ -11,6 +11,7 @@ import {
   checkEventWrite,
 } from "@/server/events/models/event-rules";
 import { validateWithdrawal } from "../inputs/stock.input";
+import { stockShortages } from "../models/stock-shortages";
 import type { ProductStockRepository } from "../repositories/product-stock.repository";
 export class SaveOrderWithdrawalUseCase {
   constructor(
@@ -56,16 +57,18 @@ export class SaveOrderWithdrawalUseCase {
         category: "validation",
       });
     const balances = await this.stock.balances(category.id);
-    if (
-      data.withdrawals.some(
-        (w) =>
-          w.quantity -
-            (current.withdrawals?.find((old) => old.productId === w.productId)
-              ?.quantity ?? 0) >
-          (balances.find((b) => b.productId === w.productId)?.quantity ?? 0),
-      )
-    )
-      throwBusinessError({ code: "STOCK_INSUFFICIENT", category: "conflict" });
+    const shortages = stockShortages(
+      current.items,
+      data.withdrawals,
+      current.withdrawals ?? [],
+      balances,
+    );
+    if (shortages.length)
+      throwBusinessError({
+        code: "STOCK_INSUFFICIENT",
+        category: "conflict",
+        stockShortages: shortages,
+      });
     const order = {
       ...current,
       withdrawals: data.withdrawals,

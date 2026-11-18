@@ -13,6 +13,7 @@ import { formatCurrency } from "@/shared/formatting/currency";
 import { Modal } from "@/components/modals/modal";
 import { ConfirmationModal } from "@/components/modals/confirmation-modal";
 import { ErrorModal } from "@/components/modals/error-modal";
+import { OrderStockShortageModal } from "@/presentation/products/components/order-stock-shortage-modal";
 import { Button } from "@/components/ui/button";
 import { SelectField } from "@/components/ui/select-field";
 import { MoneyField } from "@/components/ui/money-field";
@@ -210,7 +211,18 @@ export function OrderStatusModal({
           </span>
         </form>
       </Modal>
-      <ErrorModal error={error} onClose={closeError} />
+      {recurring &&
+      error?.code === "STOCK_INSUFFICIENT" &&
+      error.stockShortages?.length ? (
+        <OrderStockShortageModal
+          error={error}
+          categoryId={order.eventId}
+          orderId={order.id}
+          onClose={closeError}
+        />
+      ) : (
+        <ErrorModal error={error} onClose={closeError} />
+      )}
       {discard && (
         <ConfirmationModal
           title="Descartar alterações?"

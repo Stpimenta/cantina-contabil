@@ -19,12 +19,12 @@ export class InviteLocalAccountUseCase {
       data = parseInput(validateInviteAccount(input)),
       now = Math.floor(Date.now() / 1000);
     let account = await this.accounts.findByEmail(data.email);
-    if (account && account.state !== "pending")
+    if (account && !account.deletedAt && account.state !== "pending")
       return throwBusinessError({
         code: "ACCOUNT_CHANGED",
         category: "conflict",
       });
-    const existing = account;
+    const existing = account?.deletedAt ? null : account;
     account =
       account ??
       (await this.accounts.reserveInvited(
@@ -44,6 +44,7 @@ export class InviteLocalAccountUseCase {
           version: account.version,
           role: existing ? account.role : data.role,
           blocked: false,
+          restoreDeleted: !!account.deletedAt,
           cashBoxIds: existing ? account.cashBoxIds : data.cashBoxIds,
           cashBoxWriteIds: existing
             ? account.cashBoxWriteIds

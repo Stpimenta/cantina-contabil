@@ -1,3 +1,51 @@
+.shortages {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-4) 0 0;
+}
+
+.shortage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-3);
+  padding-block: var(--space-3);
+  border-top: var(--border-width) solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+.quantities {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  grid-column: 1;
+  min-width: 0;
+}
+
+.shortageHeading {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.shortageAction {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+.shortageHeading strong {
+  min-width: 0;
+}
+
+.quantities dt {
+  font-size: var(--font-xs);
+  color: var(--color-text-muted);
+}
+
+.quantities dd {
+  margin: 0;
+}
+
 .reference {
   -webkit-user-select: all;
   user-select: all;

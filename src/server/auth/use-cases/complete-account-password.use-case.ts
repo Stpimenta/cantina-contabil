@@ -17,8 +17,7 @@ export class CompleteAccountPasswordUseCase {
     private readonly login: AccountLoginUseCase,
   ) {}
   async execute(input: unknown) {
-    const data = parseInput(validateOwnPassword(input)),
-      credential = await this.browser.read();
+    const credential = await this.browser.read();
     const invalid = () =>
       throwBusinessError({
         code: "ACCOUNT_LINK_INVALID",
@@ -38,6 +37,11 @@ export class CompleteAccountPasswordUseCase {
         ticket.invitationId
     )
       return invalid();
+    const requiresName =
+      ticket.purpose === "invite" &&
+      account.state === "pending" &&
+      (account.externalUserId === null || !!account.requiresActivationName);
+    const data = parseInput(validateOwnPassword(input, requiresName));
     const tokens = await this.codec.open(ticket.encryptedTokens),
       identity = await this.enrollment.setPassword(
         tokens.accessToken,
@@ -50,7 +54,11 @@ export class CompleteAccountPasswordUseCase {
     )
       return invalid();
     if (
-      !(await this.lifecycle.consumeTicket(hash, Math.floor(Date.now() / 1000)))
+      !(await this.lifecycle.consumeTicket(
+        hash,
+        Math.floor(Date.now() / 1000),
+        requiresName ? data.fullName : undefined,
+      ))
     )
       return invalid();
     await this.browser.clear();

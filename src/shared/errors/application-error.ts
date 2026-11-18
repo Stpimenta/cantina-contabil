@@ -1,3 +1,5 @@
+import type { StockShortage } from "./business-failure";
+
 export type ErrorCategory =
   | "validation"
   | "unauthenticated"
@@ -13,6 +15,7 @@ export interface ApplicationError {
   message: string;
   reference?: string;
   fields?: Partial<Record<string, string>>;
+  stockShortages?: StockShortage[];
 }
 
 export type Result<T> =

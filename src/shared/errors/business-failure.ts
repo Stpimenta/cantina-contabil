@@ -64,6 +64,7 @@ export type BusinessCode =
   | "ACCESS_DENIED";
 
 export type ValidationIssue =
+  | "INVALID_ACCOUNT_NAME"
   | "PASSWORD_MISMATCH"
   | "INVALID_ACCOUNT_ACCESS"
   | "INVALID_ACCESS_EXPIRY"
@@ -106,8 +107,17 @@ export type ValidationIssue =
   | "NOTE_TOO_LONG";
 
 // Technical contract only: no display text, field labels or form instructions.
+export interface StockShortage {
+  productId: string;
+  productName: string;
+  requested: number;
+  available: number;
+  missing: number;
+}
+
 export interface BusinessFailure {
   code: BusinessCode;
   category: Exclude<ErrorCategory, "unavailable" | "unexpected">;
   issues?: Partial<Record<string, ValidationIssue>>;
+  stockShortages?: StockShortage[];
 }

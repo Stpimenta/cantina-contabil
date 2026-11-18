@@ -24,16 +24,22 @@ export function validateEmailProof(value: unknown) {
     "ACCOUNT_LINK_INVALID",
   );
 }
-export function validateOwnPassword(value: unknown) {
+export function validateOwnPassword(value: unknown, requireName = false) {
   return validateInput(
     z
       .object({
+        fullName: z.string().trim().min(1).max(200).optional(),
         password: z.string().min(1).max(1024),
         confirmation: z.string(),
       })
-      .refine((v) => v.password === v.confirmation, { path: ["confirmation"] }),
+      .refine((v) => v.password === v.confirmation, { path: ["confirmation"] })
+      .refine((v) => !requireName || !!v.fullName, { path: ["fullName"] }),
     value,
     "INVALID_LOGIN_INPUT",
-    { password: "INVALID_PASSWORD", confirmation: "PASSWORD_MISMATCH" },
+    {
+      fullName: "INVALID_ACCOUNT_NAME",
+      password: "INVALID_PASSWORD",
+      confirmation: "PASSWORD_MISMATCH",
+    },
   );
 }

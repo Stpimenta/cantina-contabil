@@ -10,5 +10,5 @@ export interface AccountLifecycleRepository {
   cancelInvitation(id: string, now: number): Promise<void>;
   createTicket(ticket: AccountSetupTicket): Promise<void>;
   ticket(hash: string, now: number): Promise<AccountSetupTicket | null>;
-  consumeTicket(hash: string, now: number): Promise<boolean>;
+  consumeTicket(hash: string, now: number, fullName?: string): Promise<boolean>;
 }

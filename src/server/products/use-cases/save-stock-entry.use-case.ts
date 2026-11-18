@@ -24,6 +24,16 @@ export class SaveStockEntryUseCase {
     )
       return eventMissing();
     const actor = checkEventAccessWrite(session, category).user;
+    if (data.orderId) {
+      const order = await this.events.findOrder(data.orderId);
+      if (
+        data.expectedVersion !== 0 ||
+        !order ||
+        order.eventId !== category.id ||
+        !order.items.some((item) => item.id === data.productId)
+      )
+        return eventMissing();
+    }
     const current = await this.stock.findEntry(data.entryId);
     const fingerprint = JSON.stringify(data);
     if (

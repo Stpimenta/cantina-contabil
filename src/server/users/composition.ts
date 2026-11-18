@@ -9,10 +9,12 @@ import { ListLocalAccountsUseCase } from "./use-cases/list-local-accounts.use-ca
 import { ManageLocalAccountUseCase } from "./use-cases/manage-local-account.use-case";
 import { InviteLocalAccountUseCase } from "./use-cases/invite-local-account.use-case";
 import { CancelAccountInvitationUseCase } from "./use-cases/cancel-account-invitation.use-case";
+import { DeleteLocalAccountUseCase } from "./use-cases/delete-local-account.use-case";
 export function createUsers() {
   const db = createDatabase(),
     accounts = new D1LocalAccountRepository(db),
-    lifecycle = new D1AccountLifecycleRepository(db);
+    lifecycle = new D1AccountLifecycleRepository(db),
+    deletion = new DeleteLocalAccountUseCase(accounts);
   return {
     list: new ListLocalAccountsUseCase(
       accounts,
@@ -20,7 +22,8 @@ export function createUsers() {
       lifecycle,
     ),
     manage: new ManageLocalAccountUseCase(accounts),
-    cancel: new CancelAccountInvitationUseCase(accounts, lifecycle),
+    delete: deletion,
+    cancel: new CancelAccountInvitationUseCase(accounts, deletion),
     invite: {
       execute: async (
         ...args: Parameters<InviteLocalAccountUseCase["execute"]>
