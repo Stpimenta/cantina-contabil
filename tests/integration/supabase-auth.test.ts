@@ -56,7 +56,7 @@ describe("Supabase Auth com transporte controlado", () => {
     const request = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(
-        Response.json({ error_code: "email_exists" }, { status: 422 }),
+        Response.json({ error_code: "email_exists", code: 422 }, { status: 422 }),
       )
       .mockResolvedValueOnce(
         Response.json({
@@ -201,7 +201,7 @@ describe("Supabase Auth com transporte controlado", () => {
     "traduz somente a falha conhecida %s/%s",
     async (operation, errorCode, code) => {
       const h = harness(
-        { error_code: errorCode, msg: "private provider message" },
+        { error_code: errorCode, code: 400, msg: "private provider message" },
         400,
       );
       const attempt =
@@ -210,6 +210,44 @@ describe("Supabase Auth com transporte controlado", () => {
           : h.repository.refresh("synthetic");
       await expect(attempt).rejects.toMatchObject({ details: { code } });
       expect(h.request).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("aceita código textual legado de credenciais inválidas", async () => {
+    const h = harness({ code: "invalid_credentials" }, 400);
+    await expect(
+      h.repository.login({ email: user.email, password: "synthetic" }),
+    ).rejects.toMatchObject({ details: { code: "INVALID_CREDENTIALS" } });
+  });
+
+  it.each([
+    { code: 400 },
+    { error_code: "unknown_error", code: 400 },
+    { error_code: "unknown_error", code: "invalid_credentials" },
+  ])("não trata erro HTTP desconhecido como senha incorreta", async (body) => {
+    const h = harness(body, 400);
+    await expect(
+      h.repository.login({ email: user.email, password: "synthetic" }),
+    ).rejects.toBeInstanceOf(InfrastructureError);
+  });
+
+  it.each(["weak_password", "same_password"])(
+    "preserva tratamento de senha %s com código HTTP numérico",
+    async (errorCode) => {
+      const h = harness({ error_code: errorCode, code: 422 }, 422);
+      if (errorCode === "weak_password") {
+        await expect(
+          h.repository.setPassword("synthetic-access", "synthetic"),
+        ).rejects.toMatchObject({ details: { code: "INVALID_LOGIN_INPUT" } });
+      } else {
+        h.request.mockResolvedValueOnce(
+          Response.json({ error_code: errorCode, code: 422 }, { status: 422 }),
+        );
+        h.request.mockResolvedValueOnce(Response.json(user));
+        expect(
+          await h.repository.setPassword("synthetic-access", "synthetic"),
+        ).toMatchObject({ subject: user.id });
+      }
     },
   );
 
