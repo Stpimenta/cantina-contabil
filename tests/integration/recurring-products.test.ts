@@ -48,6 +48,8 @@ it("confirma uma falta por vez com autoria, sem duplicar entrada nem retirar o p
       pix: "0",
     },
   );
+  const before = await h.events.findOrder(order.id);
+  expect(before).not.toBeNull();
   const stock = new D1ProductStockRepository(h.db);
   const resolve = new ResolveOrderStockShortageUseCase(
     h.events,
@@ -93,7 +95,7 @@ it("confirma uma falta por vez com autoria, sem duplicar entrada nem retirar o p
       productId: group.products[1].id,
     }),
   ).toEqual([]);
-  expect(await h.events.findOrder(order.id)).toEqual(order);
+  expect(await h.events.findOrder(order.id)).toEqual(before);
   const audit = (await h.events.history(group.id, 1, 15)).items.filter(
     (item) => item.resourceType === "stock",
   );
@@ -154,6 +156,8 @@ it.each(["status", "withdrawal"])(
         pix: "0",
       },
     );
+    const before = await h.events.findOrder(order.id);
+    expect(before).not.toBeNull();
     const attempt =
       operation === "status"
         ? new UpdateOrderStatusUseCase(h.events).execute(
@@ -191,7 +195,7 @@ it.each(["status", "withdrawal"])(
         ],
       },
     });
-    expect(await h.events.findOrder(order.id)).toEqual(order);
+    expect(await h.events.findOrder(order.id)).toEqual(before);
     expect(await stock.balances(group.id)).toEqual(
       expect.arrayContaining([
         { productId: group.products[0].id, quantity: 2 },
