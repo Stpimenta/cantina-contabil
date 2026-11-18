@@ -86,7 +86,7 @@ function build() {
       provider,
       config.redirectTo,
     ),
-    hasSetup: new GetAccountSetupUseCase(lifecycle, codec, setup),
+    hasSetup: new GetAccountSetupUseCase(lifecycle, codec, setup, accounts),
   };
 }
 // Build lazily: requesting the login page without a cookie does not require D1

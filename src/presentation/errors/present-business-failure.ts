@@ -102,6 +102,7 @@ const messages: Record<BusinessCode, string> = {
   ACCESS_DENIED: "Seu perfil não tem permissão para esta operação.",
 };
 const issueMessages: Record<ValidationIssue, string> = {
+  INVALID_ACCOUNT_NAME: "Informe seu nome completo, com até 200 caracteres.",
   INVALID_ACCOUNT_ACCESS: "Confira o perfil e os acessos selecionados.",
   PASSWORD_MISMATCH: "As senhas precisam ser iguais.",
   INVALID_ACCESS_NAME: "Informe o nome do acesso, com até 100 caracteres.",
@@ -161,7 +162,13 @@ export function presentBusinessFailure(
   return {
     code: error.code,
     category: error.category,
-    message: messages[error.code],
+    message:
+      error.code === "STOCK_INSUFFICIENT" && error.stockShortages?.length
+        ? "Estoque insuficiente para concluir a retirada."
+        : messages[error.code],
+    ...(error.code === "STOCK_INSUFFICIENT" && error.stockShortages?.length
+      ? { stockShortages: error.stockShortages }
+      : {}),
     ...(error.issues
       ? {
           fields: Object.fromEntries(

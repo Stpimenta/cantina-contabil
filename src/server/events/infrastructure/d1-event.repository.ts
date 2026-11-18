@@ -1,4 +1,5 @@
 import { throwBusinessError } from "@/shared/errors/business-error";
+import { stockShortages } from "@/server/products/models/stock-shortages";
 import type {
   OrderStatus,
   OrderFulfillmentFilter,
@@ -166,11 +167,37 @@ export class D1EventRepository implements EventRepository {
 
   private async write(
     execute: () => Promise<{ meta: { changes: number } }>,
+    attemptedOrder?: EventOrder,
   ): Promise<EventWriteOutcome> {
     try {
       const result = await execute();
       return result.meta.changes > 0 ? "saved" : "stale";
     } catch (cause) {
+      if (attemptedOrder && hasDatabaseError(cause, "STOCK_INSUFFICIENT")) {
+        const current = await this.findOrder(attemptedOrder.id);
+        const balances = await this.db.all<{
+          productId: string;
+          quantity: number;
+        }>(
+          sql`SELECT product_id AS productId,quantity FROM product_stock_balances WHERE event_id=${attemptedOrder.eventId}`,
+        );
+        if (
+          balances.some(
+            (b) => !Number.isSafeInteger(b.quantity) || b.quantity < 0,
+          )
+        )
+          throw new Error("Invalid product stock balance");
+        throwBusinessError({
+          code: "STOCK_INSUFFICIENT",
+          category: "conflict",
+          stockShortages: stockShortages(
+            attemptedOrder.items,
+            attemptedOrder.withdrawals ?? [],
+            current?.withdrawals ?? [],
+            balances,
+          ),
+        });
+      }
       for (const code of [
         "WITHDRAWAL_ABOVE_ORDERED",
         "STOCK_INSUFFICIENT",
@@ -395,51 +422,55 @@ export class D1EventRepository implements EventRepository {
   }
   async createOrder(o: EventOrder, catalogVersion: number) {
     await this.arm(o.eventId, o.lastOperation);
-    return this.write(() =>
-      this.db
-        .insert(eventOrders)
-        .values({
-          id: o.id,
-          eventId: o.eventId,
-          customerName: o.customerName,
-          note: o.note,
-          totalCents: o.totalCents,
-          paid: o.paid,
-          catalogVersion,
-          ...metadata(o),
-          payloadJson: orderPayload(o),
-        })
-        .onConflictDoNothing({ target: eventOrders.id })
-        .run(),
+    return this.write(
+      () =>
+        this.db
+          .insert(eventOrders)
+          .values({
+            id: o.id,
+            eventId: o.eventId,
+            customerName: o.customerName,
+            note: o.note,
+            totalCents: o.totalCents,
+            paid: o.paid,
+            catalogVersion,
+            ...metadata(o),
+            payloadJson: orderPayload(o),
+          })
+          .onConflictDoNothing({ target: eventOrders.id })
+          .run(),
+      o,
     );
   }
   async updateOrder(o: EventOrder, expected: number, catalogVersion: number) {
     await this.arm(o.eventId, o.lastOperation);
-    return this.write(() =>
-      this.db
-        .update(eventOrders)
-        .set({
-          customerName: o.customerName,
-          note: o.note,
-          totalCents: o.totalCents,
-          paid: o.paid,
-          catalogVersion,
-          version: o.version,
-          updatedAt: o.updatedAt,
-          updatedBy: o.updatedBy,
-          updatedByName: o.updatedByName,
-          lastOperation: o.lastOperation,
-          fingerprint: o.fingerprint,
-          payloadJson: orderPayload(o),
-        })
-        .where(
-          and(
-            eq(eventOrders.id, o.id),
-            eq(eventOrders.version, expected),
-            isNull(eventOrders.deletedAt),
-          ),
-        )
-        .run(),
+    return this.write(
+      () =>
+        this.db
+          .update(eventOrders)
+          .set({
+            customerName: o.customerName,
+            note: o.note,
+            totalCents: o.totalCents,
+            paid: o.paid,
+            catalogVersion,
+            version: o.version,
+            updatedAt: o.updatedAt,
+            updatedBy: o.updatedBy,
+            updatedByName: o.updatedByName,
+            lastOperation: o.lastOperation,
+            fingerprint: o.fingerprint,
+            payloadJson: orderPayload(o),
+          })
+          .where(
+            and(
+              eq(eventOrders.id, o.id),
+              eq(eventOrders.version, expected),
+              isNull(eventOrders.deletedAt),
+            ),
+          )
+          .run(),
+      o,
     );
   }
   async softDeleteOrder(deletion: OrderDeletion) {

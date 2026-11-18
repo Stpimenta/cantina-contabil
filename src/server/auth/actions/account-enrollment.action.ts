@@ -49,6 +49,7 @@ export async function completeAccountPasswordAction(form: FormData) {
     },
     async () => {
       await createAuth().password.execute({
+        fullName: form.get("fullName") ?? undefined,
         password: form.get("password"),
         confirmation: form.get("confirmation"),
       });

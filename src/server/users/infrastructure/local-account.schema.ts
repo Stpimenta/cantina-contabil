@@ -9,6 +9,12 @@ export const localAccounts = sqliteTable("local_accounts", {
   phoneCountry: text("phone_country"),
   phoneNumber: text("phone_number"),
   activatedAt: text("activated_at"),
+  deletedAt: text("deleted_at"),
+  requiresActivationName: integer("requires_activation_name", {
+    mode: "boolean",
+  })
+    .notNull()
+    .default(false),
   cashBoxIdsJson: text("cash_box_ids_json").notNull().default("[]"),
   changedBy: integer("changed_by"),
   id: integer("id").primaryKey({ autoIncrement: true }),

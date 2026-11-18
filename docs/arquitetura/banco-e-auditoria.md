@@ -35,3 +35,7 @@ Correções de várias entradas de estoque usam o D1 batch já adotado pelo proj
 ## Dependências na exclusão lógica
 
 Somente dependências ativas impedem excluir caixas, eventos/grupos ou remover produtos do catálogo. A migração 0034_active_deletion_dependencies.sql alinha os triggers com essa regra; consultas de remoção de produto usam o mesmo filtro. Dependentes devem ser excluídos primeiro, sem cascata ou exclusão física. Guardas de saldo, estoque, retirada e concorrência permanecem. Registros, snapshots e autoria/data da exclusão são preservados. Não foi criada consulta de cadastros excluídos: o responsável aceitou manter a interface atual de histórico, que exige caixa/evento ativo; após excluir o cadastro principal, seus registros continuam armazenados, mas seu histórico próprio deixa de ser acessível pela tela atual.
+
+## Contas excluídas
+
+A migração 0035_account_soft_delete.sql acrescenta deleted_at e requires_activation_name ao cadastro, preserva os vínculos de identidade e estende a auditoria com deletedAt. Exclusão lógica bloqueia a conta, remove suas concessões e, na mesma gravação, revoga sessões, cancela convites e expira tickets não consumidos, preservando todos os registros. Reconvite mantém o ID e define novas permissões, exigindo nome na ativação. Regras e fluxo em [Autenticação e usuários](../funcionalidades/autenticacao-e-usuarios.md#exclusão-e-nova-ativação-de-conta). Nomes salvos em movimentações e snapshots não são atualizados.

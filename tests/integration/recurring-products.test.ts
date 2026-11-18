@@ -8,6 +8,10 @@ import { SaveStockEntryUseCase } from "@/server/products/use-cases/save-stock-en
 import { DeleteStockEntryUseCase } from "@/server/products/use-cases/delete-stock-entry.use-case";
 import { LoadStockEntriesUseCase } from "@/server/products/use-cases/load-stock-entries.use-case";
 import { ListProductCategoriesUseCase } from "@/server/products/use-cases/list-product-categories.use-case";
+import { CreateOrderUseCase } from "@/server/events/use-cases/create-order.use-case";
+import { UpdateOrderStatusUseCase } from "@/server/events/use-cases/update-order-status.use-case";
+import { SaveOrderWithdrawalUseCase } from "@/server/products/use-cases/save-order-withdrawal.use-case";
+import { ResolveOrderStockShortageUseCase } from "@/server/products/use-cases/resolve-order-stock-shortage.use-case";
 let h: Harness;
 beforeEach(async () => {
   h = await harness();
@@ -15,6 +19,187 @@ beforeEach(async () => {
 afterEach(async () => {
   await h?.close();
 });
+it("confirma uma falta por vez com autoria, sem duplicar entrada nem retirar o pedido", async () => {
+  const box = await h.box();
+  const group = await new CreateEventUseCase(h.events, h.boxes).execute(
+    h.actor,
+    {
+      ...eventInput(box.id),
+      kind: "product_category",
+      occursOn: "",
+      products: [
+        { id: uuid(), name: "Brigadeiro", icon: "bag", price: "10" },
+        { id: uuid(), name: "Bolo", icon: "bag", price: "10" },
+      ],
+    },
+  );
+  const order = await new CreateOrderUseCase(h.events).execute(
+    h.actor,
+    group.id,
+    {
+      requestId: uuid(),
+      catalogVersion: group.version,
+      customerName: "Pessoa sintética",
+      note: "",
+      items: group.products.map((p) => ({ productId: p.id, quantity: 4 })),
+      total: "80",
+      paid: false,
+      cash: "0",
+      pix: "0",
+    },
+  );
+  const stock = new D1ProductStockRepository(h.db);
+  const resolve = new ResolveOrderStockShortageUseCase(
+    h.events,
+    stock,
+    new SaveStockEntryUseCase(h.events, stock),
+  );
+  const writer = {
+    ...h.actor,
+    role: "operator" as const,
+    eventIds: [group.id],
+    eventWriteIds: [group.id],
+  };
+  const requestId = uuid();
+  const input = {
+    requestId,
+    entryId: requestId,
+    expectedVersion: 0,
+    categoryId: group.id,
+    orderId: order.id,
+    productId: group.products[0].id,
+    quantity: 4,
+  };
+  await expect(
+    resolve.execute({ ...writer, eventWriteIds: [] }, input),
+  ).rejects.toMatchObject({ details: { code: "ACCESS_DENIED" } });
+  await expect(
+    resolve.execute(writer, { ...input, quantity: 3 }),
+  ).rejects.toMatchObject({ details: { code: "STOCK_CHANGED" } });
+  const remaining = await resolve.execute(writer, input);
+  expect(remaining).toHaveLength(1);
+  expect(remaining[0].productId).toBe(group.products[1].id);
+  expect(await resolve.execute(writer, input)).toEqual(remaining);
+  expect(await stock.balances(group.id)).toContainEqual({
+    productId: group.products[0].id,
+    quantity: 4,
+  });
+  const second = uuid();
+  expect(
+    await resolve.execute(writer, {
+      ...input,
+      requestId: second,
+      entryId: second,
+      productId: group.products[1].id,
+    }),
+  ).toEqual([]);
+  expect(await h.events.findOrder(order.id)).toEqual(order);
+  const audit = (await h.events.history(group.id, 1, 15)).items.filter(
+    (item) => item.resourceType === "stock",
+  );
+  expect(audit).toHaveLength(2);
+  expect(
+    audit.every(
+      (item) =>
+        item.actorId === writer.user.id &&
+        item.actorName === writer.user.name &&
+        item.after.quantity === 4 &&
+        !!item.occurredAt,
+    ),
+  ).toBe(true);
+});
+it.each(["status", "withdrawal"])(
+  "lista somente produtos em falta sem gravar retirada ou pagamento (%s)",
+  async (operation) => {
+    const box = await h.box();
+    const group = await new CreateEventUseCase(h.events, h.boxes).execute(
+      h.actor,
+      {
+        ...eventInput(box.id),
+        kind: "product_category",
+        occursOn: "",
+        products: [
+          { id: uuid(), name: "Brigadeiro", icon: "bag", price: "10" },
+          { id: uuid(), name: "Bolo", icon: "bag", price: "10" },
+        ],
+      },
+    );
+    const stock = new D1ProductStockRepository(h.db);
+    for (const [index, product] of group.products.entries()) {
+      const requestId = uuid();
+      await new SaveStockEntryUseCase(h.events, stock).execute(h.actor, {
+        requestId,
+        entryId: requestId,
+        categoryId: group.id,
+        productId: product.id,
+        expectedVersion: 0,
+        quantity: index === 0 ? 2 : 10,
+      });
+    }
+    const order = await new CreateOrderUseCase(h.events).execute(
+      h.actor,
+      group.id,
+      {
+        requestId: uuid(),
+        catalogVersion: group.version,
+        customerName: "Pessoa sintética",
+        note: "",
+        items: group.products.map((product) => ({
+          productId: product.id,
+          quantity: 4,
+        })),
+        total: "80",
+        paid: false,
+        cash: "0",
+        pix: "0",
+      },
+    );
+    const attempt =
+      operation === "status"
+        ? new UpdateOrderStatusUseCase(h.events).execute(
+            h.actor,
+            group.id,
+            order.id,
+            order.version,
+            {
+              requestId: uuid(),
+              fulfilled: true,
+              payment: { method: "pix", cash: "0" },
+            },
+          )
+        : new SaveOrderWithdrawalUseCase(h.events, stock).execute(h.actor, {
+            requestId: uuid(),
+            categoryId: group.id,
+            orderId: order.id,
+            expectedVersion: order.version,
+            withdrawals: order.items.map((item) => ({
+              productId: item.id,
+              quantity: item.quantity,
+            })),
+          });
+    await expect(attempt).rejects.toMatchObject({
+      details: {
+        code: "STOCK_INSUFFICIENT",
+        stockShortages: [
+          {
+            productId: group.products[0].id,
+            productName: "Brigadeiro",
+            requested: 4,
+            available: 2,
+            missing: 2,
+          },
+        ],
+      },
+    });
+    expect(await h.events.findOrder(order.id)).toEqual(order);
+    expect(await stock.balances(group.id)).toEqual(
+      expect.arrayContaining([
+        { productId: group.products[0].id, quantity: 2 },
+        { productId: group.products[1].id, quantity: 10 },
+      ]),
+    );
+  },
+);
 it("operador consulta somente o grupo concedido e precisa de Alteração para estoque", async () => {
   const box = await h.box();
   const create = new CreateEventUseCase(h.events, h.boxes);

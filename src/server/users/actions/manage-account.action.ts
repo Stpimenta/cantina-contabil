@@ -60,3 +60,23 @@ export async function cancelAccountInvitationAction(input: unknown) {
     },
   );
 }
+
+export async function deleteAccountAction(input: unknown) {
+  return executeOperation(
+    {
+      operation: "users.delete",
+      message:
+        "Não foi possível excluir a conta. Confira a lista antes de repetir.",
+      source: "src/server/users/actions/manage-account.action.ts",
+      route: "/users",
+      method: "POST",
+    },
+    async () => {
+      await createUsers().delete.execute(
+        await createAuth().getSession.execute(),
+        input,
+      );
+      revalidatePath("/users");
+    },
+  );
+}

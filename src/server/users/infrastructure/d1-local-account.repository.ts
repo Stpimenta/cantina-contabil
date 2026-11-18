@@ -13,6 +13,35 @@ import { localAccountCashBoxes } from "./local-account-cash-box.schema";
 export class D1LocalAccountRepository implements LocalAccountRepository {
   constructor(private readonly db: Database) {}
 
+  async softDelete(id: number, version: number, actorId: number, at: string) {
+    const result = await this.db
+      .update(localAccounts)
+      .set({
+        deletedAt: at,
+        state: "blocked",
+        version: version + 1,
+        changedBy: actorId,
+        updatedAt: at,
+        role: "operator",
+        accessRole: "operator",
+        cashBoxIdsJson: "[]",
+        accessJson: JSON.stringify({
+          cashBoxWriteIds: [],
+          eventIds: [],
+          eventWriteIds: [],
+        }),
+      })
+      .where(
+        and(
+          eq(localAccounts.id, id),
+          eq(localAccounts.version, version),
+          isNull(localAccounts.deletedAt),
+        ),
+      )
+      .run();
+    return result.meta.changes > 0;
+  }
+
   async eventOptions() {
     return this.db
       .select({ id: events.id, name: events.name, kind: events.kind })
@@ -24,9 +53,12 @@ export class D1LocalAccountRepository implements LocalAccountRepository {
 
   async list(query: string, page: number, pageSize: number) {
     const search = `%${query.replace(/[!%_]/g, "!$&")}%`,
-      where = query
-        ? sql`(${localAccounts.name} LIKE ${search} ESCAPE '!' OR ${localAccounts.email} LIKE ${search} ESCAPE '!')`
-        : undefined;
+      where = and(
+        isNull(localAccounts.deletedAt),
+        query
+          ? sql`(${localAccounts.name} LIKE ${search} ESCAPE '!' OR ${localAccounts.email} LIKE ${search} ESCAPE '!')`
+          : undefined,
+      );
     const total =
       (
         await this.db
@@ -55,6 +87,7 @@ export class D1LocalAccountRepository implements LocalAccountRepository {
       version: number;
       role: "admin" | "finance" | "operator";
       blocked: boolean;
+      restoreDeleted?: boolean;
       cashBoxIds: string[];
       cashBoxWriteIds?: string[];
       eventIds?: string[];
@@ -67,6 +100,13 @@ export class D1LocalAccountRepository implements LocalAccountRepository {
       const result = await this.db
         .update(localAccounts)
         .set({
+          ...(data.restoreDeleted
+            ? {
+                deletedAt: null,
+                activatedAt: null,
+                requiresActivationName: true,
+              }
+            : {}),
           role: data.role === "admin" ? "admin" : "operator",
           accessRole: data.role,
           accessJson: JSON.stringify({
@@ -76,7 +116,9 @@ export class D1LocalAccountRepository implements LocalAccountRepository {
           }),
           state: data.blocked
             ? "blocked"
-            : sql`CASE WHEN ${localAccounts.activatedAt} IS NULL THEN 'pending' ELSE 'active' END`,
+            : data.restoreDeleted
+              ? "pending"
+              : sql`CASE WHEN ${localAccounts.activatedAt} IS NULL THEN 'pending' ELSE 'active' END`,
           cashBoxIdsJson: JSON.stringify(
             data.role === "admin" ? [] : data.cashBoxIds,
           ),
@@ -88,6 +130,9 @@ export class D1LocalAccountRepository implements LocalAccountRepository {
           and(
             eq(localAccounts.id, data.id),
             eq(localAccounts.version, data.version),
+            data.restoreDeleted
+              ? sql`${localAccounts.deletedAt} IS NOT NULL`
+              : isNull(localAccounts.deletedAt),
           ),
         )
         .run();
@@ -217,6 +262,8 @@ export class D1LocalAccountRepository implements LocalAccountRepository {
     return {
       eventCashBoxIds: [...new Set(eventBoxes.map((e) => e.id))],
       id: row.id,
+      deletedAt: row.deletedAt,
+      requiresActivationName: row.requiresActivationName,
       authorId: row.externalUserId ?? -row.id,
       birthDate: row.birthDate,
       phoneCountry: row.phoneCountry,

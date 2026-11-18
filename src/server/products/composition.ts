@@ -11,17 +11,24 @@ import { GetProductStockUseCase } from "./use-cases/get-product-stock.use-case";
 import { ListStockEntriesUseCase } from "./use-cases/list-stock-entries.use-case";
 import { SaveStockEntryUseCase } from "./use-cases/save-stock-entry.use-case";
 import { SaveOrderWithdrawalUseCase } from "./use-cases/save-order-withdrawal.use-case";
+import { ResolveOrderStockShortageUseCase } from "./use-cases/resolve-order-stock-shortage.use-case";
 export function createProducts() {
   const db = createDatabase();
   const events = new D1EventRepository(db);
   const stock = new D1ProductStockRepository(db);
+  const saveEntry = new SaveStockEntryUseCase(events, stock);
   return {
+    resolveShortage: new ResolveOrderStockShortageUseCase(
+      events,
+      stock,
+      saveEntry,
+    ),
     loadEntries: new LoadStockEntriesUseCase(events, stock),
     checkRemoval: new CheckProductRemovalUseCase(events, stock),
     list: new ListProductCategoriesUseCase(events),
     stock: new GetProductStockUseCase(events, stock),
     entries: new ListStockEntriesUseCase(events, stock),
-    saveEntry: new SaveStockEntryUseCase(events, stock),
+    saveEntry,
     updateEntries: new UpdateStockEntriesUseCase(events, stock),
     deleteEntry: new DeleteStockEntryUseCase(events, stock),
     withdrawal: new SaveOrderWithdrawalUseCase(events, stock),

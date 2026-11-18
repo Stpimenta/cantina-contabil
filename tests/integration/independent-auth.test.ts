@@ -21,6 +21,8 @@ import { ConfirmAccountEmailUseCase } from "@/server/auth/use-cases/confirm-acco
 import { CompleteAccountPasswordUseCase } from "@/server/auth/use-cases/complete-account-password.use-case";
 import { RequestAccountRecoveryUseCase } from "@/server/auth/use-cases/request-account-recovery.use-case";
 import { InviteLocalAccountUseCase } from "@/server/users/use-cases/invite-local-account.use-case";
+import { CancelAccountInvitationUseCase } from "@/server/users/use-cases/cancel-account-invitation.use-case";
+import { DeleteLocalAccountUseCase } from "@/server/users/use-cases/delete-local-account.use-case";
 import { ManageLocalAccountUseCase } from "@/server/users/use-cases/manage-local-account.use-case";
 import { ListCashBoxesUseCase } from "@/server/cash-boxes/use-cases/list-cash-boxes.use-case";
 import { CreateCashBoxUseCase } from "@/server/cash-boxes/use-cases/create-cash-box.use-case";
@@ -159,7 +161,11 @@ async function invite(boxes: string[] = []) {
 async function activate(boxes: string[] = []) {
   await invite(boxes);
   await confirm.execute({ tokenHash: "synthetic-hash", type: "invite" });
-  await complete.execute({ password, confirmation: password });
+  await complete.execute({
+    fullName: "Pessoa convidada",
+    password,
+    confirmation: password,
+  });
   return (await read.execute())!;
 }
 async function imported() {
@@ -178,6 +184,163 @@ async function imported() {
   return a;
 }
 describe("autenticação própria e permissões locais", () => {
+  it("cancelar convite exclui a conta pendente, mas não uma conta já ativada", async () => {
+    const account = await invite();
+    const cancel = new CancelAccountInvitationUseCase(
+      accounts,
+      new DeleteLocalAccountUseCase(accounts),
+    );
+    await cancel.execute(h.actor, { id: account.id, version: account.version });
+    expect(await accounts.findById(account.id)).toMatchObject({
+      state: "blocked",
+      deletedAt: expect.any(String),
+    });
+    expect((await accounts.list("", 1, 15)).total).toBe(0);
+    expect(
+      await lifecycle.pendingInvitation(
+        account.id,
+        Math.floor(Date.now() / 1000),
+      ),
+    ).toBeNull();
+    await activate();
+    const active = (await accounts.findById(account.id))!;
+    await expect(
+      cancel.execute(h.actor, { id: active.id, version: active.version }),
+    ).rejects.toMatchObject({ details: { code: "ACCOUNT_CHANGED" } });
+    expect(await accounts.findById(active.id)).toMatchObject({
+      state: "active",
+      deletedAt: null,
+    });
+  });
+
+  it("exclui e reativa o mesmo ID com novo nome sem alterar movimentações anteriores", async () => {
+    const box = await h.box();
+    const actor = await activate([box.id]);
+    const account = (await accounts.findByEmail(email))!;
+    const movement = await new CreateMovementUseCase(
+      h.movements,
+      h.boxes,
+      h.receipts,
+    ).execute(actor, movementInput(box.id));
+    const before = await h.movements.find(movement.id);
+    const oldCredential = (await normal.read())!;
+    await new DeleteLocalAccountUseCase(accounts).execute(h.actor, {
+      id: account.id,
+      version: account.version,
+    });
+    expect(await read.execute()).toBeNull();
+    expect(
+      (await sessions.find(await codec.hash(oldCredential)))?.revokedAt,
+    ).not.toBeNull();
+    expect((await accounts.list("", 1, 15)).items).toHaveLength(0);
+    await expect(
+      login.execute({ gmail: email, senha: password }),
+    ).rejects.toMatchObject({ details: { code: "ACCOUNT_ACCESS_DENIED" } });
+    const restored = await invite();
+    expect(restored).toMatchObject({
+      id: account.id,
+      authorId: actor.user.id,
+      state: "pending",
+      cashBoxIds: [],
+      requiresActivationName: true,
+    });
+    used = false;
+    await confirm.execute({
+      tokenHash: "synthetic-new-hash",
+      type: "recovery",
+    });
+    await complete.execute({
+      fullName: "Novo nome",
+      password,
+      confirmation: password,
+    });
+    expect((await read.execute())?.user).toMatchObject({
+      id: actor.user.id,
+      name: "Novo nome",
+    });
+    expect(await h.movements.find(movement.id)).toEqual(before);
+    expect(await accounts.findByEmail(email)).toMatchObject({
+      id: account.id,
+      deletedAt: null,
+      state: "active",
+    });
+    const audit = await h.d1
+      .prepare(
+        "SELECT before_json,after_json FROM local_account_audit WHERE account_id=? AND json_extract(after_json,'$.deletedAt') IS NOT NULL",
+      )
+      .bind(account.id)
+      .first();
+    expect(audit).not.toBeNull();
+  });
+  it("exclusão exige administrador e versão atual; invalida prova pendente", async () => {
+    const a = await invite();
+    await confirm.execute({ tokenHash: "synthetic-hash", type: "invite" });
+    const ticketHash = await codec.hash((await setup.read())!);
+    const deletion = new DeleteLocalAccountUseCase(accounts);
+    await expect(
+      deletion.execute(
+        { ...h.actor, role: "finance" },
+        { id: a.id, version: a.version },
+      ),
+    ).rejects.toMatchObject({ details: { code: "ACCESS_DENIED" } });
+    await expect(
+      deletion.execute(h.actor, { id: a.id, version: a.version + 1 }),
+    ).rejects.toMatchObject({ details: { code: "ACCOUNT_CHANGED" } });
+    await deletion.execute(h.actor, { id: a.id, version: a.version });
+    expect(
+      await lifecycle.ticket(ticketHash, Math.floor(Date.now() / 1000)),
+    ).toBeNull();
+    expect(
+      await lifecycle.pendingInvitation(a.id, Math.floor(Date.now() / 1000)),
+    ).toBeNull();
+    await expect(
+      complete.execute({
+        fullName: "Novo nome",
+        password,
+        confirmation: password,
+      }),
+    ).rejects.toMatchObject({ details: { code: "ACCOUNT_LINK_INVALID" } });
+    expect(
+      await accounts.manage(
+        {
+          id: a.id,
+          version: a.version + 1,
+          role: "admin",
+          blocked: false,
+          cashBoxIds: [],
+        },
+        h.actor.user.id,
+        new Date().toISOString(),
+      ),
+    ).toBe(false);
+  });
+  it("reativação de importado mantém autoria positiva e permite informar o nome", async () => {
+    const a = await imported();
+    await new DeleteLocalAccountUseCase(accounts).execute(h.actor, {
+      id: a.id,
+      version: a.version,
+    });
+    await invite();
+    await confirm.execute({
+      tokenHash: "synthetic-new-hash",
+      type: "recovery",
+    });
+    await complete.execute({
+      fullName: "Nome da reativação",
+      password,
+      confirmation: password,
+    });
+    expect((await read.execute())?.user).toMatchObject({
+      id: 42,
+      name: "Nome da reativação",
+    });
+    expect(await accounts.findByEmail(email)).toMatchObject({
+      id: a.id,
+      externalUserId: 42,
+      state: "active",
+    });
+  });
+
   it("convite comprova e-mail uma vez, define senha própria e emite somente cookie opaco", async () => {
     const a = await invite();
     await expect(
@@ -186,14 +349,28 @@ describe("autenticação própria e permissões locais", () => {
     await confirm.execute({ tokenHash: "synthetic-hash", type: "invite" });
     expect(await normal.read()).toBeNull();
     expect(await setup.read()).toMatch(/^[\w-]{43}$/);
+    await expect(
+      complete.execute({ password, confirmation: password }),
+    ).rejects.toMatchObject({
+      details: {
+        code: "INVALID_LOGIN_INPUT",
+        issues: { fullName: "INVALID_ACCOUNT_NAME" },
+      },
+    });
+    expect(provider.setPassword).not.toHaveBeenCalled();
+    expect(await accounts.findById(a.id)).toMatchObject({
+      state: "pending",
+      name: email,
+    });
     await complete.execute({
+      fullName: "  Pessoa convidada  ",
       password: "new-synthetic-own",
       confirmation: "new-synthetic-own",
     });
     const s = await read.execute();
     expect(s).toMatchObject({
       role: "operator",
-      user: { id: -a.id, email },
+      user: { id: -a.id, email, name: "Pessoa convidada" },
       cashBoxIds: [],
     });
     expect(await setup.read()).toBeNull();
@@ -283,6 +460,17 @@ describe("autenticação própria e permissões locais", () => {
       invitation.id,
       Math.floor(Date.now() / 1000),
     );
+    expect(
+      await lifecycle.consumeTicket(
+        await codec.hash((await setup.read())!),
+        Math.floor(Date.now() / 1000),
+        "Nome não autorizado",
+      ),
+    ).toBe(false);
+    expect(await accounts.findById(a.id)).toMatchObject({
+      state: "pending",
+      name: email,
+    });
     await expect(
       complete.execute({ password, confirmation: password }),
     ).rejects.toMatchObject({ details: { code: "ACCOUNT_LINK_INVALID" } });
@@ -343,6 +531,7 @@ describe("autenticação própria e permissões locais", () => {
     expect(provider.recover).toHaveBeenCalledWith(email, redirect);
     await confirm.execute({ tokenHash: "proof", type: "recovery" });
     await complete.execute({
+      fullName: "Não deve substituir o nome",
       password: "reset-synthetic",
       confirmation: "reset-synthetic",
     });
@@ -350,6 +539,7 @@ describe("autenticação própria e permissões locais", () => {
       (await sessions.find(await codec.hash(oldCredential)))?.revokedAt,
     ).not.toBeNull();
     expect(await read.execute()).not.toBeNull();
+    expect((await read.execute())?.user.name).toBe("Pessoa importada");
     await new AccountLogoutUseCase(sessions, codec, normal).execute();
     expect(await normal.read()).toBeNull();
     expect(await read.execute()).toBeNull();

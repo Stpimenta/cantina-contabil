@@ -11,6 +11,12 @@ export interface ImportedAccountInput {
 }
 
 export interface LocalAccountRepository {
+  softDelete(
+    id: number,
+    version: number,
+    actorId: number,
+    at: string,
+  ): Promise<boolean>;
   eventOptions(): Promise<{ id: string; name: string; kind?: string }[]>;
   list(
     query: string,
@@ -23,6 +29,7 @@ export interface LocalAccountRepository {
       version: number;
       role: "admin" | "finance" | "operator";
       blocked: boolean;
+      restoreDeleted?: boolean;
       cashBoxIds: string[];
       cashBoxWriteIds?: string[];
       eventIds?: string[];

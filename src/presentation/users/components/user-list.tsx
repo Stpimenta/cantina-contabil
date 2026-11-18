@@ -27,6 +27,7 @@ import {
   inviteAccountAction,
   manageAccountAction,
   cancelAccountInvitationAction,
+  deleteAccountAction,
 } from "@/server/users/actions/manage-account.action";
 export interface UserEntry {
   id: number;
@@ -71,7 +72,12 @@ export function UserList({ data }: { data?: Data }) {
     [confirmation, setConfirmation] = useState<
       "save" | "discard" | "cancel" | null
     >(null),
+    [deleting, setDeleting] = useState<UserEntry | null>(null),
     [cancelled, setCancelled] = useState<UserEntry | null>(null);
+  const deletion = useServerAction({
+    connectionMessage:
+      "Não foi possível confirmar a exclusão. Confira a lista antes de repetir.",
+  });
   const invite = draft?.id === 0;
   const action = useServerAction({
     connectionMessage:
@@ -159,7 +165,7 @@ export function UserList({ data }: { data?: Data }) {
         compactActionsOnMobile
         actions={
           <Button
-            disabled={!data || action.pending}
+            disabled={!data || action.pending || deletion.pending}
             mobileIcon={<Icon name="plus" />}
             onClick={() => open()}
           >
@@ -235,7 +241,7 @@ export function UserList({ data }: { data?: Data }) {
                 {user.state === "pending" && (
                   <Button
                     variant="neutral"
-                    disabled={action.pending}
+                    disabled={action.pending || deletion.pending}
                     onClick={() => {
                       const value: Draft = {
                         ...user,
@@ -252,24 +258,35 @@ export function UserList({ data }: { data?: Data }) {
                 )}
                 <Button
                   variant="neutral"
-                  disabled={action.pending}
+                  disabled={action.pending || deletion.pending}
                   onClick={() => open(user)}
                 >
                   Editar acesso
                 </Button>
-                {user.state === "pending" &&
-                  user.invitationState === "pending" && (
-                    <Button
-                      variant="ghost"
-                      disabled={action.pending}
-                      onClick={() => {
-                        setCancelled(user);
-                        setConfirmation("cancel");
-                      }}
-                    >
-                      Cancelar convite
-                    </Button>
-                  )}
+                {user.state !== "pending" && (
+                  <Button
+                    variant="danger"
+                    disabled={deletion.pending || action.pending}
+                    mobileIcon={<Icon name="trash" />}
+                    iconBreakpoint="tablet"
+                    aria-label={`Excluir conta de ${user.name}`}
+                    onClick={() => setDeleting(user)}
+                  >
+                    Excluir conta
+                  </Button>
+                )}
+                {user.state === "pending" && (
+                  <Button
+                    variant="danger"
+                    disabled={action.pending || deletion.pending}
+                    onClick={() => {
+                      setCancelled(user);
+                      setConfirmation("cancel");
+                    }}
+                  >
+                    Cancelar convite
+                  </Button>
+                )}
               </div>
             </li>
           ))}
@@ -300,7 +317,7 @@ export function UserList({ data }: { data?: Data }) {
             <>
               <Button
                 variant="neutral"
-                disabled={action.pending}
+                disabled={action.pending || deletion.pending}
                 onClick={close}
               >
                 Cancelar
@@ -485,7 +502,7 @@ export function UserList({ data }: { data?: Data }) {
             confirmation === "save"
               ? "As novas permissões serão aplicadas nas próximas operações do usuário."
               : confirmation === "cancel"
-                ? "O convite deixará de habilitar esta conta."
+                ? "A conta pendente será excluída. O histórico será preservado."
                 : "As alterações deste formulário serão perdidas."
           }
           confirmLabel={
@@ -518,6 +535,24 @@ export function UserList({ data }: { data?: Data }) {
           }}
         />
       )}
+      {deleting && (
+        <ConfirmationModal
+          title="Excluir conta?"
+          message="O histórico será preservado."
+          confirmLabel="Excluir"
+          busy={deletion.pending}
+          onCancel={() => setDeleting(null)}
+          onConfirm={() => deletion.execute(
+            () => deleteAccountAction({ id: deleting.id, version: deleting.version }),
+            () => {
+              setDeleting(null);
+              notify("Conta excluída.");
+              router.refresh();
+            },
+          )}
+        />
+      )}
+      <ErrorModal error={deletion.error} onClose={deletion.closeError} />
       <ErrorModal error={action.error} onClose={action.closeError} />
     </div>
   );

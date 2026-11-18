@@ -46,6 +46,16 @@ const management = z.intersection(
     blocked: z.boolean(),
   }),
 );
+export function validateDeleteAccount(input: unknown) {
+  return validateInput(
+    z.object({
+      id: z.number().int().positive(),
+      version: z.number().int().positive(),
+    }),
+    input,
+    "INVALID_ACCOUNT_INPUT",
+  );
+}
 export function validateManageAccount(input: unknown) {
   return validateInput(management, input, "INVALID_ACCOUNT_INPUT", issues);
 }

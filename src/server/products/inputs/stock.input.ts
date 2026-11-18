@@ -10,6 +10,7 @@ export const stockEntryInputSchema = z
     entryId: z.uuid(),
     expectedVersion: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
     quantity,
+    orderId: z.uuid().optional(),
   })
   .refine((v) => v.expectedVersion > 0 || v.quantity > 0, {
     path: ["quantity"],
@@ -106,4 +107,8 @@ export function validateUpdateStockEntries(input: unknown) {
 }
 
 export const validateStockEntryCursor = (input: unknown) =>
-  validateInput(z.object({ createdAt: z.iso.datetime(), id: z.uuid() }).nullable(), input, "INVALID_STOCK_INPUT");
+  validateInput(
+    z.object({ createdAt: z.iso.datetime(), id: z.uuid() }).nullable(),
+    input,
+    "INVALID_STOCK_INPUT",
+  );

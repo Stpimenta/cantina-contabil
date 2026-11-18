@@ -4,6 +4,8 @@ export type LocalAccountState = "pending" | "active" | "blocked";
 export interface LocalAccount {
   id: number;
   authorId: number;
+  deletedAt?: string | null;
+  requiresActivationName?: boolean;
   birthDate?: string | null;
   phoneCountry?: string | null;
   phoneNumber?: string | null;

@@ -5,9 +5,14 @@ import { completeAccountPasswordAction } from "@/server/auth/actions/account-enr
 import { validateOwnPassword } from "@/server/auth/inputs/account-enrollment.input";
 import { presentBusinessFailure } from "@/presentation/errors/present-business-failure";
 import { PasswordField } from "@/components/ui/password-field";
+import { Field } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { ErrorModal } from "@/components/modals/error-modal";
-export function OwnPasswordForm() {
+export function OwnPasswordForm({
+  requireName = false,
+}: {
+  requireName?: boolean;
+}) {
   const form = useRef<HTMLFormElement>(null),
     [ready, setReady] = useState(false),
     [revision, setRevision] = useState(0);
@@ -15,14 +20,22 @@ export function OwnPasswordForm() {
   const action = useServerAction({
     connectionMessage:
       "Não foi possível salvar. Tente entrar com sua nova senha antes de repetir.",
-    fieldIds: { password: "password", confirmation: "confirmation" },
+    fieldIds: {
+      ...(requireName ? { fullName: "fullName" } : {}),
+      password: "password",
+      confirmation: "confirmation",
+    },
     validationKey: String(revision),
     validate: () => {
       const data = form.current ? new FormData(form.current) : null,
-        result = validateOwnPassword({
-          password: data?.get("password"),
-          confirmation: data?.get("confirmation"),
-        });
+        result = validateOwnPassword(
+          {
+            ...(requireName ? { fullName: data?.get("fullName") } : {}),
+            password: data?.get("password"),
+            confirmation: data?.get("confirmation"),
+          },
+          requireName,
+        );
       return result.ok ? null : presentBusinessFailure(result.error);
     },
   });
@@ -43,6 +56,18 @@ export function OwnPasswordForm() {
         onInput={() => setRevision((r) => r + 1)}
         aria-label="Definir senha própria"
       >
+        {requireName && (
+          <Field
+            id="fullName"
+            name="fullName"
+            label="Nome completo"
+            autoComplete="name"
+            maxLength={200}
+            required
+            disabled={action.pending}
+            error={action.fields?.fullName}
+          />
+        )}
         <PasswordField
           id="password"
           name="password"

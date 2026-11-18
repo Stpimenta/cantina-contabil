@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { unstable_splitSqlQuery } from "wrangler";
 import { describe, expect, it } from "vitest";
 import { harness } from "../support/harness";
@@ -71,6 +71,29 @@ describe("migração de perfil após gerenciamento já aplicado", () => {
           h.d1.prepare(statement),
         ),
       );
+      const migrationDirectory = new URL("../../migrations/", import.meta.url);
+      for (const file of (await readdir(migrationDirectory))
+        .filter(
+          (file) => file.endsWith(".sql") && file > "0031_account_access.sql",
+        )
+        .sort()) {
+        const nextSql = await readFile(
+          new URL(file, migrationDirectory),
+          "utf8",
+        );
+        await h.d1.batch(
+          unstable_splitSqlQuery(nextSql).map((statement) =>
+            h.d1.prepare(statement),
+          ),
+        );
+      }
+      expect(
+        await h.d1
+          .prepare(
+            "SELECT deleted_at,requires_activation_name FROM local_accounts WHERE external_user_id=42",
+          )
+          .first(),
+      ).toEqual({ deleted_at: null, requires_activation_name: 0 });
       const repo = new D1LocalAccountRepository(h.db);
       await expect(
         repo.reserveImported({
