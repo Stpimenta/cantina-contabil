@@ -118,13 +118,13 @@ describe("identificação da publicação", () => {
       id: confirmedUntaggedBaseline.versionId,
       annotations: {},
     };
-    expect(deploymentDecision("v0.6.13", sha, version, null)).toBe("deploy");
+    expect(deploymentDecision("v0.6.20", sha, version, null)).toBe("deploy");
     expect(() =>
-      deploymentDecision("v0.6.13", sha, { ...version, id: "outra" }, null),
+      deploymentDecision("v0.6.20", sha, { ...version, id: "outra" }, null),
     ).toThrow(/sem tag/);
     expect(() =>
       deploymentDecision(
-        "v0.6.13",
+        "v0.6.20",
         sha,
         { ...version, annotations: { "workers/tag": "incorreta" } },
         null,
@@ -133,10 +133,10 @@ describe("identificação da publicação", () => {
     expect(() => deploymentDecision("v0.6.9", sha, version, null)).toThrow(
       /antigo bloqueado/,
     );
-    expect(() => deploymentDecision("v0.6.13", sha, version, otherSha)).toThrow(
+    expect(() => deploymentDecision("v0.6.20", sha, version, otherSha)).toThrow(
       /outro commit/,
     );
-    expect(() => deploymentDecision("v0.6.13", sha, version, sha)).toThrow(
+    expect(() => deploymentDecision("v0.6.20", sha, version, sha)).toThrow(
       /Tag já existe/,
     );
   });
@@ -161,7 +161,7 @@ describe("identificação da publicação", () => {
 describe("falhas e repetição da publicação sem serviços reais", () => {
   it("recuperação da versão sem tag exige migrações e confirmação da publicação", async () => {
     const h = setup();
-    h.release = { ...release, tag: "v0.6.13" };
+    h.release = { ...release, tag: "v0.6.20" };
     const previous = {
       ...live(),
       version: { id: confirmedUntaggedBaseline.versionId, annotations: {} },
