@@ -61,11 +61,11 @@ export function checkMigrationNames(local, applied) {
       "Migrações locais e de produção divergem. Aplicar/conferir manualmente as migrações autorizadas antes de publicar.",
     );
 }
-// Owner supplied deployment history: v0.6.17 followed only by APP_URL/SUPABASE_URL changes.
+// Owner supplied deployment history: v0.6.20 followed only by a SUPABASE_URL update.
 // Applies only to this immutable Cloudflare version; never infer a baseline for others.
 export const confirmedUntaggedBaseline = Object.freeze({
-  versionId: "bd1d8ed6-0bb4-4047-8de5-929d7be22595",
-  tag: "v0.6.17",
+  versionId: "6f312fa2-b4c1-4908-846d-66019d52b199",
+  tag: "v0.6.20",
 });
 export function deploymentDecision(targetTag, sha, currentVersion, tagCommit) {
   if (tagCommit && tagCommit !== sha)
