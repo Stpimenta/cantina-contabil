@@ -5,3 +5,15 @@ Contrato atual. Leia somente ao alterar este assunto. [Escolher outra leitura](.
 ## Diagnóstico de build no ambiente do agente
 
 Em 28/10/2026, a execução restrita da ferramenta causou `Could not parse output from TypeScript's --showConfig`: o processo auxiliar do compilador entregava stdout vazio, e uma reprodução com spawnSync revelou EPERM. Executar `npm run build:cloudflare` fora dessa restrição, com a revisão de permissão da ferramenta, concluiu Next/TypeScript/OpenNext com código 0. Não foi necessário mudar tsconfig, versão de dependências ou desativar validação. Isso não é evidência de defeito no compilador/projeto nem exige alteração no terminal do responsável. Se reaparecer, conferir erro/saída reais do subprocesso antes de modificar configurações; permissão fora da restrição segue o mecanismo da ferramenta, sem contornar rejeição. Build não publica nem substitui conferência funcional/visual.
+
+## JavaScript estático ausente em produção
+
+Para comparar referências a JS/CSS do HTML, manifests e chunks com os arquivos de um build produtivo isolado, executar mediante autorização:
+
+```bash
+node scripts/check-deployment-assets.mjs
+# Para conferir um arquivo específico, acrescente seu caminho:
+node scripts/check-deployment-assets.mjs /_next/static/chunks/arquivo.js
+```
+
+Reutiliza prepareDeployment (cópia sem .env/credenciais/estado, build e inspeção/dry-run), lista somente caminhos ausentes e sempre remove a cópia temporária. Não publica nem acessa bancos. Ausência reproduzida aponta inconsistência no pacote; ausência não reproduzida exige conferir o pacote/versão ativos e a entrega remota. Sucesso local não comprova produção.
