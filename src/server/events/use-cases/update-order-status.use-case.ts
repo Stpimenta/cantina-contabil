@@ -1,3 +1,5 @@
+import { stockShortages } from "@/server/products/models/stock-shortages";
+import type { StockEntry } from "@/server/products/models/stock-entry.model";
 import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { throwBusinessError } from "@/shared/errors/business-error";
@@ -103,10 +105,70 @@ export class UpdateOrderStatusUseCase {
       lastOperation: data.requestId,
       fingerprint,
     };
+    const additions: (StockEntry & { expectedAvailable: number })[] = [];
+    if (data.stockConfirmation) {
+      if (event.kind !== "product_category" || !usesWithdrawals)
+        throwBusinessError({
+          code: "INVALID_STOCK_INPUT",
+          category: "validation",
+        });
+      const shortages = stockShortages(
+        current.items,
+        current.items.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+        current.withdrawals ?? [],
+        await this.events.orderStockBalances(eventId),
+      );
+      if (
+        shortages.length !== data.stockConfirmation.length ||
+        new Set(data.stockConfirmation.map((item) => item.productId)).size !==
+          data.stockConfirmation.length ||
+        shortages.some(
+          (item) =>
+            !data.stockConfirmation!.some(
+              (confirmed) =>
+                confirmed.productId === item.productId &&
+                confirmed.missing === item.missing &&
+                confirmed.available === item.available,
+            ),
+        )
+      )
+        throwBusinessError({ code: "STOCK_CHANGED", category: "conflict" });
+      for (const item of shortages) {
+        additions.push({
+          id: crypto.randomUUID(),
+          eventId,
+          productId: item.productId,
+          quantity: item.missing,
+          expectedAvailable: item.available,
+          version: 1,
+          deletedAt: null,
+          deletedBy: null,
+          deletedByName: null,
+          createdAt: order.updatedAt,
+          updatedAt: order.updatedAt,
+          createdBy: actor.id,
+          createdByName: actor.name,
+          updatedBy: actor.id,
+          updatedByName: actor.name,
+          lastOperation: data.requestId,
+          fingerprint: JSON.stringify({
+            operation: "confirmStockAndWithdraw",
+            orderId: id,
+            requestId: data.requestId,
+            productId: item.productId,
+            quantity: item.missing,
+          }),
+        });
+      }
+    }
     const outcome = await this.events.updateOrder(
       order,
       expected,
       event.version,
+      additions,
     );
     if (outcome === "stale") {
       const saved = await this.events.findOrder(id);

@@ -1,3 +1,4 @@
+import type { StockEntry } from "@/server/products/models/stock-entry.model";
 import type {
   OrderStatus,
   OrderFulfillmentFilter,
@@ -63,12 +64,18 @@ export interface EventRepository {
     order: EventOrder,
     catalogVersion: number,
   ): Promise<EventWriteOutcome>;
+  orderStockBalances(
+    eventId: string,
+  ): Promise<{ productId: string; quantity: number }[]>;
   updateOrder(
     order: EventOrder,
     expectedVersion: number,
     catalogVersion: number,
+    additions?: (StockEntry & { expectedAvailable: number })[],
   ): Promise<EventWriteOutcome>;
-  soldProducts(eventId: string): Promise<{ id: string; name: string; quantity: number }[]>;
+  soldProducts(
+    eventId: string,
+  ): Promise<{ id: string; name: string; quantity: number }[]>;
   history(
     eventId: string,
     page: number,

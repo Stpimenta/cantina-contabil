@@ -8,19 +8,17 @@ import type { ApplicationError } from "@/shared/errors/application-error";
 import { Modal } from "./modal";
 import { Button } from "../ui/button";
 import { CopyButton } from "../ui/copy-button";
-import { Icon } from "../ui/icon";
-import type { StockShortage } from "@/shared/errors/business-failure";
 
 export function ErrorModal({
   error,
   onClose,
-  onAddStock,
   busy = false,
+  onConfirmStock,
 }: {
   error: ApplicationError | null;
   onClose: () => void;
-  onAddStock?: (item: StockShortage) => void;
   busy?: boolean;
+  onConfirmStock?: () => void;
 }) {
   const router = useRouter();
   const expired =
@@ -56,13 +54,30 @@ export function ErrorModal({
                 .join("\n\n")}
             />
           )}
-          <Button disabled={busy} onClick={onClose}>
-            Entendi
-          </Button>
+          {onConfirmStock ? (
+            <>
+              <Button variant="neutral" disabled={busy} onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button busy={busy} onClick={onConfirmStock}>
+                Adicionar tudo e salvar
+              </Button>
+            </>
+          ) : (
+            <Button disabled={busy} onClick={onClose}>
+              Entendi
+            </Button>
+          )}
         </>
       }
     >
       <p>{error?.message}</p>
+      {onConfirmStock && (
+        <p>
+          Ao adicionar tudo e salvar, você confirma que as quantidades em falta
+          já existem fisicamente no estoque.
+        </p>
+      )}
       {!!error?.stockShortages?.length && (
         <ul
           className={styles.shortages}
@@ -87,18 +102,6 @@ export function ErrorModal({
                   <dd>{item.missing}</dd>
                 </div>
               </dl>
-              {onAddStock && (
-                <Button
-                  variant="primary"
-                  className={styles.shortageAction}
-                  iconOnly
-                  disabled={busy}
-                  aria-label={`Adicionar ${item.missing} ao estoque de ${item.productName}`}
-                  onClick={() => onAddStock(item)}
-                >
-                  <Icon name="plus" />
-                </Button>
-              )}
             </li>
           ))}
         </ul>

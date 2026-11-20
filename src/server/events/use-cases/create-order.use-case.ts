@@ -29,6 +29,13 @@ export class CreateOrderUseCase {
     const authorizedEvent = await this.events.find(eventId);
     if (!authorizedEvent) return eventMissing();
     checkEventAccessWrite(session, authorizedEvent);
+    parseInput(
+      validateSaveOrder(
+        input,
+        authorizedEvent.deliveryEnabled,
+        authorizedEvent.kind === "product_category",
+      ),
+    );
     const current = await this.events.findOrder(id);
     const fingerprint = JSON.stringify({ eventId, ...data });
     if (current && current.eventId !== eventId) return eventMissing();

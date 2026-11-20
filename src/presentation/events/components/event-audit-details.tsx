@@ -213,7 +213,7 @@ function Snapshot({
           {Array.isArray(value.withdrawals) && (
             <>
               <div>
-                <dt>Data prevista de retirada</dt>
+                <dt>Data de entrega prevista</dt>
                 <dd>
                   {value.pickupOn
                     ? formatDateOnly(String(value.pickupOn))

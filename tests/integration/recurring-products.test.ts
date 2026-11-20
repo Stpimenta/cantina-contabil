@@ -40,6 +40,7 @@ it("confirma uma falta por vez com autoria, sem duplicar entrada nem retirar o p
       requestId: uuid(),
       catalogVersion: group.version,
       customerName: "Pessoa sintética",
+      pickupOn: "2026-11-22",
       note: "",
       items: group.products.map((p) => ({ productId: p.id, quantity: 4 })),
       total: "80",
@@ -145,6 +146,7 @@ it.each(["status", "withdrawal"])(
         requestId: uuid(),
         catalogVersion: group.version,
         customerName: "Pessoa sintética",
+        pickupOn: "2026-11-22",
         note: "",
         items: group.products.map((product) => ({
           productId: product.id,
@@ -349,4 +351,136 @@ it("cursor não pula entradas após exclusão e correções concorrentes reverte
   ).rejects.toMatchObject({ details: { code: "STOCK_CHANGED" } });
   expect((await stock.findEntry(a.id))?.quantity).toBe(2);
   expect((await stock.findEntry(b.id))?.quantity).toBe(3);
+});
+
+it("adiciona todas as faltas e salva retirada e pagamento sem duplicar ao repetir", async () => {
+  const box = await h.box();
+  const group = await new CreateEventUseCase(h.events, h.boxes).execute(
+    h.actor,
+    {
+      ...eventInput(box.id),
+      kind: "product_category",
+      occursOn: "",
+      products: [
+        { id: uuid(), name: "Bolo", icon: "bag", price: "10" },
+        { id: uuid(), name: "Doce", icon: "bag", price: "10" },
+      ],
+    },
+  );
+  const order = await new CreateOrderUseCase(h.events).execute(
+    h.actor,
+    group.id,
+    {
+      requestId: uuid(),
+      catalogVersion: group.version,
+      customerName: "Pessoa sintética",
+      pickupOn: "2026-11-22",
+      note: "",
+      items: group.products.map((product) => ({
+        productId: product.id,
+        quantity: 3,
+      })),
+      total: "60",
+      paid: false,
+      cash: "0",
+      pix: "0",
+    },
+  );
+  const input = {
+    requestId: uuid(),
+    fulfilled: true,
+    payment: { method: "pix", cash: "0" },
+    stockConfirmation: group.products.map((product) => ({
+      productId: product.id,
+      missing: 3,
+      available: 0,
+    })),
+  };
+  const update = new UpdateOrderStatusUseCase(h.events);
+  const saved = await update.execute(
+    h.actor,
+    group.id,
+    order.id,
+    order.version,
+    input,
+  );
+  expect(saved.paid).toBe(true);
+  expect(saved.withdrawals).toEqual(
+    group.products.map((product) => ({ productId: product.id, quantity: 3 })),
+  );
+  expect(
+    await update.execute(h.actor, group.id, order.id, order.version, input),
+  ).toEqual(saved);
+  const stock = new D1ProductStockRepository(h.db);
+  for (const product of group.products) {
+    const entries = await stock.entries(group.id, product.id, 1, 15);
+    expect(entries.total).toBe(1);
+    expect(entries.items[0]).toMatchObject({
+      quantity: 3,
+      createdBy: h.actor.user.id,
+    });
+    expect(
+      (await stock.balances(group.id)).find(
+        (item) => item.productId === product.id,
+      )?.quantity,
+    ).toBe(0);
+  }
+});
+
+it("não repõe nem altera pedido quando a confirmação das faltas está desatualizada", async () => {
+  const box = await h.box();
+  const group = await new CreateEventUseCase(h.events, h.boxes).execute(
+    h.actor,
+    {
+      ...eventInput(box.id),
+      kind: "product_category",
+      occursOn: "",
+    },
+  );
+  const order = await new CreateOrderUseCase(h.events).execute(
+    h.actor,
+    group.id,
+    {
+      requestId: uuid(),
+      catalogVersion: group.version,
+      customerName: "Pessoa sintética",
+      pickupOn: "2026-11-22",
+      note: "",
+      items: [{ productId: group.products[0].id, quantity: 3 }],
+      total: "30",
+      paid: false,
+      cash: "0",
+      pix: "0",
+    },
+  );
+  await expect(
+    new UpdateOrderStatusUseCase(h.events).execute(
+      h.actor,
+      group.id,
+      order.id,
+      order.version,
+      {
+        requestId: uuid(),
+        fulfilled: true,
+        stockConfirmation: [
+          { productId: group.products[0].id, missing: 2, available: 0 },
+        ],
+      },
+    ),
+  ).rejects.toMatchObject({ details: { code: "STOCK_CHANGED" } });
+  expect(await h.events.findOrder(order.id)).toMatchObject({
+    version: order.version,
+    paid: false,
+    withdrawals: [],
+  });
+  expect(
+    (
+      await new D1ProductStockRepository(h.db).entries(
+        group.id,
+        group.products[0].id,
+        1,
+        15,
+      )
+    ).total,
+  ).toBe(0);
 });
