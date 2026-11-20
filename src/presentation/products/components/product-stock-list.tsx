@@ -7,6 +7,7 @@ import { ProductIcon } from "@/components/ui/product-icon";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import { useCashBoxAccess } from "@/components/ui/cash-box-access";
 import { formatCurrency } from "@/shared/formatting/currency";
+import { ProductionPlan } from "./production-plan";
 import { StockManagerModal } from "./stock-manager-modal";
 import type { EventPage } from "@/server/events/repositories/event.repository";
 import type { StockEntry } from "@/server/products/models/stock-entry.model";
@@ -35,17 +36,24 @@ export function ProductStockList({
     if (productId) next.set("stock", productId);
     else next.delete("stock");
     startTransition(() =>
-      router.replace(`/products/${category.id}${next.size ? `?${next}` : ""}`, {
-        scroll: false,
-      }),
+      router.replace(
+        `/${category.kind === "product_category" ? "products" : "events"}/${category.id}${next.size ? `?${next}` : ""}`,
+        {
+          scroll: false,
+        },
+      ),
     );
   }
   return (
     <section className="stack" aria-labelledby="products-title">
-      <h2 id="products-title">Produtos e estoque</h2>
+      <div className={styles.heading}>
+        <h2 id="products-title">Produtos e estoque</h2>
+        <ProductionPlan eventId={category.id} />
+      </div>
       {!category.products.length && (
         <SectionFeedback area="pedidos">
-          Adicione produtos na edição do grupo.
+          Adicione produtos na edição{" "}
+          {category.kind === "product_category" ? "do grupo" : "do evento"}.
         </SectionFeedback>
       )}
       <ul className="record-list" aria-label="Produtos e estoque">

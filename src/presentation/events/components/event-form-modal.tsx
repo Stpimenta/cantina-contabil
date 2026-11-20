@@ -125,7 +125,7 @@ export function EventFormModal({
     if (isPending()) return;
     const selected = input.products[index];
     if (!selected) return;
-    if (recurring && event?.products.some((p) => p.id === selected.id)) {
+    if (event?.products.some((p) => p.id === selected.id)) {
       removal.execute(
         () => checkProductRemovalAction(event.id, selected.id),
         () => removeProductRow(index),

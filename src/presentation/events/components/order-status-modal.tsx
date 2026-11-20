@@ -21,32 +21,35 @@ export function OrderStatusModal({
   order,
   deliveryEnabled,
   recurring = false,
+  standard = false,
   onClose,
   onSaved,
 }: {
   order: EventOrder;
   deliveryEnabled: boolean;
   recurring?: boolean;
+  standard?: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const id = useId();
   const [requestId] = useState(() => createRequestId());
   const [paid, setPaid] = useState(order.paid);
-  const initialFulfilled = recurring
-    ? order.items.every(
-        (p) =>
-          (order.withdrawals?.find((w) => w.productId === p.id)?.quantity ??
-            0) === p.quantity,
-      )
-    : order.fulfilled;
+  const initialFulfilled =
+    recurring || standard
+      ? order.items.every(
+          (p) =>
+            (order.withdrawals?.find((w) => w.productId === p.id)?.quantity ??
+              0) === p.quantity,
+        )
+      : order.fulfilled;
   const [fulfillmentTouched, setFulfillmentTouched] = useState(false);
   const [fulfilled, setFulfilled] = useState(initialFulfilled);
   const [method, setMethod] = useState("pix");
   const [cash, setCash] = useState("0,00");
   const [discard, setDiscard] = useState(false);
   const hasFulfillment =
-    recurring || (deliveryEnabled && !!order.fulfillmentMode);
+    recurring || standard || (deliveryEnabled && !!order.fulfillmentMode);
   const input = {
     requestId,
     ...(paid && !order.paid

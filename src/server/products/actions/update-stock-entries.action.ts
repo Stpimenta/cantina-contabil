@@ -21,6 +21,7 @@ export async function updateStockEntriesAction(input: unknown) {
         input,
       );
       revalidatePath("/products", "layout");
+      revalidatePath("/events", "layout");
       revalidatePath("/cash-boxes", "layout");
       return value;
     },

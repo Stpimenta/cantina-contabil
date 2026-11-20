@@ -1,3 +1,4 @@
+import { GetProductionPlanUseCase } from "./use-cases/get-production-plan.use-case";
 import { LoadStockEntriesUseCase } from "./use-cases/load-stock-entries.use-case";
 import { CheckProductRemovalUseCase } from "./use-cases/check-product-removal.use-case";
 import { UpdateStockEntriesUseCase } from "./use-cases/update-stock-entries.use-case";
@@ -18,6 +19,7 @@ export function createProducts() {
   const stock = new D1ProductStockRepository(db);
   const saveEntry = new SaveStockEntryUseCase(events, stock);
   return {
+    productionPlan: new GetProductionPlanUseCase(events, stock),
     resolveShortage: new ResolveOrderStockShortageUseCase(
       events,
       stock,

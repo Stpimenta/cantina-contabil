@@ -41,7 +41,7 @@
 .history {
   max-height: min(40dvh, var(--select-list-height));
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
   padding-inline: var(--space-1);
 }
 .loadMore {

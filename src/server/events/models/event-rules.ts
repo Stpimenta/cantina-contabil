@@ -85,10 +85,18 @@ export function orderFields(
     };
   });
   if (
-    event.kind === "product_category" &&
     current?.withdrawals?.some(
       (w) =>
         w.quantity > (items.find((i) => i.id === w.productId)?.quantity ?? 0),
+    )
+  )
+    throwBusinessError({ code: "ORDER_BELOW_WITHDRAWN", category: "conflict" });
+  if (
+    (current?.fulfilled || current?.collected) &&
+    current.items.some(
+      (item) =>
+        item.quantity >
+        (items.find((next) => next.id === item.id)?.quantity ?? 0),
     )
   )
     throwBusinessError({ code: "ORDER_BELOW_WITHDRAWN", category: "conflict" });
@@ -100,9 +108,11 @@ export function orderFields(
     throwBusinessError({ code: "AMOUNT_LIMIT", category: "validation" });
   return {
     ...(event.canteenEnabled ? { collected: current?.collected ?? false } : {}),
-    ...(event.kind === "product_category"
+    ...(!event.deliveryEnabled && !event.canteenEnabled
       ? {
-          pickupOn: data.pickupOn,
+          ...(event.kind === "product_category"
+            ? { pickupOn: data.pickupOn }
+            : {}),
           withdrawals:
             current &&
             current.items.every((item) =>

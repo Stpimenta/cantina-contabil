@@ -3,3 +3,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.content { min-width: 0; flex: 1; }
+.metadata {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--font-sm);
+}

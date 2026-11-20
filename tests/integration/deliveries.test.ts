@@ -1,3 +1,4 @@
+import { replenishEvent } from "../support/event-stock";
 import { UpdateOrderStatusUseCase } from "@/server/events/use-cases/update-order-status.use-case";
 import { beforeEach, afterEach, describe, expect, it } from "vitest";
 import { harness, type Harness } from "../support/harness";
@@ -22,6 +23,7 @@ async function setup(enabled = true) {
     h.actor,
     input,
   );
+  await replenishEvent(h, event);
   const order = {
     requestId: uuid(),
     catalogVersion: event.version,
@@ -307,8 +309,15 @@ describe("entregas e retiradas", () => {
     expect(
       outcomes.filter((outcome) => outcome.status === "rejected"),
     ).toHaveLength(1);
-    const current = await h.events.findOrder(saved.id);
+    let current = await h.events.findOrder(saved.id);
     expect(Number(current!.paid) + Number(current!.fulfilled)).toBe(1);
+    if (current!.fulfilled) {
+      await update.execute(h.actor, event.id, current!.id, current!.version, {
+        requestId: uuid(),
+        fulfilled: false,
+      });
+      current = await h.events.findOrder(saved.id);
+    }
     await new DeleteOrderUseCase(h.events).execute(
       h.actor,
       event.id,

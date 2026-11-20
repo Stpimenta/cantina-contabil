@@ -31,6 +31,8 @@ export function OrderList({
   search?: ReactNode;
 }) {
   const recurring = event.kind === "product_category";
+  const standard =
+    !recurring && !event.deliveryEnabled && !event.canteenEnabled;
   const [selected, setSelected] = useState<EventOrder | "new" | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<EventOrder | null>(null);
   const [deleting, setDeleting] = useState<EventOrder | null>(null);
@@ -88,7 +90,7 @@ export function OrderList({
                   .map((p) => `${p.quantity} × ${p.name}`)
                   .join(" · ")}
               </p>
-              {recurring && (
+              {(recurring || standard) && (
                 <>
                   <p className="muted record-meta">
                     {order.items.every(
@@ -124,7 +126,10 @@ export function OrderList({
               )}
             </div>
             <div className="action-group">
-              {(recurring || !order.paid || event.deliveryEnabled) && (
+              {(recurring ||
+                standard ||
+                !order.paid ||
+                event.deliveryEnabled) && (
                 <Button
                   variant="neutral"
                   disabled={pending || !writable}
@@ -168,6 +173,7 @@ export function OrderList({
           order={updatingStatus}
           deliveryEnabled={event.deliveryEnabled}
           recurring={recurring}
+          standard={standard}
           onClose={() => setUpdatingStatus(null)}
           onSaved={() => {
             setUpdatingStatus(null);

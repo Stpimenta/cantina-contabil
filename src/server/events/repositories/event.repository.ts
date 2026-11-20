@@ -56,6 +56,7 @@ export interface EventRepository {
     pageSize: number,
     status?: OrderStatus,
     fulfillment?: OrderFulfillmentFilter,
+    options?: { range?: { from: string; to: string }; withdrawals?: boolean },
   ): Promise<EventPage<EventOrder>>;
   findOrder(id: string): Promise<EventOrder | null>;
   createOrder(
@@ -67,6 +68,7 @@ export interface EventRepository {
     expectedVersion: number,
     catalogVersion: number,
   ): Promise<EventWriteOutcome>;
+  soldProducts(eventId: string): Promise<{ id: string; name: string; quantity: number }[]>;
   history(
     eventId: string,
     page: number,

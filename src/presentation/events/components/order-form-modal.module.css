@@ -56,6 +56,20 @@
   white-space: nowrap;
 }
 
+@media (max-width: 37.499rem) {
+  .productHeading {
+    align-items: flex-start;
+  }
+
+  .productName {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 .formActions {
   display: flex;
   flex-wrap: wrap;

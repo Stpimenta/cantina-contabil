@@ -15,8 +15,7 @@ export class GetProductStockUseCase {
     checkAccess(session);
     const id = parseInput(validateEventId(idInput));
     const category = await this.events.find(id);
-    if (!category || category.kind !== "product_category")
-      return eventMissing();
+    if (!category) return eventMissing();
     checkEventRead(session, category);
     return this.stock.balances(id);
   }

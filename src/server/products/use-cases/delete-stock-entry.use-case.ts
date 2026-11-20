@@ -16,8 +16,7 @@ export class DeleteStockEntryUseCase {
     checkAccess(session);
     const data = parseInput(validateDeleteStockEntry(input));
     const category = await this.events.find(data.categoryId);
-    if (!category || category.kind !== "product_category")
-      return eventMissing();
+    if (!category) return eventMissing();
     const actor = checkEventAccessWrite(session, category).user;
     const current = await this.stock.findEntry(data.entryId);
     if (

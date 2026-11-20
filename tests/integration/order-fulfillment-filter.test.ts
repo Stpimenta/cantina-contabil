@@ -1,3 +1,4 @@
+import { replenishEvent } from "../support/event-stock";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { harness, type Harness } from "../support/harness";
 import { eventInput, uuid } from "../support/data";
@@ -21,6 +22,7 @@ async function setup(deliveryEnabled = true) {
     h.actor,
     input,
   );
+  await replenishEvent(h, event);
   return { box, input, event };
 }
 function orderInput(productId: string, customerName: string, paid = false) {

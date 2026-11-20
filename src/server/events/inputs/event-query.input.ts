@@ -24,14 +24,17 @@ export const orderStatusSchema = z
   .catch("all");
 export type OrderStatus = z.infer<typeof orderStatusSchema>;
 export const orderFulfillmentFilterSchema = z
-  .enum(["all", "pending"])
+  .enum(["all", "pending", "completed"])
   .catch("all");
 export type OrderFulfillmentFilter = z.infer<
   typeof orderFulfillmentFilterSchema
 >;
+export const orderPeriodSchema = z.enum(["all", "week", "month"]).catch("all");
+export type OrderPeriod = z.infer<typeof orderPeriodSchema>;
 export const validateOrderQuery = (input: unknown) =>
   validateInput(
     listSchema.extend({
+      period: orderPeriodSchema,
       status: orderStatusSchema,
       fulfillment: orderFulfillmentFilterSchema,
     }),

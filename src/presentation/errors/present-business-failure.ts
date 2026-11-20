@@ -11,18 +11,18 @@ const messages: Record<BusinessCode, string> = {
   STOCK_INSUFFICIENT:
     "Estoque insuficiente. Confira as quantidades disponíveis de cada produto.",
   STOCK_ENTRY_REDUCTION_BLOCKED:
-    "As retiradas já registradas impedem esta redução da entrada de estoque.",
+    "As quantidades já comprometidas ou retiradas impedem esta redução da entrada de estoque.",
   ORDER_BELOW_WITHDRAWN:
     "A quantidade pedida não pode ser menor que a retirada. Corrija primeiro a retirada.",
   INVALID_STOCK_INPUT: "Confira o produto e as quantidades informadas.",
   STOCK_CHANGED:
     "Este registro foi alterado. Atualize a página antes de tentar novamente.",
   STOCK_PRODUCT_IN_USE:
-    "Este produto possui entradas de estoque ou pedidos preservados e não pode ser removido do grupo.",
+    "Este produto possui entradas de estoque ou pedidos ativos e não pode ser removido do catálogo.",
   STOCK_HAS_ENTRIES:
-    "Este grupo possui entradas de estoque preservadas e não pode ser excluído.",
+    "Há entradas de estoque ativas. Exclua essas entradas antes de excluir o evento ou grupo.",
   ORDER_HAS_WITHDRAWALS:
-    "Corrija a retirada para zero antes de excluir este pedido.",
+    "Desfaça a entrega ou retirada antes de excluir este pedido.",
   STOCK_LIMIT: "A quantidade total ultrapassa a precisão suportada.",
 
   ACCOUNT_LINK_INVALID:
@@ -164,7 +164,7 @@ export function presentBusinessFailure(
     category: error.category,
     message:
       error.code === "STOCK_INSUFFICIENT" && error.stockShortages?.length
-        ? "Estoque insuficiente para concluir a retirada."
+        ? "Estoque insuficiente para concluir a operação."
         : messages[error.code],
     ...(error.code === "STOCK_INSUFFICIENT" && error.stockShortages?.length
       ? { stockShortages: error.stockShortages }
