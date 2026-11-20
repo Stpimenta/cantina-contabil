@@ -1,3 +1,4 @@
+import { replenishEvent, clearEventEntries } from "../support/event-stock";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { harness, type Harness } from "../support/harness";
 import {
@@ -50,8 +51,14 @@ const move = (
     h.actor,
     movementInput(box, amount, direction),
   );
-const event = (box: string) =>
-  new CreateEventUseCase(h.events, h.boxes).execute(h.actor, eventInput(box));
+const event = async (box: string) => {
+  const saved = await new CreateEventUseCase(h.events, h.boxes).execute(
+    h.actor,
+    eventInput(box),
+  );
+  await replenishEvent(h, saved);
+  return saved;
+};
 const orderInput = (
   productId: string,
   total = "30",
@@ -365,6 +372,7 @@ describe("pedidos, catálogo e insumos", () => {
       h.actor,
       input,
     );
+    await replenishEvent(h, e);
     const o = await new CreateOrderUseCase(h.events).execute(
       h.actor,
       e.id,
@@ -502,6 +510,7 @@ describe("pedidos, catálogo e insumos", () => {
           1,
         );
       }
+      await clearEventEntries(h, e);
       await new DeleteEventUseCase(h.events).execute(h.actor, e.id, 1);
       await new DeleteCashBoxUseCase(h.boxes).execute(h.actor, a.id, 1);
       expect(await h.events.find(e.id)).toBeNull();
@@ -530,6 +539,7 @@ describe("repetição, concorrência e consultas", () => {
     const eInput = eventInput(a.id);
     const eCreate = new CreateEventUseCase(h.events, h.boxes);
     const e = await eCreate.execute(h.actor, eInput);
+    await replenishEvent(h, e);
     const d = await donate(a.id);
     const mInput = movementInput(a.id);
     const mCreate = new CreateMovementUseCase(h.movements, h.boxes, h.receipts);
@@ -720,6 +730,7 @@ it.each(["doação", "insumo", "pedido", "evento"])(
         );
       code = "SUPPLY_CHANGED";
     } else if (kind === "pedido") {
+      await replenishEvent(h, e);
       const o = await new CreateOrderUseCase(h.events).execute(
         h.actor,
         e.id,

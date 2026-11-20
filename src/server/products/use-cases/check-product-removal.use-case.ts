@@ -21,8 +21,7 @@ export class CheckProductRemovalUseCase {
     const categoryId = parseInput(validateEventId(categoryInput));
     const productId = parseInput(validateEventId(productInput));
     const category = await this.events.find(categoryId);
-    if (!category || category.kind !== "product_category")
-      return eventMissing();
+    if (!category) return eventMissing();
     checkEventAccessWrite(session, category);
     if (!category.products.some((p) => p.id === productId))
       return eventMissing();

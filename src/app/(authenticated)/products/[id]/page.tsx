@@ -48,7 +48,7 @@ export default async function ProductCategoryPage({
       const balances = await createProducts().stock.execute(session, id);
       const history = query.history
         ? await useCases.history.execute(session, id, {
-            page: Number(query.history),
+            page: 1,
           })
         : null;
       const cashBoxes = await useCases.boxes.execute(session);

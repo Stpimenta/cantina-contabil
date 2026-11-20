@@ -33,7 +33,8 @@ export class DeleteOrderUseCase {
     if (current.version !== expectedVersion) return eventChanged();
     const event = authorizedEvent;
     if (
-      event.kind === "product_category" &&
+      current.fulfilled ||
+      current.collected ||
       current.withdrawals?.some((w) => w.quantity > 0)
     )
       throwBusinessError({

@@ -175,6 +175,14 @@ export class D1EventRepository implements EventRepository {
     } catch (cause) {
       if (attemptedOrder && hasDatabaseError(cause, "STOCK_INSUFFICIENT")) {
         const current = await this.findOrder(attemptedOrder.id);
+        // A concurrent identical request may have committed before this guard.
+        // Let the use case recognize its normal idempotent result.
+        if (
+          current?.lastOperation === attemptedOrder.lastOperation &&
+          current.fingerprint === attemptedOrder.fingerprint &&
+          current.updatedBy === attemptedOrder.updatedBy
+        )
+          return "stale";
         const balances = await this.db.all<{
           productId: string;
           quantity: number;
@@ -187,13 +195,24 @@ export class D1EventRepository implements EventRepository {
           )
         )
           throw new Error("Invalid product stock balance");
+        const event = await this.find(attemptedOrder.eventId);
+        const reserved = event?.kind !== "product_category";
+        const quantities = (items: EventOrder["items"]) =>
+          items.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+          }));
         throwBusinessError({
           code: "STOCK_INSUFFICIENT",
           category: "conflict",
           stockShortages: stockShortages(
             attemptedOrder.items,
-            attemptedOrder.withdrawals ?? [],
-            current?.withdrawals ?? [],
+            reserved
+              ? quantities(attemptedOrder.items)
+              : (attemptedOrder.withdrawals ?? []),
+            reserved
+              ? quantities(current?.items ?? [])
+              : (current?.withdrawals ?? []),
             balances,
           ),
         });
@@ -374,14 +393,20 @@ export class D1EventRepository implements EventRepository {
     pageSize: number,
     status: OrderStatus = "all",
     fulfillment: OrderFulfillmentFilter = "all",
+    options?: { range?: { from: string; to: string }; withdrawals?: boolean },
   ) {
     const search = `%${query.replace(/[!%_]/g, "!$&")}%`;
     const condition = and(
       eq(eventOrders.eventId, eventId),
       isNull(eventOrders.deletedAt),
       status === "all" ? undefined : eq(eventOrders.paid, status === "paid"),
-      fulfillment === "pending"
-        ? sql`coalesce(json_extract(${eventOrders.payloadJson}, '$.fulfilled'), 0) = 0`
+      fulfillment !== "all"
+        ? options?.withdrawals
+          ? sql`EXISTS (SELECT 1 FROM json_each(${eventOrders.payloadJson}, '$.items') item WHERE coalesce((SELECT json_extract(w.value, '$.quantity') FROM json_each(${eventOrders.payloadJson}, '$.withdrawals') w WHERE json_extract(w.value, '$.productId') = json_extract(item.value, '$.id')), 0) < json_extract(item.value, '$.quantity')) = ${fulfillment === "pending" ? 1 : 0}`
+          : sql`coalesce(json_extract(${eventOrders.payloadJson}, '$.fulfilled'), 0) = ${fulfillment === "completed" ? 1 : 0}`
+        : undefined,
+      options?.range
+        ? sql`json_extract(${eventOrders.payloadJson}, '$.pickupOn') BETWEEN ${options.range.from} AND ${options.range.to}`
         : undefined,
       sql`${eventOrders.customerName} LIKE ${search} ESCAPE '!'`,
     );
@@ -397,6 +422,8 @@ export class D1EventRepository implements EventRepository {
       .from(eventOrders)
       .where(condition)
       .orderBy(
+          sql`CASE WHEN coalesce(json_extract(${eventOrders.payloadJson}, '$.pickupOn'), '') = '' THEN 1 ELSE 0 END ASC`,
+          sql`json_extract(${eventOrders.payloadJson}, '$.pickupOn') ASC`,
         sql`${eventOrders.customerName} COLLATE NOCASE ASC`,
         desc(eventOrders.createdAt),
         desc(eventOrders.id),
@@ -501,6 +528,16 @@ export class D1EventRepository implements EventRepository {
         )
         .run(),
     );
+  }
+  async soldProducts(eventId: string) {
+    return this.db.all<{ id: string; name: string; quantity: number }>(sql`
+      SELECT json_extract(item.value, '$.id') AS id,
+        max(json_extract(item.value, '$.name')) AS name,
+        sum(json_extract(item.value, '$.quantity')) AS quantity
+      FROM event_orders o, json_each(o.payload_json, '$.items') item
+      WHERE o.event_id = ${eventId} AND o.deleted_at IS NULL
+      GROUP BY json_extract(item.value, '$.id')
+    `);
   }
   async history(eventId: string, page: number, pageSize: number) {
     const source = sql`SELECT id,event_id AS eventId,resource_id AS resourceId,resource_type AS resourceType,action,actor_id AS actorId,actor_name AS actorName,occurred_at AS occurredAt,before_json AS beforeJson,after_json AS afterJson FROM event_audit WHERE event_id=${eventId}

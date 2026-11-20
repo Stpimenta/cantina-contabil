@@ -15,8 +15,8 @@
   z-index: var(--z-modal);
 }
 .root[open] {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
 }
 @media (min-width: 64rem) {
   .wide {
@@ -47,6 +47,7 @@
   flex-shrink: 0;
 }
 .body {
+  flex: 0 1 auto;
   position: relative;
   z-index: var(--z-modal-content);
   -webkit-user-select: text;

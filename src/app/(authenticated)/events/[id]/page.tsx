@@ -1,3 +1,5 @@
+import { createProducts } from "@/server/products/composition";
+import { ProductStockList } from "@/presentation/products/components/product-stock-list";
 import { formatCurrency } from "@/shared/formatting/currency";
 import Link from "next/link";
 import { buttonClassName } from "@/components/ui/button";
@@ -28,6 +30,7 @@ export default async function EventPage({
     page?: string;
     history?: string;
     orders?: string;
+    stock?: string;
   }>;
 }) {
   const session = await createAuth().getSession.execute();
@@ -59,11 +62,16 @@ export default async function EventPage({
         );
       const history = query.history
         ? await useCases.history.execute(session, id, {
-            page: Number(query.history),
+            page: 1,
           })
         : null;
       const cashBoxes = await useCases.boxes.execute(session);
-      return { event, history, cashBoxes };
+      const products = createProducts();
+      const balances = await products.stock.execute(session, id);
+      const stockEntries = query.stock
+        ? await products.entries.execute(session, id, query.stock, { page: 1 })
+        : null;
+      return { event, history, cashBoxes, balances, stockEntries };
     },
   );
   if (!result.ok && result.error.code === "EVENT_NOT_FOUND") notFound();
@@ -206,6 +214,12 @@ export default async function EventPage({
               )}
             </dl>
           </section>
+          <ProductStockList
+            category={result.value.event}
+            balances={result.value.balances}
+            stockProductId={query.stock}
+            stockEntries={result.value.stockEntries}
+          />
         </>
       )}
     </div>

@@ -8,25 +8,30 @@ import { Icon } from "@/components/ui/icon";
 import { SelectField } from "@/components/ui/select-field";
 import type {
   OrderStatus,
+  OrderPeriod,
   OrderFulfillmentFilter,
 } from "@/server/events/inputs/event-query.input";
 
 export function OrderFilters({
   basePath,
   status,
+  period,
   fulfillment,
   deliveryEnabled,
   query,
 }: {
   basePath: string;
   status: OrderStatus;
+  period: OrderPeriod;
   fulfillment: OrderFulfillmentFilter;
   deliveryEnabled: boolean;
   query: string;
 }) {
   const [open, setOpen] = useState(false);
   const count =
-    Number(status !== "all") + Number(deliveryEnabled && fulfillment !== "all");
+    Number(status !== "all") +
+    Number(fulfillment !== "all") +
+    Number(period !== "all");
   return (
     <>
       <Button
@@ -48,6 +53,7 @@ export function OrderFilters({
         <OrderFiltersModal
           basePath={basePath}
           status={status}
+          period={period}
           fulfillment={fulfillment}
           deliveryEnabled={deliveryEnabled}
           query={query}
@@ -61,6 +67,7 @@ export function OrderFilters({
 function OrderFiltersModal({
   basePath,
   status,
+  period,
   fulfillment,
   deliveryEnabled,
   query,
@@ -68,6 +75,7 @@ function OrderFiltersModal({
 }: {
   basePath: string;
   status: OrderStatus;
+  period: OrderPeriod;
   fulfillment: OrderFulfillmentFilter;
   deliveryEnabled: boolean;
   query: string;
@@ -75,6 +83,7 @@ function OrderFiltersModal({
 }) {
   const id = useId();
   const router = useRouter();
+  const [selectedPeriod, setSelectedPeriod] = useState(period);
   const [selected, setSelected] = useState(status);
   const [selectedFulfillment, setSelectedFulfillment] = useState(fulfillment);
   const [pending, startTransition] = useTransition();
@@ -108,14 +117,19 @@ function OrderFiltersModal({
         onSubmit={(event) => {
           event.preventDefault();
           if (pending) return;
-          if (selected === status && selectedFulfillment === fulfillment) {
+          if (
+            selected === status &&
+            selectedFulfillment === fulfillment &&
+            selectedPeriod === period
+          ) {
             onClose();
             return;
           }
           const params = new URLSearchParams();
           if (query) params.set("q", query);
           if (selected !== "all") params.set("status", selected);
-          if (deliveryEnabled && selectedFulfillment !== "all")
+          if (selectedPeriod !== "all") params.set("period", selectedPeriod);
+          if (selectedFulfillment !== "all")
             params.set("fulfillment", selectedFulfillment);
           startTransition(() =>
             router.push(`${basePath}${params.size ? `?${params}` : ""}`, {
@@ -124,6 +138,18 @@ function OrderFiltersModal({
           );
         }}
       >
+        <SelectField
+          id={`${id}-period`}
+          label="Previsão de entrega ou retirada"
+          value={selectedPeriod}
+          disabled={pending}
+          onValueChange={(value) => setSelectedPeriod(value as OrderPeriod)}
+          options={[
+            { value: "all", label: "Todos" },
+            { value: "week", label: "Próxima semana (hoje até domingo)" },
+            { value: "month", label: "Próximo mês (hoje até 30 dias)" },
+          ]}
+        />
         <SelectField
           id={`${id}-status`}
           label="Pagamento"
@@ -136,10 +162,9 @@ function OrderFiltersModal({
             { value: "paid", label: "Pagos" },
           ]}
         />
-        {deliveryEnabled && (
-          <SelectField
+        <SelectField
             id={`${id}-fulfillment`}
-            label="Entrega ou retirada"
+            label={deliveryEnabled ? "Entrega ou retirada" : "Retirada"}
             value={selectedFulfillment}
             disabled={pending}
             onValueChange={(value) =>
@@ -147,10 +172,16 @@ function OrderFiltersModal({
             }
             options={[
               { value: "all", label: "Todas" },
-              { value: "pending", label: "Não concluídas" },
+              {
+                value: "pending",
+                label: deliveryEnabled ? "Entrega ou retirada pendente" : "Retirada pendente",
+              },
+              {
+                value: "completed",
+                label: deliveryEnabled ? "Entregues ou retirados" : "Retirados",
+              },
             ]}
-          />
-        )}
+        />
         <span className="sr-only" role="status">
           {pending ? "Atualizando filtros" : ""}
         </span>

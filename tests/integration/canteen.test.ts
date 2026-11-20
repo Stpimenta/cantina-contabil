@@ -1,3 +1,5 @@
+import { D1ProductStockRepository } from "@/server/products/infrastructure/d1-product-stock.repository";
+import { replenishEvent } from "../support/event-stock";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { harness, type Harness } from "../support/harness";
 import { uuid, eventInput } from "../support/data";
@@ -30,6 +32,7 @@ async function setup() {
     h.actor,
     input,
   );
+  await replenishEvent(h, event);
   const repo = new D1CanteenRepository(h.db),
     auth = new ResolveCommandAuthorization(repo, credentialCodec);
   return {
@@ -80,6 +83,12 @@ describe("Cantina, acesso temporário e entrega durável", () => {
     const s = await setup(),
       order = await createOrder(s.event),
       a = await access(s);
+    const stock = new D1ProductStockRepository(h.db);
+    const reservedBalance = await stock.balances(s.event.id);
+    expect(reservedBalance).toContainEqual({
+      productId: s.event.products[0].id,
+      quantity: 998,
+    });
     const input = {
       requestId: uuid(),
       version: order.version,
@@ -130,6 +139,7 @@ describe("Cantina, acesso temporário e entrega durável", () => {
     expect(await s.get.execute(a.identity, s.event.id, order.id)).toMatchObject(
       { collected: false, paid: false, version: 3 },
     );
+    expect(await stock.balances(s.event.id)).toEqual(reservedBalance);
   });
   it("duas ativações simultâneas permitem um navegador e o original pode repetir", async () => {
     const s = await setup(),
@@ -440,11 +450,19 @@ describe("Cantina, acesso temporário e entrega durável", () => {
       { ...orderData(s.event, "Nome corrigido"), note: "Outra observação" },
     );
     expect(edited).toMatchObject({ collected: true, version: 3 });
+    await expect(
+      new DeleteOrderUseCase(h.events).execute(h.actor, s.event.id, o.id, 3),
+    ).rejects.toMatchObject({ details: { code: "ORDER_HAS_WITHDRAWALS" } });
+    await s.collect.execute(identity(), s.event.id, o.id, {
+      requestId: uuid(),
+      version: 3,
+      collected: false,
+    });
     await new DeleteOrderUseCase(h.events).execute(
       h.actor,
       s.event.id,
       o.id,
-      3,
+      4,
     );
     expect(await s.get.execute(identity(), s.event.id, o.id)).toBeNull();
     const notices = await h.d1
@@ -453,6 +471,6 @@ describe("Cantina, acesso temporário e entrega durável", () => {
       )
       .bind(o.id)
       .all();
-    expect(notices.results.map((r) => r.version)).toEqual([1, 2, 3, 4]);
+    expect(notices.results.map((r) => r.version)).toEqual([1, 2, 3, 4, 5]);
   });
 });

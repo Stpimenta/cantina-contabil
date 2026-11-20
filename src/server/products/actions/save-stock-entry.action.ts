@@ -18,6 +18,7 @@ export async function saveStockEntryAction(input: unknown) {
       context.actorId = session?.user.id ?? 0;
       const value = await createProducts().saveEntry.execute(session, input);
       revalidatePath("/products", "layout");
+      revalidatePath("/events", "layout");
       revalidatePath("/cash-boxes", "layout");
       return value;
     },

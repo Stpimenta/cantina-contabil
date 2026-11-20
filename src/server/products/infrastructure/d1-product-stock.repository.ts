@@ -8,6 +8,35 @@ import type { StockEntry } from "../models/stock-entry.model";
 import { productStockEntries as entries } from "./product-stock-entry.schema";
 export class D1ProductStockRepository implements ProductStockRepository {
   constructor(private readonly db: Database) {}
+  async productionDemand(categoryId: string, range?: { from: string; to: string }) {
+    const inPeriod = range
+      ? sql`json_extract(o.payload_json, '$.pickupOn') BETWEEN ${range.from} AND ${range.to}`
+      : sql`1`;
+    return this.db.all<{ productId: string; name: string; pending: number; allPending: number; available: number }>(sql`
+      WITH demand AS (
+        SELECT json_extract(i.value, '$.id') AS productId,
+          json_extract(i.value, '$.name') AS name,
+          CASE WHEN ${inPeriod} THEN 1 ELSE 0 END AS inPeriod,
+          max(0, json_extract(i.value, '$.quantity') -
+            CASE WHEN e.kind = 'product_category' OR (e.delivery_enabled = 0 AND e.canteen_enabled = 0)
+              THEN coalesce((SELECT json_extract(w.value, '$.quantity')
+                FROM json_each(o.payload_json, '$.withdrawals') w
+                WHERE json_extract(w.value, '$.productId') = json_extract(i.value, '$.id')), 0)
+              WHEN coalesce(json_extract(o.payload_json, '$.fulfilled'), 0) = 1
+                OR coalesce(json_extract(o.payload_json, '$.collected'), 0) = 1
+              THEN json_extract(i.value, '$.quantity') ELSE 0 END) AS remaining
+        FROM event_orders o JOIN events e ON e.id = o.event_id,
+          json_each(o.payload_json, '$.items') i
+        WHERE o.event_id = ${categoryId} AND o.deleted_at IS NULL
+      )
+      SELECT productId, max(name) AS name,
+        sum(CASE WHEN inPeriod = 1 THEN remaining ELSE 0 END) AS pending,
+        sum(remaining) AS allPending,
+        coalesce((SELECT b.quantity FROM product_stock_balances b
+          WHERE b.event_id = ${categoryId} AND b.product_id = demand.productId), 0) AS available
+      FROM demand GROUP BY productId
+    `);
+  }
   async productInUse(categoryId: string, productId: string) {
     const rows = await this.db.all<{ used: number }>(sql`
       SELECT (EXISTS(SELECT 1 FROM product_stock_entries WHERE event_id=${categoryId} AND product_id=${productId} AND deleted_at IS NULL)

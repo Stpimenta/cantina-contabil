@@ -26,11 +26,7 @@ export class ListStockEntriesUseCase {
     const productId = parseInput(validateEventId(productInput));
     const data = parseInput(validateEventQuery(input));
     const category = await this.events.find(id);
-    if (
-      !category ||
-      category.kind !== "product_category" ||
-      !category.products.some((p) => p.id === productId)
-    )
+    if (!category || !category.products.some((p) => p.id === productId))
       return eventMissing();
     checkEventRead(session, category);
     return this.stock.entries(id, productId, data.page, DEFAULT_PAGE_SIZE);

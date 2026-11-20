@@ -1,5 +1,6 @@
 import {
   orderStatusSchema,
+  orderPeriodSchema,
   orderFulfillmentFilterSchema,
 } from "@/server/events/inputs/event-query.input";
 import { OrderFilters } from "@/presentation/events/components/order-filters";
@@ -25,12 +26,14 @@ export default async function OrdersPage({
     page?: string;
     status?: string;
     fulfillment?: string;
+    period?: string;
   }>;
 }) {
   const session = await createAuth().getSession.execute();
   if (!session) redirect("/login");
   const { id } = await params;
   const query = await searchParams;
+  const period = orderPeriodSchema.parse(query.period);
   const status = orderStatusSchema.parse(query.status);
   const requestedFulfillment = orderFulfillmentFilterSchema.parse(
     query.fulfillment,
@@ -49,11 +52,12 @@ export default async function OrdersPage({
       const useCases = createEvents();
       const event = await useCases.get.execute(session, id);
       if (event.kind !== "product_category") return eventMissing();
-      const fulfillment = event.deliveryEnabled ? requestedFulfillment : "all";
+      const fulfillment = requestedFulfillment;
       const orders = await useCases.orders.execute(session, id, {
         query: typeof query.q === "string" ? query.q : "",
         page: Number(query.page),
         status,
+        period,
         fulfillment,
       });
       return { event, orders, fulfillment };
@@ -61,6 +65,7 @@ export default async function OrdersPage({
   );
   if (!result.ok && result.error.code === "EVENT_NOT_FOUND") notFound();
   const filters: Record<string, string> = {
+    ...(period === "all" ? {} : { period }),
     ...(status === "all" ? {} : { status }),
     ...(result.ok && result.value.fulfillment !== "all"
       ? { fulfillment: result.value.fulfillment }
@@ -95,9 +100,10 @@ export default async function OrdersPage({
                 filters={filters}
                 actions={
                   <OrderFilters
-                    key={`${status}:${result.value.fulfillment}:${result.value.orders.query}`}
+                    key={`${period}:${status}:${result.value.fulfillment}:${result.value.orders.query}`}
                     basePath={basePath}
                     status={status}
+                    period={period}
                     deliveryEnabled={result.value.event.deliveryEnabled}
                     fulfillment={result.value.fulfillment}
                     query={result.value.orders.query}

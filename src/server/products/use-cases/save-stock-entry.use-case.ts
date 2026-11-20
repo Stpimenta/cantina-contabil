@@ -17,11 +17,7 @@ export class SaveStockEntryUseCase {
     checkAccess(session);
     const data = parseInput(validateStockEntry(input));
     const category = await this.events.find(data.categoryId);
-    if (
-      !category ||
-      category.kind !== "product_category" ||
-      !category.products.some((p) => p.id === data.productId)
-    )
+    if (!category || !category.products.some((p) => p.id === data.productId))
       return eventMissing();
     const actor = checkEventAccessWrite(session, category).user;
     if (data.orderId) {
