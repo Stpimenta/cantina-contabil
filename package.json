@@ -1,6 +1,6 @@
 {
   "name": "cantina-contabil",
-  "version": "0.6.23",
+  "version": "0.6.24",
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
