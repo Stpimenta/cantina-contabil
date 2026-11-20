@@ -12,6 +12,7 @@ describe("filtros de pedidos", () => {
     ).toEqual({
       ok: true,
       value: {
+        period: "all",
         query: "Pessoa",
         page: 2,
         status: "paid",
@@ -19,6 +20,30 @@ describe("filtros de pedidos", () => {
       },
     });
   });
+  it.each(["all", "week", "month"])(
+    "preserva período %s com retirados e pagamento",
+    (period) => {
+      const result = validateOrderQuery({
+        period,
+        fulfillment: "completed",
+        status: "pending",
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.period).toBe(period);
+        expect(result.value.fulfillment).toBe("completed");
+        expect(result.value.status).toBe("pending");
+      }
+    },
+  );
+  it.each([undefined, "invalid", true])(
+    "normaliza período inválido %s para Todos",
+    (period) => {
+      const result = validateOrderQuery({ period });
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.value.period).toBe("all");
+    },
+  );
   it.each([undefined, "outro", true, "delivered"])(
     "normaliza filtro de transporte desconhecido %s para Todos",
     (fulfillment) => {
