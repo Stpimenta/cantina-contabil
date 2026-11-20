@@ -219,8 +219,27 @@ export function OrderStatusModal({
       error.stockShortages?.length ? (
         <OrderStockShortageModal
           error={error}
-          categoryId={order.eventId}
-          orderId={order.id}
+          busy={pending}
+          onConfirm={() => {
+            if (isPending()) return;
+            const stockConfirmation = error.stockShortages!.map(
+              ({ productId, missing, available }) => ({
+                productId,
+                missing,
+                available,
+              }),
+            );
+            execute(
+              () =>
+                updateOrderStatusAction(
+                  order.eventId,
+                  order.id,
+                  order.version,
+                  { ...input, stockConfirmation },
+                ),
+              onSaved,
+            );
+          }}
           onClose={closeError}
         />
       ) : (

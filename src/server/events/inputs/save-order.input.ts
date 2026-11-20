@@ -86,10 +86,15 @@ const propertyIssues: Record<string, ValidationIssue> = {
 export function validateOrderSection(
   input: unknown,
   section: "details" | "fulfillment" | "payment",
+  pickupRequired = false,
 ) {
   const schema =
     section === "details"
-      ? detailsSchema
+      ? pickupRequired
+        ? detailsSchema.refine((data) => !!data.pickupOn, {
+            path: ["pickupOn"],
+          })
+        : detailsSchema
       : section === "payment"
         ? paymentSchema
         : fulfillmentSchema.refine((data) => !!data.fulfillmentMode, {
@@ -97,13 +102,26 @@ export function validateOrderSection(
           });
   return validateInput(schema, input, "INVALID_ORDER_INPUT", propertyIssues);
 }
-export function validateSaveOrder(input: unknown, deliveryEnabled = false) {
+export function validateSaveOrder(
+  input: unknown,
+  deliveryEnabled = false,
+  pickupRequired = false,
+) {
   const result = validateInput(
     saveOrderInputSchema,
     input,
     "INVALID_ORDER_INPUT",
     propertyIssues,
   );
+  if (result.ok && pickupRequired && !result.value.pickupOn)
+    return {
+      ok: false as const,
+      error: {
+        code: "INVALID_ORDER_INPUT" as const,
+        category: "validation" as const,
+        issues: { pickupOn: "INVALID_DATE" as const },
+      },
+    };
   if (result.ok && deliveryEnabled && !result.value.fulfillmentMode)
     return {
       ok: false as const,

@@ -1,3 +1,5 @@
+import type { StockEntry } from "@/server/products/models/stock-entry.model";
+import { productStockEntries } from "@/server/products/infrastructure/product-stock-entry.schema";
 import { throwBusinessError } from "@/shared/errors/business-error";
 import { stockShortages } from "@/server/products/models/stock-shortages";
 import type {
@@ -422,8 +424,8 @@ export class D1EventRepository implements EventRepository {
       .from(eventOrders)
       .where(condition)
       .orderBy(
-          sql`CASE WHEN coalesce(json_extract(${eventOrders.payloadJson}, '$.pickupOn'), '') = '' THEN 1 ELSE 0 END ASC`,
-          sql`json_extract(${eventOrders.payloadJson}, '$.pickupOn') ASC`,
+        sql`CASE WHEN coalesce(json_extract(${eventOrders.payloadJson}, '$.pickupOn'), '') = '' THEN 1 ELSE 0 END ASC`,
+        sql`json_extract(${eventOrders.payloadJson}, '$.pickupOn') ASC`,
         sql`${eventOrders.customerName} COLLATE NOCASE ASC`,
         desc(eventOrders.createdAt),
         desc(eventOrders.id),
@@ -469,36 +471,68 @@ export class D1EventRepository implements EventRepository {
       o,
     );
   }
-  async updateOrder(o: EventOrder, expected: number, catalogVersion: number) {
-    await this.arm(o.eventId, o.lastOperation);
-    return this.write(
-      () =>
-        this.db
-          .update(eventOrders)
-          .set({
-            customerName: o.customerName,
-            note: o.note,
-            totalCents: o.totalCents,
-            paid: o.paid,
-            catalogVersion,
-            version: o.version,
-            updatedAt: o.updatedAt,
-            updatedBy: o.updatedBy,
-            updatedByName: o.updatedByName,
-            lastOperation: o.lastOperation,
-            fingerprint: o.fingerprint,
-            payloadJson: orderPayload(o),
-          })
-          .where(
-            and(
-              eq(eventOrders.id, o.id),
-              eq(eventOrders.version, expected),
-              isNull(eventOrders.deletedAt),
-            ),
-          )
-          .run(),
-      o,
+  async orderStockBalances(eventId: string) {
+    return this.db.all<{ productId: string; quantity: number }>(
+      sql`SELECT product_id AS productId, quantity FROM product_stock_balances WHERE event_id=${eventId}`,
     );
+  }
+  async updateOrder(
+    o: EventOrder,
+    expected: number,
+    catalogVersion: number,
+    additions?: (StockEntry & { expectedAvailable: number })[],
+  ) {
+    await this.arm(o.eventId, o.lastOperation);
+    return this.write(async () => {
+      const update = this.db
+        .update(eventOrders)
+        .set({
+          customerName: o.customerName,
+          note: o.note,
+          totalCents: o.totalCents,
+          paid: o.paid,
+          catalogVersion,
+          version: o.version,
+          updatedAt: o.updatedAt,
+          updatedBy: o.updatedBy,
+          updatedByName: o.updatedByName,
+          lastOperation: o.lastOperation,
+          fingerprint: o.fingerprint,
+          payloadJson: orderPayload(o),
+        })
+        .where(
+          and(
+            eq(eventOrders.id, o.id),
+            eq(eventOrders.version, expected),
+            isNull(eventOrders.deletedAt),
+          ),
+        );
+      if (!additions?.length) return update.run();
+      const inserts = additions.map(({ expectedAvailable, ...entry }) =>
+        this.db.insert(productStockEntries).values({
+          ...entry,
+          quantity: sql`CASE WHEN EXISTS(SELECT 1 FROM event_orders WHERE id=${o.id} AND version=${expected} AND deleted_at IS NULL)
+            AND coalesce((SELECT quantity FROM product_stock_balances WHERE event_id=${o.eventId} AND product_id=${entry.productId}),0)=${expectedAvailable}
+            THEN ${entry.quantity} ELSE 0 END`,
+        }),
+      );
+      const [first, ...rest] = inserts;
+      try {
+        const results = await this.db.batch([first!, ...rest, update]);
+        return results[results.length - 1];
+      } catch (cause) {
+        const current = await this.findOrder(o.id);
+        if (
+          current?.lastOperation === o.lastOperation &&
+          current.fingerprint === o.fingerprint &&
+          current.updatedBy === o.updatedBy
+        )
+          return { meta: { changes: 0 } };
+        if (hasDatabaseError(cause, "INVALID_STOCK_INPUT"))
+          throwBusinessError({ code: "STOCK_CHANGED", category: "conflict" });
+        throw cause;
+      }
+    }, o);
   }
   async softDeleteOrder(deletion: OrderDeletion) {
     const operation = crypto.randomUUID();

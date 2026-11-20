@@ -4,6 +4,10 @@ Retomada curta. Use o [mapa de leitura](README.md) para abrir somente os contrat
 
 ## Local de trabalho e limites
 
+- Reposição no Mais do pedido — implementação local na mesma entrega 0.6.25 em `fix/product-order-delivery-date`: removidos +/confirmações individuais; Adicionar tudo e salvar confirma presença física, registra todas as faltas e salva retirada/pagamento em batch atômico, com auditoria/idempotência e conferência de versão/saldos. Cancelar não grava. Cenários de reposição conjunta/repetição e confirmação desatualizada acrescentados, não executados; revisão estática e formatação, sem typecheck/build/app ou migração/publicação. Alterações anteriores da data obrigatória preservadas.
+
+- Correção local em `fix/product-order-delivery-date`: Data de entrega obrigatória no formulário/servidor de Produtos, reutilizando pickupOn, com rótulo na lista/histórico. Legados sem data preservados até edição. Versão 0.6.25 preparada; sem migração, commit/envio ou publicação. Revisão estática; sem testes/build nesta alteração.
+
 - Responsável confirmou em 20/11 que todos os testes passaram no terminal após as correções dos cenários. Saída completa/contagem não fornecida; não somar às execuções locais. Versão 0.6.23 novamente validada contra origin/main disponível 0.6.22, sem atualização remota pelo agente. Pendentes de commit/envio somente os dois arquivos de testes e este estado. Migração 0036 e publicação de produção continuam sem confirmação de execução nesta conversa.
 
 - Nova suíte completa solicitada em 20/11 após ajustes: npm test terminou com 282 aprovados e 111 integrações bloqueadas na preparação por listen EPERM em 127.0.0.1 (24 arquivos aprovados/11 bloqueados). Nenhuma falha de asserção nesta execução; integrações continuam sem validação neste ambiente. Sem build, migração, commit/envio ou publicação.

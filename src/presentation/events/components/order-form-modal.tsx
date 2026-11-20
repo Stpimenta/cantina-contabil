@@ -210,6 +210,7 @@ export function OrderFormModal({
         input,
         event.deliveryEnabled,
         phased ? step : undefined,
+        recurring,
       );
     },
     connectionMessage:
@@ -280,7 +281,7 @@ export function OrderFormModal({
     e.preventDefault();
     if (isPending()) return;
     if (phased && step < 2) {
-      const failure = validateOrderForm(input, true, step);
+      const failure = validateOrderForm(input, true, step, recurring);
       if (failure) showError(failure);
       else {
         resetValidation();
@@ -288,7 +289,12 @@ export function OrderFormModal({
       }
       return;
     }
-    const failure = validateOrderForm(input, event.deliveryEnabled);
+    const failure = validateOrderForm(
+      input,
+      event.deliveryEnabled,
+      undefined,
+      recurring,
+    );
     if (failure) {
       const failedStep = firstOrderErrorStep(failure);
       if (phased && failedStep !== null && failedStep !== step) {
@@ -471,7 +477,8 @@ export function OrderFormModal({
                   <DateField
                     id={`${id}-pickup-on`}
                     name="pickupOn"
-                    label="Data prevista de retirada (opcional)"
+                    label="Data de entrega"
+                    required
                     value={pickupOn}
                     onValueChange={setPickupOn}
                     disabled={pending}

@@ -39,3 +39,5 @@ Somente dependências ativas impedem excluir caixas, eventos/grupos ou remover p
 ## Contas excluídas
 
 A migração 0035_account_soft_delete.sql acrescenta deleted_at e requires_activation_name ao cadastro, preserva os vínculos de identidade e estende a auditoria com deletedAt. Exclusão lógica bloqueia a conta, remove suas concessões e, na mesma gravação, revoga sessões, cancela convites e expira tickets não consumidos, preservando todos os registros. Reconvite mantém o ID e define novas permissões, exigindo nome na ativação. Regras e fluxo em [Autenticação e usuários](../funcionalidades/autenticacao-e-usuarios.md#exclusão-e-nova-ativação-de-conta). Nomes salvos em movimentações e snapshots não são atualizados.
+
+Reposição confirmada no aviso de retirada insuficiente usa um único D1 batch para todas as entradas novas e a atualização do pedido. As inserções exigem a versão esperada do pedido e o saldo exibido; divergência aborta pelo guarda de quantidade. A atualização aplica versão/catálogo e guardas financeiros/de retirada; a auditoria de entradas e pedido integra a mesma transação. Não aplica migração ou SQL remoto.

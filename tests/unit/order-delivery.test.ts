@@ -4,7 +4,10 @@ import {
   orderAddressSchema,
   contactPhoneSchema,
 } from "@/server/events/inputs/order-delivery.input";
-import { validateSaveOrder } from "@/server/events/inputs/save-order.input";
+import {
+  validateOrderSection,
+  validateSaveOrder,
+} from "@/server/events/inputs/save-order.input";
 import {
   formatOrderAddress,
   orderMapsUrl,
@@ -114,5 +117,30 @@ describe("endereço e contato de entrega", () => {
     expect(url.searchParams.get("query")).toContain("Rua Sintética, 12");
     expect(url.searchParams.get("query")).not.toContain("privado");
     expect(formatOrderAddress(value)).toContain("Apartamento privado");
+  });
+});
+
+describe("data de entrega de Produtos", () => {
+  it("exige data no cadastro completo e na etapa Pedido", () => {
+    const input = order();
+    for (const result of [
+      validateSaveOrder(input, false, true),
+      validateOrderSection(input, "details", true),
+    ]) {
+      expect(result.ok).toBe(false);
+      if (!result.ok)
+        expect(result.error.issues).toMatchObject({ pickupOn: "INVALID_DATE" });
+    }
+  });
+  it("aceita data civil válida e rejeita data impossível", () => {
+    expect(
+      validateSaveOrder({ ...order(), pickupOn: "2026-11-22" }, false, true).ok,
+    ).toBe(true);
+    expect(
+      validateSaveOrder({ ...order(), pickupOn: "2026-02-30" }, false, true).ok,
+    ).toBe(false);
+  });
+  it("mantém pedidos de eventos sem obrigação de data", () => {
+    expect(validateSaveOrder(order(), false, false).ok).toBe(true);
   });
 });

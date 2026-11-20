@@ -22,13 +22,15 @@ export function validateOrderForm(
   input: unknown,
   deliveryEnabled: boolean,
   step?: number,
+  pickupRequired = false,
 ): ApplicationError | null {
   const result =
     step === undefined
-      ? validateSaveOrder(input, deliveryEnabled)
+      ? validateSaveOrder(input, deliveryEnabled, pickupRequired)
       : validateOrderSection(
           input,
           step === 0 ? "details" : step === 1 ? "fulfillment" : "payment",
+          pickupRequired,
         );
   if (result.ok) return null;
   const error = presentBusinessFailure(result.error);
