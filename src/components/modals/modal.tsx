@@ -5,6 +5,7 @@ import styles from "./modal.module.css";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { Button } from "../ui/button";
 import { Icon } from "../ui/icon";
+import { registerModal } from "./modal-session";
 
 export function Modal({
   id,
@@ -39,14 +40,15 @@ export function Modal({
     const dialog = ref.current;
     if (!dialog || !open) return;
     const previous = document.activeElement as HTMLElement | null;
-    const overflow = document.body.style.overflow;
     dialog.showModal();
+    const release = registerModal(dialog, previous);
     titleRef.current?.focus({ preventScroll: true });
-    document.body.style.overflow = "hidden";
     return () => {
-      dialog.close();
-      document.body.style.overflow = overflow;
-      previous?.focus();
+      try {
+        dialog.close();
+      } finally {
+        release();
+      }
     };
   }, [open]);
 
