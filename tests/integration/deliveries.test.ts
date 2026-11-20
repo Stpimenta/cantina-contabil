@@ -331,7 +331,7 @@ describe("entregas e retiradas", () => {
       }),
     ).rejects.toMatchObject({ details: { code: "EVENT_NOT_FOUND" } });
   });
-  it("exige modalidade para conclusão rápida e preserva pagamento do legado", async () => {
+  it("permite retirada comum e exige modalidade após habilitar entregas, preservando pagamento", async () => {
     const { event, order, input } = await setup(false);
     const saved = await new CreateOrderUseCase(h.events).execute(
       h.actor,
@@ -339,12 +339,46 @@ describe("entregas e retiradas", () => {
       order,
     );
     const update = new UpdateOrderStatusUseCase(h.events);
-    await expect(
-      update.execute(h.actor, event.id, saved.id, saved.version, {
+    const withdrawn = await update.execute(
+      h.actor,
+      event.id,
+      saved.id,
+      saved.version,
+      {
         requestId: uuid(),
         fulfilled: true,
-      }),
-    ).rejects.toMatchObject({ details: { code: "EVENT_DELIVERY_DISABLED" } });
+      },
+    );
+    expect(withdrawn).toMatchObject({
+      paid: false,
+      fulfilled: false,
+      withdrawals: [{ productId: event.products[0].id, quantity: 1 }],
+    });
+    await expect(
+      new UpdateEventUseCase(h.events, h.boxes).execute(
+        h.actor,
+        event.id,
+        event.version,
+        {
+          ...input,
+          requestId: uuid(),
+          deliveryEnabled: true,
+        },
+      ),
+    ).rejects.toMatchObject({ details: { code: "EVENT_DELIVERY_LOCKED" } });
+    const restored = await update.execute(
+      h.actor,
+      event.id,
+      saved.id,
+      withdrawn.version,
+      {
+        requestId: uuid(),
+        fulfilled: false,
+      },
+    );
+    expect(restored.withdrawals).toEqual([
+      { productId: event.products[0].id, quantity: 0 },
+    ]);
     await new UpdateEventUseCase(h.events, h.boxes).execute(
       h.actor,
       event.id,
@@ -352,7 +386,7 @@ describe("entregas e retiradas", () => {
       { ...input, requestId: uuid(), deliveryEnabled: true },
     );
     await expect(
-      update.execute(h.actor, event.id, saved.id, saved.version, {
+      update.execute(h.actor, event.id, saved.id, restored.version, {
         requestId: uuid(),
         payment: { method: "pix", cash: "0" },
         fulfilled: true,
@@ -361,7 +395,7 @@ describe("entregas e retiradas", () => {
       details: { code: "ORDER_FULFILLMENT_UNDEFINED" },
     });
     expect(await h.events.findOrder(saved.id)).toMatchObject({
-      version: saved.version,
+      version: restored.version,
       paid: false,
       fulfilled: false,
       fulfillmentMode: null,
@@ -603,11 +637,12 @@ describe("entregas e retiradas", () => {
       deliveryEnabled: false,
     });
     expect(disabled.deliveryEnabled).toBe(false);
-    expect(
-      await h.events.createOrder(
+    const rejectedId = uuid();
+    await expect(
+      h.events.createOrder(
         {
           ...order,
-          id: uuid(),
+          id: rejectedId,
           eventId: event.id,
           customerName: "Teste",
           fulfillmentMode: "delivery",
@@ -632,6 +667,7 @@ describe("entregas e retiradas", () => {
         },
         disabled.version,
       ),
-    ).toBe("delivery_disabled");
+    ).rejects.toMatchObject({ details: { code: "INVALID_STOCK_INPUT" } });
+    expect(await h.events.findOrder(rejectedId)).toBeNull();
   });
 });
