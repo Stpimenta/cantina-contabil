@@ -37,6 +37,12 @@ const paths = {
   chevronLeft: <path d="m14 6-6 6 6 6" />,
   chevronRight: <path d="m10 6 6 6-6 6" />,
   chevronDown: <path d="m6 9 6 6 6-6" />,
+  copy: (
+    <>
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V4H4v12h4" />
+    </>
+  ),
   check: <path d="m5 12 4 4L19 6" />,
   edit: (
     <>

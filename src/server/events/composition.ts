@@ -1,3 +1,4 @@
+import { GetOrderReceiptUseCase } from "./use-cases/get-order-receipt.use-case";
 import { DurablePublicationCoordinator } from "@/server/canteen/infrastructure/publication-coordinator";
 import { UpdateOrderStatusUseCase } from "./use-cases/update-order-status.use-case";
 import { UpdateSupplyUseCase } from "./use-cases/update-supply.use-case";
@@ -36,14 +37,15 @@ export function createEvents() {
     createSupply: new CreateSupplyUseCase(supplies, repo, boxes, receipts),
     receiveSupply: new ReceiveSupplyUseCase(supplies, repo),
     receipt: new GetSupplyReceiptUseCase(supplies, repo, receipts),
+    orderReceipt: new GetOrderReceiptUseCase(repo, receipts),
     delete: new DeleteEventUseCase(repo),
     deleteOrder: new DeleteOrderUseCase(repo),
     boxes: new GetEventBoxesUseCase(repo),
     create: new CreateEventUseCase(repo, boxes),
     update: new UpdateEventUseCase(repo, boxes),
-    createOrder: new CreateOrderUseCase(repo),
-    updateOrder: new UpdateOrderUseCase(repo),
-    updateOrderStatus: new UpdateOrderStatusUseCase(repo),
+    createOrder: new CreateOrderUseCase(repo, receipts),
+    updateOrder: new UpdateOrderUseCase(repo, receipts),
+    updateOrderStatus: new UpdateOrderStatusUseCase(repo, receipts),
     list: new ListEventsUseCase(repo),
     get: new GetEventUseCase(repo),
     orders: new ListOrdersUseCase(repo),

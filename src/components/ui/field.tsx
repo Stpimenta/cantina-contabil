@@ -1,3 +1,4 @@
+import { Icon } from "./icon";
 import { FieldError } from "./field-error";
 import styles from "./field.module.css";
 import type { InputHTMLAttributes, ReactNode } from "react";
@@ -9,6 +10,7 @@ export function Field({
   trailing,
   labelAction,
   hideLabel = false,
+  searchWithoutButtonOnMobile = false,
   appearance = "standard",
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & {
@@ -18,11 +20,12 @@ export function Field({
   trailing?: ReactNode;
   labelAction?: ReactNode;
   hideLabel?: boolean;
+  searchWithoutButtonOnMobile?: boolean;
   appearance?: "standard" | "search" | "quantityNative" | "quantityStepper";
 }) {
   return (
     <div
-      className={`${styles.root}${appearance !== "standard" ? ` ${styles[appearance]}` : ""}`}
+      className={`${styles.root}${appearance !== "standard" ? ` ${styles[appearance]}` : ""}${searchWithoutButtonOnMobile ? ` ${styles.searchWithoutButtonOnMobile}` : ""}`}
     >
       {labelAction ? (
         <div className={styles.labelRow}>
@@ -37,6 +40,11 @@ export function Field({
         </label>
       )}
       <div className={styles.control}>
+        {searchWithoutButtonOnMobile && appearance === "search" && (
+          <span className={styles.mobileSearchIcon} aria-hidden="true">
+            <Icon name="search" />
+          </span>
+        )}
         <input
           {...props}
           id={id}

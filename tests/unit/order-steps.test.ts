@@ -18,6 +18,26 @@ const input = () => ({
   fulfillmentMode: null,
 });
 describe("etapas do pedido", () => {
+  it("mantém comprovante opcional e direciona arquivo inválido para Pagamento", () => {
+    expect(validateOrderForm(input(), false, 2)).toBeNull();
+    const failure = validateOrderForm(
+      { ...input(), receipts: [{ type: "application/pdf", size: 0 }] },
+      false,
+    );
+    expect(failure?.fields).toHaveProperty("receipts");
+    expect(firstOrderErrorStep(failure!)).toBe(2);
+    expect(
+      validateOrderForm(
+        {
+          ...input(),
+          retainedReceiptIds: Array.from({ length: 5 }, () => uuid()),
+          receipts: [{ type: "application/pdf", size: 20 }],
+        },
+        false,
+        2,
+      )?.fields,
+    ).toHaveProperty("receipts");
+  });
   it("valida a etapa atual com o mesmo contrato sem exigir etapas futuras", () => {
     expect(validateOrderForm(input(), true, 0)).toBeNull();
     expect(
@@ -50,6 +70,25 @@ describe("etapas do pedido", () => {
         )!,
       ),
     ).toBe(2);
+  });
+  it("situação aceita comprovante sem mudança financeira e limita novos mais mantidos", () => {
+    expect(
+      validateUpdateOrderStatus({
+        requestId: uuid(),
+        receipts: [{ type: "application/pdf", size: 20 }],
+      }).ok,
+    ).toBe(true);
+    expect(
+      validateUpdateOrderStatus({ requestId: uuid(), retainedReceiptIds: [] })
+        .ok,
+    ).toBe(true);
+    expect(
+      validateUpdateOrderStatus({
+        requestId: uuid(),
+        receipts: [{ type: "application/pdf", size: 20 }],
+        retainedReceiptIds: Array.from({ length: 5 }, () => uuid()),
+      }).ok,
+    ).toBe(false);
   });
   it("valida alterações independentes e não aceita um pedido sem alteração", () => {
     expect(

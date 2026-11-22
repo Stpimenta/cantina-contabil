@@ -14,6 +14,7 @@ import { ErrorModal } from "@/components/modals/error-modal";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import styles from "./temporary-accesses.module.css";
+import fieldStyles from "@/components/ui/field.module.css";
 import { Field } from "@/components/ui/field";
 import { DateField } from "@/components/ui/date-field";
 import { useUnsavedChanges } from "@/shared/hooks/use-unsaved-changes";
@@ -59,7 +60,6 @@ export function TemporaryAccesses({
     [date, setDate] = useState(initial.date),
     [time, setTime] = useState(initial.time),
     [link, setLink] = useState(""),
-    [show, setShow] = useState(false),
     [copied, setCopied] = useState(false);
   const input = {
     requestId,
@@ -98,7 +98,6 @@ export function TemporaryAccesses({
     setOpen(false);
     setName("");
     setLink("");
-    setShow(false);
     setCopied(false);
     setDiscard(false);
     if (closeTarget.current === "manager") setManaging(false);
@@ -121,7 +120,6 @@ export function TemporaryAccesses({
       (v) => {
         setOpen(false);
         setName("");
-        setShow(false);
         setCopied(false);
         setLink(`${location.origin}/command-access#chave=${v.secret}`);
         router.refresh();
@@ -309,37 +307,37 @@ export function TemporaryAccesses({
             <Field
               id={`${id}-link`}
               label="Link temporário"
-              type={show ? "text" : "password"}
+              type="text"
               value={link}
               readOnly
               autoComplete="off"
+              trailing={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  iconOnly
+                  className={fieldStyles.trailing}
+                  aria-label={copied ? "Link copiado" : "Copiar link"}
+                  title={copied ? "Link copiado" : "Copiar link"}
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(link);
+                      setCopied(true);
+                    } catch {
+                      setCopied(false);
+                      showError({
+                        code: "CLIPBOARD_FAILED",
+                        category: "unexpected",
+                        message:
+                          "Não foi possível copiar. Selecione o link e copie manualmente.",
+                      });
+                    }
+                  }}
+                >
+                  <Icon name={copied ? "check" : "copy"} />
+                </Button>
+              }
             />
-            <div className="action-group">
-              <Button
-                variant="neutral"
-                aria-pressed={show}
-                onClick={() => setShow(!show)}
-              >
-                {show ? "Ocultar link" : "Mostrar link"}
-              </Button>
-              <Button
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(link);
-                    setCopied(true);
-                  } catch {
-                    showError({
-                      code: "CLIPBOARD_FAILED",
-                      category: "unexpected",
-                      message:
-                        "Não foi possível copiar. Mostre o link e copie manualmente.",
-                    });
-                  }
-                }}
-              >
-                Copiar link
-              </Button>
-            </div>
             <span className="sr-only" role="status">
               {copied ? "Link copiado." : ""}
             </span>
@@ -354,8 +352,7 @@ export function TemporaryAccesses({
           onCancel={() => setRevoking(null)}
           onConfirm={() =>
             execute(
-              () =>
-                revokeAccessAction(eventId, revoking.id, createRequestId()),
+              () => revokeAccessAction(eventId, revoking.id, createRequestId()),
               () => {
                 setRevoking(null);
                 router.refresh();

@@ -8,6 +8,7 @@ export async function updateOrderAction(
   id: string,
   version: number,
   input: unknown,
+  attachments?: FormData,
 ) {
   return executeOperation(
     {
@@ -27,6 +28,9 @@ export async function updateOrderAction(
         id,
         version,
         input,
+        attachments
+          ?.getAll("receipts")
+          .filter((entry): entry is File => entry instanceof File) ?? [],
       );
       revalidatePath("/events");
       revalidatePath(`/events/${eventId}`);

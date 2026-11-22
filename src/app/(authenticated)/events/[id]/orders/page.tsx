@@ -98,6 +98,7 @@ export default async function OrdersPage({
             search={
               <SearchForm
                 key="order-search"
+                compactActionsOnMobile
                 action={basePath}
                 filters={filters}
                 actions={

@@ -1,3 +1,4 @@
+import { OrderListLoading } from "@/presentation/events/components/order-list-loading";
 import { ProductsLoading } from "@/presentation/products/components/products-loading";
 import commandStyles from "@/presentation/canteen/components/command-board.module.css";
 import { ApiDocumentationLoading } from "@/presentation/api/api-documentation-loading";
@@ -236,11 +237,18 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
             <span>
               Evento: <Skeleton shape="amount" />
             </span>
+          ) : area === "evento" ? (
+            <>
+              <span className={eventStyles.desktopOnly}>{description}</span>
+              <span className={eventStyles.mobileOnly}>
+                <Skeleton shape="amount" />
+              </span>
+            </>
           ) : (
             description
           )
         }
-        hideDescriptionOnMobile={!nested}
+        hideDescriptionOnMobile={!nested || area === "pedidos"}
         compactActionsOnMobile={area !== "home" && area !== "doacoes"}
         actions={
           <>
@@ -257,7 +265,7 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
         <>
           {area === "evento" ? (
             <section className={eventStyles.financial}>
-              <h2>Situação financeira</h2>
+              <h2 className={eventStyles.desktopOnly}>Situação financeira</h2>
               <div className={eventStyles.summary}>
                 <BalancePlaceholder />
                 <div className={`muted record-meta ${eventStyles.payments}`}>
@@ -272,8 +280,20 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
                     <p className="muted record-meta">Produtos vendidos</p>
                     <Skeleton shape="amount" />
                   </div>
+                  <div className={eventStyles.metric}>
+                    <p className="muted record-meta">Data</p>
+                    <Skeleton shape="amount" />
+                  </div>
                 </div>
               </div>
+              <dl className="details">
+                <div>
+                  <dt>Caixa</dt>
+                  <dd>
+                    <Skeleton />
+                  </dd>
+                </div>
+              </dl>
               <div className={eventStyles.actions}>
                 {["Pedidos", "Insumos", "Histórico"].map((label, index) => (
                   <Button
@@ -292,30 +312,20 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
           ) : (
             <BalancePlaceholder />
           )}
-          <section
-            className={area === "evento" ? eventStyles.information : "stack"}
-          >
-            {area === "evento" && <h2>Informações do evento</h2>}
-            <dl
-              className={
-                area === "evento"
-                  ? `details ${eventStyles.eventDetails}`
-                  : "details"
-              }
-            >
-              {(area === "evento"
-                ? ["Data", "Caixa"]
-                : ["Descrição", "Criado por"]
-              ).map((label) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>
-                    <Skeleton />
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </section>
+          {area !== "evento" && (
+            <section className="stack">
+              <dl className="details">
+                {["Descrição", "Criado por"].map((label) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>
+                      <Skeleton />
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
           {area === "caixa" && (
             <div className="centered-actions">
               <Button disabled variant="neutral">
@@ -333,6 +343,7 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
           )}
           {search && (
             <SearchForm
+              compactActionsOnMobile={area === "pedidos" || area === "eventos"}
               action={
                 (
                   {
@@ -350,7 +361,14 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
               disabled
               actions={
                 area === "doacoes" || area === "pedidos" ? (
-                  <Button disabled variant="neutral">
+                  <Button
+                    disabled
+                    variant="neutral"
+                    aria-label="Filtros"
+                    mobileIcon={
+                      area === "pedidos" ? <Icon name="filter" /> : undefined
+                    }
+                  >
                     <Icon name="filter" />
                     Filtros
                   </Button>
@@ -358,14 +376,18 @@ export function RouteLoading({ area }: { area: LoadingArea }) {
               }
             />
           )}
-          <div
-            aria-hidden="true"
-            className={area === "insumos" ? supplyStyles.list : "record-list"}
-          >
-            {[0, 1, 2].map((item) => (
-              <LoadingRow key={item} area={area} />
-            ))}
-          </div>
+          {area === "pedidos" ? (
+            <OrderListLoading />
+          ) : (
+            <div
+              aria-hidden="true"
+              className={area === "insumos" ? supplyStyles.list : "record-list"}
+            >
+              {[0, 1, 2].map((item) => (
+                <LoadingRow key={item} area={area} />
+              ))}
+            </div>
+          )}
         </>
       )}
     </section>

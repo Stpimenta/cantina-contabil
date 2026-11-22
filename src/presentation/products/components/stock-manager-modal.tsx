@@ -1,5 +1,12 @@
 "use client";
-import { useEffect, useId, useRef, useState, useTransition, type FormEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+  type FormEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import type { StockEntry } from "@/server/products/models/stock-entry.model";
 import type { EventPage } from "@/server/events/repositories/event.repository";
@@ -48,40 +55,51 @@ export function StockManagerModal({
   onClose: () => void;
 }) {
   const id = useId();
-  const historyRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(entries.items);
-  const [hasMore, setHasMore] = useState(entries.page * entries.pageSize < entries.total);
+  const [hasMore, setHasMore] = useState(
+    entries.page * entries.pageSize < entries.total,
+  );
   const [cursor, setCursor] = useState(() => {
     const last = entries.items.at(-1);
     return last ? { createdAt: last.createdAt, id: last.id } : null;
   });
   const load = useServerAction({
-    connectionMessage: "Não foi possível carregar as entradas. Tente novamente.",
+    connectionMessage:
+      "Não foi possível carregar as entradas. Tente novamente.",
   });
   // Refresh existing rows after deletion without discarding older loaded rows or drafts.
   useEffect(() => {
-    setLoaded((current) => current.map((entry) =>
-      entries.items.find((fresh) => fresh.id === entry.id) ?? entry,
-    ));
+    setLoaded((current) =>
+      current.map(
+        (entry) =>
+          entries.items.find((fresh) => fresh.id === entry.id) ?? entry,
+      ),
+    );
   }, [entries]);
   function loadMore() {
     if (!hasMore || load.isPending() || load.error || locked()) return;
-    load.execute(() => loadStockEntriesAction(categoryId, productId, cursor), (page) => {
-      setLoaded((current) => {
-        const ids = new Set(current.map((entry) => entry.id));
-        return [...current, ...page.items.filter((entry) => !ids.has(entry.id))];
-      });
-      setCursor(page.cursor);
-      setHasMore(page.hasMore);
-    });
+    load.execute(
+      () => loadStockEntriesAction(categoryId, productId, cursor),
+      (page) => {
+        setLoaded((current) => {
+          const ids = new Set(current.map((entry) => entry.id));
+          return [
+            ...current,
+            ...page.items.filter((entry) => !ids.has(entry.id)),
+          ];
+        });
+        setCursor(page.cursor);
+        setHasMore(page.hasMore);
+      },
+    );
   }
   useEffect(() => {
     const target = sentinelRef.current;
     if (!target || !hasMore || load.error) return;
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) loadMore();
-    }, { root: historyRef.current });
+    });
     observer.observe(target);
     return () => observer.disconnect();
   });
@@ -160,7 +178,11 @@ export function StockManagerModal({
       "Não foi possível confirmar a exclusão. Confira o estoque antes de repetir.",
   });
   const busy =
-    save.pending || correction.pending || remove.pending || refreshing || load.pending;
+    save.pending ||
+    correction.pending ||
+    remove.pending ||
+    refreshing ||
+    load.pending;
   const dirty = quantity !== "1" || changes.length > 0;
   useUnsavedChanges(dirty);
   function locked() {
@@ -299,7 +321,6 @@ export function StockManagerModal({
           >
             <h2 id={`${id}-entries-title`}>Entradas registradas</h2>
             <div
-              ref={historyRef}
               className={styles.history}
               role="region"
               tabIndex={0}
@@ -404,12 +425,19 @@ export function StockManagerModal({
               </ul>
               {hasMore && (
                 <div ref={sentinelRef} className={styles.loadMore}>
-                  <Button type="button" variant="ghost" disabled={busy || load.pending} onClick={loadMore}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={busy || load.pending}
+                    onClick={loadMore}
+                  >
                     {load.pending ? "Carregando entradas…" : "Carregar mais"}
                   </Button>
                 </div>
               )}
-              <span className="sr-only" role="status">{load.pending ? "Carregando entradas" : ""}</span>
+              <span className="sr-only" role="status">
+                {load.pending ? "Carregando entradas" : ""}
+              </span>
             </div>
             {changes.length >= DEFAULT_PAGE_SIZE && (
               <p className="muted record-meta">

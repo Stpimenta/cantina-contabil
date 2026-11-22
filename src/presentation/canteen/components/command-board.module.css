@@ -69,3 +69,8 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+
+.filterTrigger[data-active="true"] {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}

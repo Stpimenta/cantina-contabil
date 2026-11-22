@@ -64,6 +64,7 @@ export default async function ProductsPage({
       ) : (
         <>
           <SearchForm
+            compactActionsOnMobile
             action="/products"
             query={result.value.list.query}
             label="Buscar pelo nome"

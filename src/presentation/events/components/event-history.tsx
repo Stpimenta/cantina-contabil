@@ -121,7 +121,12 @@ export function EventHistory({
   );
 }
 
-function HistoryContent({ eventId, initial, recurring, onDetails }: {
+function HistoryContent({
+  eventId,
+  initial,
+  recurring,
+  onDetails,
+}: {
   eventId: string;
   initial: HistoryResult;
   recurring: boolean;
@@ -132,20 +137,30 @@ function HistoryContent({ eventId, initial, recurring, onDetails }: {
   const [total, setTotal] = useState(initial.total);
   const sentinel = useRef<HTMLDivElement>(null);
   const load = useServerAction({
-    connectionMessage: "Não foi possível carregar o histórico. Tente novamente.",
+    connectionMessage:
+      "Não foi possível carregar o histórico. Tente novamente.",
   });
   const hasMore = page * initial.pageSize < total;
-  const soldUnits = initial.soldProducts.reduce((sum, product) => sum + product.quantity, 0);
+  const soldUnits = initial.soldProducts.reduce(
+    (sum, product) => sum + product.quantity,
+    0,
+  );
   function loadMore() {
     if (!hasMore || load.isPending() || load.error) return;
-    load.execute(() => loadEventHistoryAction(eventId, page + 1), (next) => {
-      setEntries((current) => {
-        const ids = new Set(current.map((entry) => entry.id));
-        return [...current, ...next.items.filter((entry) => !ids.has(entry.id))];
-      });
-      setPage(next.page);
-      setTotal(next.total);
-    });
+    load.execute(
+      () => loadEventHistoryAction(eventId, page + 1),
+      (next) => {
+        setEntries((current) => {
+          const ids = new Set(current.map((entry) => entry.id));
+          return [
+            ...current,
+            ...next.items.filter((entry) => !ids.has(entry.id)),
+          ];
+        });
+        setPage(next.page);
+        setTotal(next.total);
+      },
+    );
   }
   useEffect(() => {
     const element = sentinel.current;
@@ -161,41 +176,67 @@ function HistoryContent({ eventId, initial, recurring, onDetails }: {
       <section className={styles.sales} aria-label="Produtos vendidos">
         <div className={styles.sectionHeading}>
           <h3>Produtos vendidos</h3>
-          <p className={styles.total}><strong>{soldUnits.toLocaleString("pt-BR")}</strong> unidades</p>
+          <p className={styles.total}>
+            <strong>{soldUnits.toLocaleString("pt-BR")}</strong> unidades
+          </p>
         </div>
-        <p className="muted record-meta">Pedidos pagos e pendentes. Pedidos excluídos não entram na contagem.</p>
         {initial.soldProducts.length ? (
           <ul className="record-list">
             {initial.soldProducts.map((product) => (
               <li key={product.id} className={styles.product}>
                 <span className={styles.name}>{product.name}</span>
-                <strong className={styles.quantity}>{product.quantity.toLocaleString("pt-BR")} un.</strong>
+                <strong className={styles.quantity}>
+                  {product.quantity.toLocaleString("pt-BR")} un.
+                </strong>
               </li>
             ))}
           </ul>
-        ) : <p className="muted">Nenhum produto vendido.</p>}
+        ) : (
+          <p className="muted">Nenhum produto vendido.</p>
+        )}
       </section>
       <section className="stack-small" aria-label="Registros do histórico">
         <div className={styles.sectionHeading}>
           <h3>Registros do histórico</h3>
-          <span className="muted record-meta">{total.toLocaleString("pt-BR")} registros</span>
+          <span className="muted record-meta">
+            {total.toLocaleString("pt-BR")} registros
+          </span>
         </div>
-        <p className="muted record-meta">Do mais recente ao mais antigo. Use os três pontos para ver os detalhes.</p>
+        <p className="muted record-meta">
+          Do mais recente ao mais antigo. Use os três pontos para ver os
+          detalhes.
+        </p>
         <HistoryRecordList
           label={recurring ? "Histórico do grupo" : "Histórico do evento"}
-          entries={entries.map((entry) => ({ id: entry.id, label: label(entry), actorName: entry.actorName, occurredAt: entry.occurredAt }))}
+          entries={entries.map((entry) => ({
+            id: entry.id,
+            label: label(entry),
+            actorName: entry.actorName,
+            occurredAt: entry.occurredAt,
+          }))}
           onDetails={(id) => {
             const entry = entries.find((item) => item.id === id);
             if (entry) onDetails(entry);
           }}
         />
-        <p className="muted record-meta">{entries.length.toLocaleString("pt-BR")} de {total.toLocaleString("pt-BR")} registros carregados</p>
-        {hasMore && <div ref={sentinel}>
-          <Button variant="neutral" disabled={load.pending || !!load.error} onClick={loadMore}>
-            Carregar mais registros
-          </Button>
-        </div>}
-        <span className="sr-only" role="status">{load.pending ? "Carregando histórico" : ""}</span>
+        <p className="muted record-meta">
+          {entries.length.toLocaleString("pt-BR")} de{" "}
+          {total.toLocaleString("pt-BR")} registros carregados
+        </p>
+        {hasMore && (
+          <div ref={sentinel}>
+            <Button
+              variant="neutral"
+              disabled={load.pending || !!load.error}
+              onClick={loadMore}
+            >
+              Carregar mais registros
+            </Button>
+          </div>
+        )}
+        <span className="sr-only" role="status">
+          {load.pending ? "Carregando histórico" : ""}
+        </span>
       </section>
       <ErrorModal error={load.error} onClose={load.closeError} />
     </div>

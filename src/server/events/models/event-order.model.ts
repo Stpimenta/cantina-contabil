@@ -10,6 +10,7 @@ export interface EventOrder {
   contactPhone: string;
   fulfilled: boolean;
   collected?: boolean;
+  receipts?: import("./order-receipt.model").OrderReceipt[];
   updatedActor?: import("@/server/canteen/models/command-actor.model").CommandActor;
   items: OrderItem[];
   pickupOn?: string;

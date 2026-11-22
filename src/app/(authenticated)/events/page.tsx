@@ -64,6 +64,7 @@ export default async function EventsPage({
       ) : (
         <>
           <SearchForm
+            compactActionsOnMobile
             action="/events"
             query={result.value.list.query}
             label="Buscar pelo nome"

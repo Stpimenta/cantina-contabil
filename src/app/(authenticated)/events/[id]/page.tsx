@@ -102,8 +102,14 @@ export default async function EventPage({
                 {result.value.event.name}
               </span>
             }
-            description="Detalhes do evento"
-            hideDescriptionOnMobile
+            description={
+              <>
+                <span className={styles.desktopOnly}>Detalhes do evento</span>
+                <span className={styles.mobileOnly}>
+                  {formatDateOnly(result.value.event.occursOn)}
+                </span>
+              </>
+            }
             actions={
               <div className={styles.headerActions}>
                 {result.value.event.canteenEnabled && (
@@ -131,7 +137,9 @@ export default async function EventPage({
             className={styles.financial}
             aria-labelledby="event-financial-title"
           >
-            <h2 id="event-financial-title">Situação financeira</h2>
+            <h2 id="event-financial-title" className={styles.desktopOnly}>
+              Situação financeira
+            </h2>
             <div className={styles.summary}>
               <CashBoxBalance
                 amountCents={result.value.event.realCents}
@@ -161,8 +169,29 @@ export default async function EventPage({
                       : "unidades"}
                   </p>
                 </div>
+                <div className={styles.metric}>
+                  <p className="muted record-meta">Data</p>
+                  <p className="balance-value">
+                    {formatDateOnly(result.value.event.occursOn)}
+                  </p>
+                </div>
               </div>
             </div>
+            <dl className="details">
+              <div>
+                <dt>Caixa</dt>
+                <dd>
+                  <Link
+                    className="text-link"
+                    href={`/cash-boxes/${result.value.event.cashBoxId}`}
+                  >
+                    {result.value.cashBoxes.find(
+                      (b) => b.id === result.value.event.cashBoxId,
+                    )?.name ?? "Ver caixa"}
+                  </Link>
+                </dd>
+              </div>
+            </dl>
             <div className={styles.actions}>
               <EventOrders eventId={id} />
 
@@ -181,39 +210,16 @@ export default async function EventPage({
             </div>
           </section>
 
-          <section
-            className={styles.information}
-            aria-labelledby="event-information-title"
-          >
-            <h2 id="event-information-title">Informações do evento</h2>
-            <dl className={`details ${styles.eventDetails}`}>
+          {result.value.event.description && (
+            <dl className="details">
               <div>
-                <dt>Data</dt>
-                <dd>{formatDateOnly(result.value.event.occursOn)}</dd>
-              </div>
-              <div>
-                <dt>Caixa</dt>
-                <dd>
-                  <Link
-                    className="text-link"
-                    href={`/cash-boxes/${result.value.event.cashBoxId}`}
-                  >
-                    {result.value.cashBoxes.find(
-                      (b) => b.id === result.value.event.cashBoxId,
-                    )?.name ?? "Ver caixa"}
-                  </Link>
+                <dt>Descrição</dt>
+                <dd className="preserve-lines">
+                  {result.value.event.description}
                 </dd>
               </div>
-              {result.value.event.description && (
-                <div>
-                  <dt>Descrição</dt>
-                  <dd className="preserve-lines">
-                    {result.value.event.description}
-                  </dd>
-                </div>
-              )}
             </dl>
-          </section>
+          )}
           <ProductStockList
             category={result.value.event}
             balances={result.value.balances}

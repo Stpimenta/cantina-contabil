@@ -17,6 +17,7 @@ export function Modal({
   variant = "standard",
   size = "standard",
   closeLabel = "Fechar",
+  fullScreenOnMobile = false,
 }: {
   id?: string;
   open: boolean;
@@ -27,6 +28,7 @@ export function Modal({
   variant?: "standard" | "navigation";
   size?: "standard" | "wide" | "form" | "formCompact";
   closeLabel?: string;
+  fullScreenOnMobile?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -56,7 +58,7 @@ export function Modal({
     <dialog
       id={id}
       ref={ref}
-      className={`${styles.root}${variant === "navigation" ? ` ${styles.navigation}` : size === "wide" ? ` ${styles.wide}` : size === "form" ? ` ${styles.form}` : size === "formCompact" ? ` ${styles.formCompact}` : ""}`}
+      className={`${styles.root}${variant === "navigation" ? ` ${styles.navigation}` : size === "wide" ? ` ${styles.wide}` : size === "form" ? ` ${styles.form}` : size === "formCompact" ? ` ${styles.formCompact}` : ""}${fullScreenOnMobile ? ` ${styles.fullScreenOnMobile}` : ""}`}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();

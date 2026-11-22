@@ -128,6 +128,8 @@ const issueMessages: Record<ValidationIssue, string> = {
     "Informe um valor válido. Compras exigem valor maior que zero.",
   INVALID_SUPPLY_SOURCE: "Escolha compra ou doação.",
   INVALID_SUPPLY_STATUS: "Escolha se o insumo doado está pendente ou recebido.",
+  INVALID_ORDER_RECEIPT:
+    "Anexe até 5 imagens ou PDFs válidos, de até 5 MB cada.",
   INVALID_RECEIPT:
     "Anexe até 5 arquivos JPEG, PNG, WebP ou PDF, de até 5 MB cada. Compras exigem ao menos um comprovante.",
   INVALID_EVENT_NAME: "Informe um nome com até 100 caracteres.",
@@ -135,7 +137,7 @@ const issueMessages: Record<ValidationIssue, string> = {
     "Adicione produtos com nome, ícone e preço válido, sem repetir produtos.",
   INVALID_CUSTOMER_NAME: "Informe o nome da pessoa, com até 100 caracteres.",
   INVALID_ORDER_ITEMS:
-    "Escolha ao menos um produto com quantidade inteira maior que zero.",
+    "Adicione pelo menos um produto com quantidade maior que zero.",
   INVALID_ORDER_TOTAL:
     "Informe um valor válido, inclusive zero para entrega gratuita.",
   INVALID_ORDER_PAYMENT:

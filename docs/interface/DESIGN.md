@@ -50,6 +50,25 @@ As correções do responsável estabelecem estes critérios; não são autoriza�
 - **Mobile é composição própria:** preservar leitura, não apenas empilhar tudo. Agrupar Valor/Ícone e Preço/Ícone/X nos contextos já aprovados, com 44px de toque. Reticências são visuais e preservam conteúdo completo acessível; valores, tamanho de arquivo e controles permanecem legíveis. Categorias podem rolar na própria faixa, nunca fazer a página inteira transbordar.
 - **Desktop também precisa de revisão:** após qualquer ajuste mobile, conferir a largura e distribuição desktop e a faixa intermediária de 600–1023px. Não esticar botões pequenos nem reaproveitar colunas fixadas para uma disposição antiga.
 
+## Espaçamentos nos detalhes de Produtos e Eventos
+
+Abaixo de 600px, Real/Pendente e Caixa permanecem visíveis sem o título Situação financeira. No evento, a data aparece abaixo do nome e a contagem de vendidos fica disponível no Histórico, sem repetição no resumo mobile. Nas demais larguras, preservar o resumo completo.
+
+Usar a escala existente em globals.css, sem somar margens extras ao gap do grupo. A aplicação inicial deste padrão cobre detalhes de Produtos/Eventos e sua lista compartilhada de estoque.
+
+| Relação                                       | Token e medida                                                                                |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Seções no celular                             | space-6 — 24px                                                                                |
+| Grupos do resumo financeiro no celular        | space-6 — 24px                                                                                |
+| Grupos do resumo financeiro a partir de 600px | space-6 — 24px                                                                                |
+| Título de Produtos e estoque até a lista      | space-4 — 16px no celular; space-3 — 12px nas demais larguras, além do preenchimento da linha |
+| Preenchimento vertical de cada produto        | space-4 — 16px por lado                                                                       |
+| Nome até preço                                | space-2 — 8px                                                                                 |
+| Saldo até botão Estoque no celular            | space-3 — 12px                                                                                |
+| Botões Pedidos/Insumos/Histórico no celular   | space-2 — 8px                                                                                 |
+
+Na lista de estoque, identificação/preço e saldo/ação alinham pelo topo. No celular, o botão Estoque acompanha a largura da coluna de saldo, com mínimo de duas alturas de controle (88px); preserva alvo de toque de 44px. Nomes quebram na coluna flexível e quantidades longas quebram sem ampliar a página. Não alterar espaçamentos globais de outras listas para ajustar esta composição.
+
 ## Revisão estática obrigatória da composição
 
 Antes de encerrar alterações visuais, ler JSX/CSS e conferir os cenários abaixo. Isso não autoriza iniciar servidores, usar navegador, gerar screenshots ou recriar testes.
@@ -64,13 +83,13 @@ Antes de encerrar alterações visuais, ler JSX/CSS e conferir os cenários abai
 
 Limites distintos por responsabilidade, sem generalizar um breakpoint para todos os controles:
 
-| Largura            | Responsabilidade                                                                                                                        |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Abaixo de 600px    | mobileIcon padrão vira ícone; alvos de 44×44px. Ações Pedidos/Insumos/Histórico compactam mantendo texto; resumos truncam em uma linha. |
-| A partir de 600px  | mobileIcon padrão mostra conteúdo completo; ações diretas Editar/Excluir ainda usam ícones até 1023px.                                  |
-| Abaixo de 768px    | Drawer; busca ocupa a primeira linha e Filtros fica abaixo. PageHeader pode compactar ações.                                            |
-| A partir de 768px  | Lateral recolhível e layout desktop, sem alterar os breakpoints dos controles.                                                          |
-| A partir de 1024px | Editar/Excluir diretos mostram texto; form-grid usa duas colunas e modais form/formCompact ampliam para a largura aprovada.             |
+| Largura            | Responsabilidade                                                                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Abaixo de 600px    | mobileIcon padrão vira ícone; alvos de 44×44px. Ações Pedidos/Insumos/Histórico compactam mantendo texto; resumos truncam em uma linha.                            |
+| A partir de 600px  | mobileIcon padrão mostra conteúdo completo; ações diretas Editar/Excluir ainda usam ícones até 1023px.                                                             |
+| Abaixo de 768px    | Drawer; busca ocupa a primeira linha e Filtros fica abaixo, exceto Pedidos abaixo de 600px (busca e ícone de filtro lado a lado). PageHeader pode compactar ações. |
+| A partir de 768px  | Lateral recolhível e layout desktop, sem alterar os breakpoints dos controles.                                                                                     |
+| A partir de 1024px | Editar/Excluir diretos mostram texto; form-grid usa duas colunas e modais form/formCompact ampliam para a largura aprovada.                                        |
 
 - Padrão para ações com ícone inequívoco: compactar só a apresentação, nunca retirar a funcionalidade ou inventar um botão menor. Implementar pelo mobileIcon de Button, sem duplicar componentes ou usar regras por tela.
 - Ações diretas Editar/Excluir em caixas, eventos e pedidos usam iconBreakpoint="tablet" do Button: ícones abaixo de 1024px, conteúdo completo a partir de 1024px; editar neutral e excluir danger com lixeira. Novo caixa e outras criações mantêm mobileIcon padrão de 600px. Menus de três pontos não mudam: gatilho iconOnly e opções com ícone/texto em todas as telas; confirmação de exclusão mantém rótulo completo.
@@ -79,7 +98,7 @@ Limites distintos por responsabilidade, sem generalizar um breakpoint para todos
 
 ## Identificação discreta das seções
 
-Cabeçalhos PageHeader separam identificação e conteúdo com linha inferior discreta e espaçamento compartilhado. Caixas, Doações, Eventos e Movimentações usam o mesmo ícone da navegação junto do título; detalhes de caixa/evento preservam essa identificação. Textos curtos contextualizam as listagens a partir de 600px. Abaixo de 600px, subtítulos explicativos de Home/Caixas/Doações/Eventos/Movimentações são ocultos por hideDescriptionOnMobile no PageHeader compartilhado. Contexto de Evento: nome em Pedidos/Insumos e identificação de detalhes permanecem visíveis; não ocultar conteúdo cadastral ou descrições dos registros. Título pode quebrar e ações preservam os controles e breakpoints aprovados. Menu ativo permanece sem preenchimento, com texto/ícone terracota e traço lateral curto de 2px (token --focus-width), além de aria-current. Hover usa somente o fundo quente claro; não combinar bloco preenchido e barra grossa para indicar seleção. Tema único, densidade e listas existentes permanecem; não há cores por seção.
+Cabeçalhos PageHeader separam identificação e conteúdo com linha inferior discreta e espaçamento compartilhado. Caixas, Doações, Eventos e Movimentações usam o mesmo ícone da navegação junto do título; detalhes de caixa/evento preservam essa identificação. Textos curtos contextualizam as listagens a partir de 600px. Abaixo de 600px, subtítulos explicativos de Home/Caixas/Doações/Eventos/Movimentações são ocultos por hideDescriptionOnMobile no PageHeader compartilhado. Contexto de Evento: nome em Insumos e identificação de detalhes permanecem visíveis; em Pedidos, o nome aparece no caminho e a descrição fica oculta abaixo de 600px; não ocultar conteúdo cadastral ou descrições dos registros. Título pode quebrar e ações preservam os controles e breakpoints aprovados. Menu ativo permanece sem preenchimento, com texto/ícone terracota e traço lateral curto de 2px (token --focus-width), além de aria-current. Hover usa somente o fundo quente claro; não combinar bloco preenchido e barra grossa para indicar seleção. Tema único, densidade e listas existentes permanecem; não há cores por seção.
 
 ## Marca
 
@@ -100,5 +119,7 @@ Interface em pt-BR, foco visível, navegação por teclado, texto selecionável 
 Novas cores, dimensões, padrões ou exceções precisam de aprovação. O pai controla posicionamento; o componente controla sua aparência. Não alterar a identidade visual para introduzir uma funcionalidade.
 
 ## Orientação entre telas
+
+No celular abaixo de 600px, Breadcrumbs mostra somente o nível anterior e a página atual, separados por /, junto de Voltar. A partir de 600px, preserva o caminho completo. Nomes longos podem quebrar sem deslocar o botão Voltar. Nos pedidos de Produtos/Eventos, a descrição Grupo: nome ou Evento: nome fica oculta no celular, pois o contexto já aparece no caminho.
 
 Breadcrumbs compartilhado em components/layout mantém o caminho e inclui Voltar com seta para a esquerda, alinhado à direita na mesma faixa, nos detalhes: Home / Eventos / nome e Home / Eventos / nome / Pedidos; caixas seguem Home / Caixas / nome. Links ancestrais e página atual com aria-current, separadores discretos e quebra para nomes longos. Voltar reutiliza buttonClassName ghost, texto em todas as larguras e alvo de 44px; nav flexível com min-width:0 e ação sem encolhimento. Pedidos/Insumos voltam ao evento, detalhes de caixas/eventos às respectivas listas. Fallback reserva o controle desabilitado. Páginas principais não recebem Voltar. Preservar título legível e contexto: detalhes mostram Detalhes do evento/caixa, Pedidos mostra Evento: nome. Identidade continua minimalista, sem cores ou painéis exclusivos por página.

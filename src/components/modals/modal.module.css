@@ -113,3 +113,17 @@
 .title:focus {
   outline: none;
 }
+
+@media (max-width: 37.499rem) {
+  .fullScreenOnMobile {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+  .fullScreenOnMobile .body {
+    flex: 1 1 auto;
+    padding-inline: var(--space-2);
+  }
+}

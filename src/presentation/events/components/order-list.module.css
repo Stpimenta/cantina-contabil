@@ -1,9 +1,32 @@
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name actions"
+    "content actions";
+  column-gap: var(--space-4);
+  row-gap: var(--space-2);
+}
+
+.customerName {
+  grid-area: name;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  align-self: center;
+}
+
 .content {
-  flex: 1 1 16rem;
+  grid-area: content;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
+.actions {
+  grid-area: actions;
+  align-self: start;
+}
+
+.itemsSummary,
 .note {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -11,24 +34,22 @@
   line-clamp: 2;
   overflow: hidden;
   white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 599px) {
+  .row {
+    grid-template-areas:
+      "name actions"
+      "content content";
+    column-gap: var(--space-2);
+  }
+  .actions {
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+  }
   .note {
     -webkit-line-clamp: 1;
     line-clamp: 1;
-  }
-}
-
-@media (max-width: 599px) {
-  .recurringRow {
-    flex-wrap: wrap;
-  }
-  .recurringRow > .content.content {
-    flex-basis: 100%;
-  }
-  .itemsSummary {
-    white-space: normal;
-    overflow-wrap: anywhere;
   }
 }

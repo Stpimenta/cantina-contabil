@@ -1,3 +1,10 @@
+import { receiptMetadata } from "@/shared/receipts/receipt-input";
+import type { ReceiptRepository } from "../repositories/receipt.repository";
+import {
+  keepOrderReceipts,
+  inspectOrderReceipts,
+  storeOrderReceipts,
+} from "./order-receipts";
 import { stockShortages } from "@/server/products/models/stock-shortages";
 import type { StockEntry } from "@/server/products/models/stock-entry.model";
 import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
@@ -18,31 +25,41 @@ import {
   checkEventWrite,
 } from "../models/event-rules";
 export class UpdateOrderStatusUseCase {
-  constructor(private readonly events: EventRepository) {}
+  constructor(
+    private readonly events: EventRepository,
+    private readonly receipts?: ReceiptRepository,
+  ) {}
   async execute(
     session: Session | null,
     eventIdInput: unknown,
     idInput: unknown,
     versionInput: unknown,
-    input: unknown,
+    rawInput: unknown,
+    files: File[] = [],
   ) {
+    const input =
+      typeof rawInput === "object" && rawInput !== null
+        ? { ...rawInput, receipts: files.map(receiptMetadata) }
+        : rawInput;
     const actor = checkAccess(session).user;
     const eventId = parseInput(validateEventId(eventIdInput));
     const id = parseInput(validateEventId(idInput));
     const expected = parseInput(validateEventVersion(versionInput));
     const data = parseInput(validateUpdateOrderStatus(input));
+    const authorizedEvent = await this.events.find(eventId);
+    if (!authorizedEvent) return eventMissing();
+    checkEventAccessWrite(session, authorizedEvent);
+    const current = await this.events.findOrder(id);
+    if (!current || current.eventId !== eventId) return eventMissing();
+    const hashes = await inspectOrderReceipts(files);
     const fingerprint = JSON.stringify({
       operation: "updateOrderStatus",
       eventId,
       id,
       expected,
       ...data,
+      ...(files.length ? { hashes } : {}),
     });
-    const authorizedEvent = await this.events.find(eventId);
-    if (!authorizedEvent) return eventMissing();
-    checkEventAccessWrite(session, authorizedEvent);
-    const current = await this.events.findOrder(id);
-    if (!current || current.eventId !== eventId) return eventMissing();
     if (checkRepeat(current, data.requestId, fingerprint, actor.id))
       return current;
     if (current.version !== expected || (data.payment && current.paid))
@@ -51,18 +68,21 @@ export class UpdateOrderStatusUseCase {
     const event = authorizedEvent;
     const usesWithdrawals = !event.deliveryEnabled && !event.canteenEnabled;
     if (data.fulfilled !== undefined) {
-      if (!usesWithdrawals && !event.deliveryEnabled)
-        throwBusinessError({
-          code: "EVENT_DELIVERY_DISABLED",
-          category: "conflict",
-        });
-      if (!usesWithdrawals && !current.fulfillmentMode)
+      if (event.deliveryEnabled && !current.fulfillmentMode)
         throwBusinessError({
           code: "ORDER_FULFILLMENT_UNDEFINED",
           category: "conflict",
         });
     }
-    if (!data.payment && data.fulfilled === undefined) return current;
+    const kept = keepOrderReceipts(
+      current.receipts ?? [],
+      data.retainedReceiptIds,
+      files.length,
+    );
+    const receiptsChanged =
+      files.length > 0 || kept.length !== (current.receipts?.length ?? 0);
+    if (!data.payment && data.fulfilled === undefined && !receiptsChanged)
+      return current;
     const cashCents = !data.payment
       ? current.cashCents
       : data.payment.method === "cash"
@@ -85,7 +105,12 @@ export class UpdateOrderStatusUseCase {
       paid: data.payment ? true : current.paid,
       fulfilled: usesWithdrawals
         ? false
-        : (data.fulfilled ?? current.fulfilled),
+        : event.canteenEnabled
+          ? current.fulfilled
+          : (data.fulfilled ?? current.fulfilled),
+      ...(event.canteenEnabled && data.fulfilled !== undefined
+        ? { collected: data.fulfilled }
+        : {}),
       ...(usesWithdrawals && data.fulfilled !== undefined
         ? {
             withdrawals: current.items.map((item) => ({
@@ -164,6 +189,15 @@ export class UpdateOrderStatusUseCase {
         });
       }
     }
+    const stored = await storeOrderReceipts(
+      this.receipts,
+      eventId,
+      id,
+      data.requestId,
+      files,
+      hashes,
+    );
+    if (receiptsChanged) order.receipts = [...kept, ...stored];
     const outcome = await this.events.updateOrder(
       order,
       expected,

@@ -45,7 +45,7 @@ export function ProductStockList({
     );
   }
   return (
-    <section className="stack" aria-labelledby="products-title">
+    <section className={styles.section} aria-labelledby="products-title">
       <div className={styles.heading}>
         <h2 id="products-title">Produtos e estoque</h2>
         <ProductionPlan eventId={category.id} />
@@ -58,7 +58,7 @@ export function ProductStockList({
       )}
       <ul className="record-list" aria-label="Produtos e estoque">
         {category.products.map((p) => (
-          <li key={p.id} className={`record-row ${styles.row}`}>
+          <li key={p.id} className={styles.row}>
             <div className={styles.content}>
               <p className={`record-title ${styles.name}`}>
                 <ProductIcon name={p.icon} />

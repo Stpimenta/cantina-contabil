@@ -3,7 +3,11 @@ import { revalidatePath } from "next/cache";
 import { createAuth } from "@/server/auth/composition";
 import { executeOperation } from "@/shared/errors/execute-operation";
 import { createEvents } from "../composition";
-export async function createOrderAction(eventId: string, input: unknown) {
+export async function createOrderAction(
+  eventId: string,
+  input: unknown,
+  attachments?: FormData,
+) {
   return executeOperation(
     {
       operation: "event.createOrder",
@@ -20,6 +24,9 @@ export async function createOrderAction(eventId: string, input: unknown) {
         session,
         eventId,
         input,
+        attachments
+          ?.getAll("receipts")
+          .filter((entry): entry is File => entry instanceof File) ?? [],
       );
       revalidatePath("/events");
       revalidatePath(`/events/${eventId}`);

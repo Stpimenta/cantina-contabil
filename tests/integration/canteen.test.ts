@@ -6,6 +6,7 @@ import { uuid, eventInput } from "../support/data";
 import { CreateEventUseCase } from "@/server/events/use-cases/create-event.use-case";
 import { UpdateEventUseCase } from "@/server/events/use-cases/update-event.use-case";
 import { CreateOrderUseCase } from "@/server/events/use-cases/create-order.use-case";
+import { UpdateOrderStatusUseCase } from "@/server/events/use-cases/update-order-status.use-case";
 import { UpdateOrderUseCase } from "@/server/events/use-cases/update-order.use-case";
 import { DeleteOrderUseCase } from "@/server/events/use-cases/delete-order.use-case";
 import { D1CanteenRepository } from "@/server/canteen/infrastructure/d1-canteen.repository";
@@ -79,6 +80,101 @@ async function access(s: Awaited<ReturnType<typeof setup>>) {
   };
 }
 describe("Cantina, acesso temporário e entrega durável", () => {
+  it("situação do pedido paga e retira uma única vez, sem baixar novamente o estoque", async () => {
+    const s = await setup();
+    const order = await createOrder(s.event);
+    const stock = new D1ProductStockRepository(h.db);
+    const balance = await stock.balances(s.event.id);
+    const update = new UpdateOrderStatusUseCase(h.events);
+    const input = {
+      requestId: uuid(),
+      fulfilled: true,
+      payment: { method: "pix", cash: "0" },
+    };
+    const saved = await update.execute(
+      h.actor,
+      s.event.id,
+      order.id,
+      order.version,
+      input,
+    );
+    expect(saved).toMatchObject({
+      paid: true,
+      collected: true,
+      fulfilled: false,
+      pixCents: 2000,
+      version: 2,
+    });
+    expect(
+      await update.execute(h.actor, s.event.id, order.id, order.version, input),
+    ).toEqual(saved);
+    expect(await s.get.execute(identity(), s.event.id, order.id)).toMatchObject(
+      { collected: true, paid: true, version: 2 },
+    );
+    expect(await h.events.find(s.event.id)).toMatchObject({
+      realCents: 2000,
+      pendingCents: 0,
+    });
+    expect(await stock.balances(s.event.id)).toEqual(balance);
+    const audit = await h.d1
+      .prepare(
+        "SELECT count(*) AS count FROM event_audit WHERE resource_id=? AND action='update'",
+      )
+      .bind(order.id)
+      .first<{ count: number }>();
+    expect(audit?.count).toBe(1);
+    const undone = await update.execute(
+      h.actor,
+      s.event.id,
+      order.id,
+      saved.version,
+      { requestId: uuid(), fulfilled: false },
+    );
+    expect(undone).toMatchObject({
+      collected: false,
+      paid: true,
+      pixCents: 2000,
+      version: 3,
+    });
+    expect(await s.get.execute(identity(), s.event.id, order.id)).toMatchObject(
+      { collected: false, paid: true },
+    );
+    expect(await stock.balances(s.event.id)).toEqual(balance);
+  });
+  it("situação do pedido rejeita versão antiga e consulta sem alteração, preservando retirada e pagamento", async () => {
+    const s = await setup();
+    const order = await createOrder(s.event);
+    const update = new UpdateOrderStatusUseCase(h.events);
+    await s.collect.execute(identity(), s.event.id, order.id, {
+      requestId: uuid(),
+      version: order.version,
+      collected: true,
+    });
+    await expect(
+      update.execute(h.actor, s.event.id, order.id, order.version, {
+        requestId: uuid(),
+        fulfilled: false,
+        payment: { method: "pix", cash: "0" },
+      }),
+    ).rejects.toMatchObject({ details: { code: "EVENT_CHANGED" } });
+    const reader = {
+      ...h.actor,
+      role: "operator" as const,
+      eventIds: [s.event.id],
+      eventWriteIds: [],
+    };
+    await expect(
+      update.execute(reader, s.event.id, order.id, 2, {
+        requestId: uuid(),
+        fulfilled: false,
+      }),
+    ).rejects.toMatchObject({ details: { code: "ACCESS_DENIED" } });
+    expect(await h.events.findOrder(order.id)).toMatchObject({
+      collected: true,
+      paid: false,
+      version: 2,
+    });
+  });
   it("retira e desfaz sem mudar pagamento, saldo ou produtos; preserva autoria separada", async () => {
     const s = await setup(),
       order = await createOrder(s.event),

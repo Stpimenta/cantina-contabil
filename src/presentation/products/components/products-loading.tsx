@@ -1,7 +1,9 @@
+import { OrderListLoading } from "@/presentation/events/components/order-list-loading";
 import { PageHeader } from "@/components/layout/page-header";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { SearchForm } from "@/components/ui/search-form";
 import styles from "@/app/(authenticated)/products/[id]/page.module.css";
 export type ProductsLoadingSection =
@@ -46,7 +48,7 @@ export function ProductsLoading({
         title={title}
         icon={list || detail ? "box" : undefined}
         compactActionsOnMobile
-        hideDescriptionOnMobile={list}
+        hideDescriptionOnMobile={list || detail || section === "orders"}
         description={
           list ? (
             "Vendas recorrentes organizadas por grupo de produtos."
@@ -79,12 +81,20 @@ export function ProductsLoading({
       />
       {detail ? (
         <>
-          <section className="stack">
-            <h2>Situação financeira</h2>
+          <section className={styles.financial}>
+            <h2 className={styles.desktopOnly}>Situação financeira</h2>
             <div className="inline">
               <Skeleton shape="amount" />
               <Skeleton shape="amount" />
             </div>
+            <dl className="details">
+              <div>
+                <dt>Caixa</dt>
+                <dd>
+                  <Skeleton />
+                </dd>
+              </div>
+            </dl>
             <div className={styles.actions}>
               {["Pedidos", "Insumos", "Histórico"].map((label) => (
                 <Button
@@ -104,19 +114,24 @@ export function ProductsLoading({
             <h2>Produtos e estoque</h2>
             <Rows />
           </section>
-          <dl className="details">
-            <div>
-              <dt>Caixa</dt>
-              <dd>
-                <Skeleton />
-              </dd>
-            </div>
-          </dl>
         </>
       ) : (
         <>
           {(list || section === "orders") && (
             <SearchForm
+              compactActionsOnMobile={list || section === "orders"}
+              actions={
+                section === "orders" ? (
+                  <Button
+                    disabled
+                    variant="neutral"
+                    mobileIcon={<Icon name="filter" />}
+                    aria-label="Filtros"
+                  >
+                    <Icon name="filter" /> Filtros
+                  </Button>
+                ) : undefined
+              }
               action="/products"
               query=""
               label="Buscar pelo nome"
@@ -128,7 +143,7 @@ export function ProductsLoading({
               Total em compras: <Skeleton shape="amount" />
             </p>
           )}
-          <Rows />
+          {section === "orders" ? <OrderListLoading /> : <Rows />}
         </>
       )}
     </div>
