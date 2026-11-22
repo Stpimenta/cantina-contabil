@@ -65,6 +65,9 @@ dl.eventDetails {
   grid-column: 2;
   grid-row: 1;
 }
+.mobileOnly {
+  display: none;
+}
 .payments {
   display: flex;
   flex-wrap: wrap;
@@ -79,10 +82,7 @@ dl.eventDetails {
     gap: var(--space-6);
   }
   .financial {
-    gap: var(--space-4);
-  }
-  .financial .actions {
-    margin-top: var(--space-2);
+    gap: var(--space-6);
   }
   .summary {
     grid-template-columns: minmax(0, 1fr);
@@ -91,22 +91,19 @@ dl.eventDetails {
   .payments {
     display: none;
   }
-  .statistics {
-    grid-column: 1;
-    grid-row: auto;
-    flex-direction: column;
-    gap: var(--space-4);
-    padding-top: var(--space-4);
-    border-top: var(--border-width) solid var(--color-border);
+  .statistics,
+  .desktopOnly {
+    display: none;
+  }
+  .mobileOnly {
+    display: inline;
   }
 }
 
 @media (max-width: 37.499rem) {
   .metric {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
     gap: var(--space-2);
   }
 }

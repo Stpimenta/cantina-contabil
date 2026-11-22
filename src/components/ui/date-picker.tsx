@@ -13,7 +13,7 @@ function calendarDate(value: string) {
   return new Date(`${value}T12:00:00`);
 }
 
-function CalendarDay({ day, modifiers, ...props }: DayButtonProps) {
+function CalendarDay({ day, modifiers, className, ...props }: DayButtonProps) {
   const ref = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (modifiers.focused) ref.current?.focus();
@@ -25,6 +25,7 @@ function CalendarDay({ day, modifiers, ...props }: DayButtonProps) {
       type="button"
       iconOnly
       variant={modifiers.selected ? "primary" : "ghost"}
+      className={`${className ?? ""} ${styles.dayButton}${modifiers.today && !modifiers.selected ? ` ${styles.today}` : ""}`}
     />
   );
 }
@@ -48,7 +49,13 @@ export function DatePicker({
 }) {
   const today = currentDateInSaoPaulo();
   return (
-    <Modal id={id} open title={`Selecionar data — ${label}`} onClose={onClose}>
+    <Modal
+      id={id}
+      open
+      fullScreenOnMobile
+      title={`Selecionar data — ${label}`}
+      onClose={onClose}
+    >
       <div className={styles.viewport}>
         <DayPicker
           locale={ptBR}
@@ -79,7 +86,6 @@ export function DatePicker({
             month_grid: styles.grid,
             weekday: styles.weekday,
             day: styles.day,
-            today: styles.today,
             chevron: styles.chevron,
           }}
         />

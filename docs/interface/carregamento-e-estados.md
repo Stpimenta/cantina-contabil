@@ -10,6 +10,12 @@ Leia para loading.tsx, RouteLoading, Skeleton, PageTransition e SectionFeedback.
 - Mínimo único de 300ms por pathname no PageTransition, desde a montagem no navegador, inclusive entrada inicial e todos os ambientes. Corre junto da consulta: exibir conteúdo após mínimo e dados prontos, diretamente, sem entrada/fade/deslocamento/espera de saída. Cancelar timer ao sair; não reiniciar em query/busca/filtro/paginação/histórico/refresh da mesma rota, nem criar timer por tela. page-enter e duration-page foram removidos.
 - O fallback não promete aparecer antes de ser obtido nem cobre a verificação inicial da sessão do layout. Falhas seguem PageFailure/error; resolver sem registros encerra o skeleton normalmente. Demais movimentos respeitam redução de movimento.
 
+Os pedidos de Produtos/Eventos reutilizam OrderListLoading com o CSS da lista final: nome e ações no topo, metadados abaixo em largura completa no celular.
+
+## Retorno visual da busca
+
+SearchForm exibe uma barra discreta animada enquanto a navegação da pesquisa estiver pendente, sem atraso artificial ou percentual fictício. Digitação e limpeza continuam disponíveis; anúncio Buscando e aria-busy preservados. Redução de movimento mantém a barra estática. Carregamentos de Pedidos preservam busca e filtro em ícone lado a lado abaixo de 600px.
+
 ## Resultados vazios
 
 - Array renderizado vazio em listas, histórico e seções da Home usa SectionFeedback + SectionIllustration com frase específica da área. Busca/filtros/cadastro continuam disponíveis; sem ação nova, skeleton, aria-busy ou anúncio de espera. Falha, ausência e carregamento são estados distintos. Pagination não mostra rodapé duplicado de zero resultados; renderiza para total positivo.

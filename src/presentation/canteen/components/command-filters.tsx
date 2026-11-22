@@ -6,6 +6,7 @@ import type { CommandFilter } from "@/server/canteen/models/command.model";
 import { Modal } from "@/components/modals/modal";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import styles from "./command-board.module.css";
 import { SelectField } from "@/components/ui/select-field";
 export function CommandFilters({
   basePath,
@@ -21,6 +22,9 @@ export function CommandFilters({
     <>
       <Button
         variant="neutral"
+        className={styles.filterTrigger}
+        data-active={collected !== "all" || undefined}
+        mobileIcon={<Icon name="filter" />}
         title="Filtros"
         aria-haspopup="dialog"
         aria-expanded={open}

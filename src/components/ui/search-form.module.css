@@ -6,11 +6,38 @@
   gap: var(--space-3);
 }
 .form {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
   border-radius: var(--radius-pill);
+}
+.form[aria-busy="true"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--space-4);
+  bottom: 0;
+  height: var(--focus-width);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  pointer-events: none;
+  animation: searching 1s ease-in-out infinite alternate;
+}
+@keyframes searching {
+  from {
+    opacity: 0.3;
+    transform: scaleX(0.25);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .form[aria-busy="true"]::after {
+    animation: none;
+  }
 }
 .form:focus-within {
   outline: var(--focus-width) solid var(--color-focus);
@@ -27,5 +54,17 @@
   }
   .form {
     flex-basis: 100%;
+  }
+}
+@media (max-width: 37.499rem) {
+  .compactActions {
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+  }
+  .compactActions .submit {
+    display: none;
+  }
+  .compactActions .form {
+    flex-basis: 0;
   }
 }

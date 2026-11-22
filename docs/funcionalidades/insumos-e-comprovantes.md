@@ -4,6 +4,8 @@ Contrato atual. Leia somente ao alterar este assunto. [Escolher outra leitura](.
 
 ## Regras e implementação
 
+O armazenamento R2 e os controles de upload/visualização também são reutilizados pelos [comprovantes opcionais de pedidos](eventos-e-pedidos.md#comprovantes-opcionais-do-pedido); as regras do pedido ficam naquele contrato.
+
 ### Insumos e comprovantes privados
 
 As mesmas regras atendem grupos de [Produtos recorrentes](produtos-recorrentes.md) vinculados a um caixa. A página `/products/[id]/supplies` reutiliza os casos de uso, comprovantes privados e cálculos existentes. A autorização considera o tipo do catálogo: operador não acessa categorias, nem pela rota compartilhada de comprovante. Insumos não geram reposição automática de produtos prontos.

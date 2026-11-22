@@ -1,3 +1,7 @@
+import {
+  receiptListSchema,
+  RECEIPT_MAX_FILES,
+} from "@/shared/receipts/receipt-input";
 import { z } from "zod";
 import { validateInput } from "@/shared/validation/input";
 import { moneyInputSchema } from "@/shared/validation/money-input";
@@ -6,6 +10,12 @@ export function validateUpdateOrderStatus(input: unknown, totalCents?: number) {
     z
       .object({
         requestId: z.uuid(),
+        receipts: receiptListSchema.default([]),
+        retainedReceiptIds: z
+          .array(z.uuid())
+          .max(RECEIPT_MAX_FILES)
+          .refine((ids) => new Set(ids).size === ids.length)
+          .optional(),
         payment: z
           .object({
             method: z.enum(["pix", "cash", "mixed"]),
@@ -37,13 +47,25 @@ export function validateUpdateOrderStatus(input: unknown, totalCents?: number) {
       .superRefine((data, ctx) => {
         if (data.stockConfirmation && data.fulfilled !== true)
           ctx.addIssue({ code: "custom", path: ["fulfilled"] });
-        if (!data.payment && data.fulfilled === undefined)
+        if (
+          (data.retainedReceiptIds?.length ?? 0) + data.receipts.length >
+          RECEIPT_MAX_FILES
+        )
+          ctx.addIssue({ code: "custom", path: ["receipts"] });
+        if (
+          !data.payment &&
+          data.fulfilled === undefined &&
+          !data.receipts.length &&
+          data.retainedReceiptIds === undefined
+        )
           ctx.addIssue({ code: "custom", path: ["status"] });
       }),
     input,
     "INVALID_ORDER_INPUT",
     {
       payment: "INVALID_ORDER_PAYMENT",
+      receipts: "INVALID_ORDER_RECEIPT",
+      retainedReceiptIds: "INVALID_ORDER_RECEIPT",
       fulfilled: "INVALID_FULFILLMENT_STATUS",
       status: "INVALID_ORDER_STATUS",
     },

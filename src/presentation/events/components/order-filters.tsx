@@ -6,6 +6,7 @@ import { Modal } from "@/components/modals/modal";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { SelectField } from "@/components/ui/select-field";
+import styles from "./order-filters.module.css";
 import type {
   OrderStatus,
   OrderPeriod,
@@ -36,6 +37,9 @@ export function OrderFilters({
     <>
       <Button
         variant="neutral"
+        className={styles.trigger}
+        mobileIcon={<Icon name="filter" />}
+        data-active={count > 0 || undefined}
         title="Filtros"
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -163,24 +167,26 @@ function OrderFiltersModal({
           ]}
         />
         <SelectField
-            id={`${id}-fulfillment`}
-            label={deliveryEnabled ? "Entrega ou retirada" : "Retirada"}
-            value={selectedFulfillment}
-            disabled={pending}
-            onValueChange={(value) =>
-              setSelectedFulfillment(value as OrderFulfillmentFilter)
-            }
-            options={[
-              { value: "all", label: "Todas" },
-              {
-                value: "pending",
-                label: deliveryEnabled ? "Entrega ou retirada pendente" : "Retirada pendente",
-              },
-              {
-                value: "completed",
-                label: deliveryEnabled ? "Entregues ou retirados" : "Retirados",
-              },
-            ]}
+          id={`${id}-fulfillment`}
+          label={deliveryEnabled ? "Entrega ou retirada" : "Retirada"}
+          value={selectedFulfillment}
+          disabled={pending}
+          onValueChange={(value) =>
+            setSelectedFulfillment(value as OrderFulfillmentFilter)
+          }
+          options={[
+            { value: "all", label: "Todas" },
+            {
+              value: "pending",
+              label: deliveryEnabled
+                ? "Entrega ou retirada pendente"
+                : "Retirada pendente",
+            },
+            {
+              value: "completed",
+              label: deliveryEnabled ? "Entregues ou retirados" : "Retirados",
+            },
+          ]}
         />
         <span className="sr-only" role="status">
           {pending ? "Atualizando filtros" : ""}

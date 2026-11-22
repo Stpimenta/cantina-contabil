@@ -1,3 +1,7 @@
+import {
+  receiptListSchema,
+  RECEIPT_MAX_FILES,
+} from "@/shared/receipts/receipt-input";
 import { z } from "zod";
 import { isDateOnly } from "@/shared/dates/date-only";
 import { validateInput } from "@/shared/validation/input";
@@ -49,10 +53,21 @@ const paymentSchema = z
   .object({
     total: moneyInputSchema,
     paid: z.boolean(),
+    receipts: receiptListSchema.default([]),
+    retainedReceiptIds: z
+      .array(z.uuid())
+      .max(RECEIPT_MAX_FILES)
+      .refine((ids) => new Set(ids).size === ids.length)
+      .optional(),
     cash: moneyInputSchema,
     pix: moneyInputSchema,
   })
   .superRefine((data, ctx) => {
+    if (
+      (data.retainedReceiptIds?.length ?? 0) + data.receipts.length >
+      RECEIPT_MAX_FILES
+    )
+      ctx.addIssue({ code: "custom", path: ["receipts"] });
     if (
       data.paid
         ? BigInt(data.cash) + BigInt(data.pix) !== BigInt(data.total)
@@ -82,6 +97,8 @@ const propertyIssues: Record<string, ValidationIssue> = {
   total: "INVALID_ORDER_TOTAL",
   cash: "INVALID_ORDER_PAYMENT",
   pix: "INVALID_ORDER_PAYMENT",
+  receipts: "INVALID_ORDER_RECEIPT",
+  retainedReceiptIds: "INVALID_ORDER_RECEIPT",
 };
 export function validateOrderSection(
   input: unknown,

@@ -1,4 +1,6 @@
 "use client";
+import { OrderReceiptUpload } from "./order-receipt-upload";
+import { receiptMetadata } from "@/shared/receipts/receipt-input";
 import {
   emptyOrderAddress,
   brazilianStates,
@@ -61,6 +63,8 @@ export function OrderFormModal({
       skipStepFocus.current = false;
     }
   }, [step]);
+  const [files, setFiles] = useState<File[]>([]);
+  const [keptReceipts, setKeptReceipts] = useState(order?.receipts ?? []);
   const [requestId] = useState(() => createRequestId());
   const [customerName, setCustomerName] = useState(order?.customerName ?? "");
   const [fulfillmentMode, setFulfillmentMode] = useState(
@@ -136,6 +140,8 @@ export function OrderFormModal({
   Object.assign(fieldIds, {
     items: `${id}-product-${products[0]?.id}`,
     total: `${id}-total`,
+    receipts: `${id}-receipts`,
+    retainedReceiptIds: `${id}-receipts`,
     cash: method === "mixed" ? `${id}-cash` : `${id}-method`,
     pix: `${id}-cash`,
   });
@@ -164,6 +170,8 @@ export function OrderFormModal({
   const input = {
     requestId,
     catalogVersion: event.version,
+    receipts: files.map(receiptMetadata),
+    retainedReceiptIds: keptReceipts.map((receipt) => receipt.id),
     fulfillmentMode:
       event.deliveryEnabled && fulfillmentMode ? fulfillmentMode : null,
     address:
@@ -248,9 +256,10 @@ export function OrderFormModal({
     paid,
     method,
     cash,
+    retainedReceiptIds: keptReceipts.map((receipt) => receipt.id),
   });
   const [baseline] = useState(state);
-  const dirty = state !== baseline;
+  const dirty = state !== baseline || files.length > 0;
   useUnsavedChanges(dirty);
   function adjustQuantity(productId: string, delta: number) {
     if (isPending()) return;
@@ -304,11 +313,19 @@ export function OrderFormModal({
       showError(failure);
       return;
     }
+    const attachments = new FormData();
+    for (const file of files) attachments.append("receipts", file);
     execute(
       () =>
         order
-          ? updateOrderAction(event.id, order.id, order.version, input)
-          : createOrderAction(event.id, input),
+          ? updateOrderAction(
+              event.id,
+              order.id,
+              order.version,
+              input,
+              attachments,
+            )
+          : createOrderAction(event.id, input, attachments),
       onSaved,
     );
   }
@@ -785,6 +802,22 @@ export function OrderFormModal({
                   </>
                 )}
               </div>
+              <OrderReceiptUpload
+                id={`${id}-receipts`}
+                eventId={event.id}
+                orderId={order?.id}
+                customerName={customerName}
+                files={files}
+                receipts={keptReceipts}
+                onFilesChange={setFiles}
+                onRemoveReceipt={(receiptId) =>
+                  setKeptReceipts((current) =>
+                    current.filter((receipt) => receipt.id !== receiptId),
+                  )
+                }
+                disabled={pending}
+                error={fields?.receipts ?? fields?.retainedReceiptIds}
+              />
             </div>
           </div>
           {!phased && (

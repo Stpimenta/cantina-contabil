@@ -25,6 +25,7 @@ export function SearchForm({
   actions,
   scroll = true,
   disabled = false,
+  compactActionsOnMobile = false,
 }: {
   action: string;
   query: string;
@@ -33,6 +34,7 @@ export function SearchForm({
   actions?: ReactNode;
   scroll?: boolean;
   disabled?: boolean;
+  compactActionsOnMobile?: boolean;
 }) {
   const [value, setValue] = useState(query);
   const [pending, startTransition] = useTransition();
@@ -83,7 +85,9 @@ export function SearchForm({
     };
   }, [disabled, value, query, pending, composing, search]);
   return (
-    <div className={styles.root}>
+    <div
+      className={`${styles.root}${compactActionsOnMobile ? ` ${styles.compactActions}` : ""}`}
+    >
       <form
         className={styles.form}
         aria-busy={pending}
@@ -99,6 +103,7 @@ export function SearchForm({
           label={label}
           hideLabel
           appearance="search"
+          searchWithoutButtonOnMobile={compactActionsOnMobile}
           type="search"
           disabled={disabled}
           onCompositionStart={() => setComposing(true)}
@@ -133,6 +138,7 @@ export function SearchForm({
           type="submit"
           variant="primary"
           shape="search"
+          className={styles.submit}
           iconOnly
           busy={pending}
           aria-label="Buscar"

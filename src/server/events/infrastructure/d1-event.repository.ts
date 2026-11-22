@@ -71,6 +71,7 @@ function readOrder({
     address: null,
     contactPhone: "",
     fulfilled: false,
+    receipts: [],
     ...JSON.parse(payloadJson),
     ...row,
   };
@@ -90,6 +91,7 @@ const orderPayload = (o: EventOrder) =>
   JSON.stringify({
     ...(o.collected !== undefined ? { collected: o.collected } : {}),
     updatedActor: o.updatedActor,
+    ...(o.receipts?.length ? { receipts: o.receipts } : {}),
     ...(o.withdrawals !== undefined
       ? { withdrawals: o.withdrawals, pickupOn: o.pickupOn ?? "" }
       : {}),

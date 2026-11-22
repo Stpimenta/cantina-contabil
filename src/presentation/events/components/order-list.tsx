@@ -49,6 +49,7 @@ export function OrderList({
       <PageHeader
         title="Pedidos"
         description={`${recurring ? "Grupo" : "Evento"}: ${event.name}`}
+        hideDescriptionOnMobile
         compactActionsOnMobile
         actions={
           <Button
@@ -75,12 +76,9 @@ export function OrderList({
         aria-label={recurring ? "Pedidos do grupo" : "Pedidos do evento"}
       >
         {orders.map((order) => (
-          <li
-            key={order.id}
-            className={`record-row ${recurring ? styles.recurringRow : ""}`}
-          >
+          <li key={order.id} className={`record-row ${styles.row}`}>
+            <p className={styles.customerName}>{order.customerName}</p>
             <div className={`stack-small ${styles.content}`}>
-              <p>{order.customerName}</p>
               <p className="muted record-meta">
                 {order.paid ? "Pago" : "Pendente"} ·{" "}
                 {formatCurrency(order.totalCents)}
@@ -109,6 +107,11 @@ export function OrderList({
                   )}
                 </>
               )}
+              {event.canteenEnabled && (
+                <p className="muted record-meta">
+                  {order.collected ? "Retirado" : "A retirar"}
+                </p>
+              )}
               {event.deliveryEnabled && (
                 <p className="muted record-meta">
                   {order.fulfillmentMode === "delivery"
@@ -126,11 +129,12 @@ export function OrderList({
                 <p className={`muted ${styles.note}`}>{order.note}</p>
               )}
             </div>
-            <div className="action-group">
+            <div className={`action-group ${styles.actions}`}>
               {(recurring ||
                 standard ||
                 !order.paid ||
-                event.deliveryEnabled) && (
+                event.deliveryEnabled ||
+                event.canteenEnabled) && (
                 <Button
                   variant="neutral"
                   disabled={pending || !writable}
@@ -175,6 +179,7 @@ export function OrderList({
           deliveryEnabled={event.deliveryEnabled}
           recurring={recurring}
           standard={standard}
+          canteen={event.canteenEnabled}
           onClose={() => setUpdatingStatus(null)}
           onSaved={() => {
             setUpdatingStatus(null);

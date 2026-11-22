@@ -265,6 +265,7 @@ export function CommandBoard({
         </span>
       )}
       <SearchForm
+        compactActionsOnMobile
         action={basePath}
         query={initial.query}
         label="Buscar pelo nome"

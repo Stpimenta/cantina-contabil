@@ -52,6 +52,16 @@ Esse comando só confere formato, sincronização e incremento; não publica nem
 
 ## 3. Entregar a branch e o PR
 
+Quando o responsável pedir os comandos para subir a branch, entregar somente os três comandos simples abaixo, com a mensagem do commit e o nome real da branch preenchidos. Não incluir cd, fetch, validação de versão, testes, build, subshell ou scripts nesse bloco. As conferências necessárias continuam sendo feitas na preparação; pendências reais devem ser informadas brevemente fora dos comandos, sem declarar validações ainda não realizadas como aprovadas.
+
+```bash
+git add .
+git commit -m "fix: short description in English"
+git push -u origin fix/actual-branch-name
+```
+
+Sempre acompanhar os comandos de título e resumo do PR em inglês, prontos para copiar. O título deve começar com feat: ou fix: e refletir o escopo final. O resumo descreve o problema/comportamento resultante, as mudanças relevantes e a validação realmente realizada, distinguindo verificações pendentes. Não inventar aprovação de testes/build nem prometer publicação.
+
 - Concentrar as verificações de código na revisão final antes do deploy, conduzida pelo responsável, conforme [quando executar](testes.md#quando-executar). O agente não roda testes, typecheck, build ou auditorias automaticamente durante modificações; executa somente mediante pedido explícito. Na etapa final solicitada, usar os grupos afetados e o build Cloudflare/TypeScript isolado. Documentação exige somente revisão de conteúdo, links e formatação.
 - Revisar o diff staged e confirmar ausência de conflitos/arquivos indevidos antes de criar o commit. Commits e título do PR usam feat/fix com descrição em inglês.
 - Antes de fornecer o comando de push, confirmar branch, commit, versão preparada nos três pontos e incremento validado. Se algum desses itens estiver pendente, informar explicitamente que a entrega ainda não está pronta para envio.

@@ -39,9 +39,6 @@
   margin-block-start: calc(var(--font-sm) * var(--line-body) + var(--space-2));
 }
 .history {
-  max-height: min(40dvh, var(--select-list-height));
-  overflow-y: auto;
-  overscroll-behavior-y: auto;
   padding-inline: var(--space-1);
 }
 .loadMore {
@@ -50,8 +47,6 @@
   padding-block: var(--space-2);
 }
 .row {
-  content-visibility: auto;
-  contain-intrinsic-block-size: auto calc(var(--control-height) + var(--space-4) * 2);
   display: flex;
   align-items: center;
   justify-content: space-between;

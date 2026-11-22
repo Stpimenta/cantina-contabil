@@ -35,12 +35,26 @@
   padding: 0;
   text-align: center;
 }
-.today {
-  text-decoration: underline;
-  text-underline-offset: var(--space-1);
+.dayButton {
+  border-radius: var(--radius-pill);
+}
+.dayButton.today {
+  background: var(--color-surface-muted);
+  color: var(--color-primary);
 }
 .chevron {
   width: var(--icon-size);
   height: var(--icon-size);
   fill: currentColor;
+}
+
+@media (max-width: 37.499rem) {
+  .calendar {
+    width: 100%;
+    min-width: calc(var(--control-height) * 7);
+  }
+  .grid {
+    width: 100%;
+    table-layout: fixed;
+  }
 }

@@ -27,3 +27,10 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+@media (max-width: 37.499rem) {
+  .item:not(:nth-last-child(-n + 2)),
+  .item:nth-last-child(2) .separator,
+  .item:only-child .separator {
+    display: none;
+  }
+}

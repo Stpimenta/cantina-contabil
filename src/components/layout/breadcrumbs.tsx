@@ -25,7 +25,10 @@ export function Breadcrumbs({
           {items.map((item, index) => (
             <li key={`${index}-${item.label}`} className={styles.item}>
               {index > 0 && (
-                <span aria-hidden="true" className="muted">
+                <span
+                  aria-hidden="true"
+                  className={`muted ${styles.separator}`}
+                >
                   /
                 </span>
               )}

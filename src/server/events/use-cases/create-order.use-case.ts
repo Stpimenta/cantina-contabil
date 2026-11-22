@@ -1,3 +1,10 @@
+import { receiptMetadata } from "@/shared/receipts/receipt-input";
+import type { ReceiptRepository } from "../repositories/receipt.repository";
+import {
+  keepOrderReceipts,
+  inspectOrderReceipts,
+  storeOrderReceipts,
+} from "./order-receipts";
 import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
@@ -15,12 +22,20 @@ import {
 } from "../models/event-rules";
 import type { EventOrder } from "../models/event-order.model";
 export class CreateOrderUseCase {
-  constructor(private readonly events: EventRepository) {}
+  constructor(
+    private readonly events: EventRepository,
+    private readonly receipts?: ReceiptRepository,
+  ) {}
   async execute(
     session: Session | null,
     eventIdInput: unknown,
-    input: unknown,
+    rawInput: unknown,
+    files: File[] = [],
   ) {
+    const input =
+      typeof rawInput === "object" && rawInput !== null
+        ? { ...rawInput, receipts: files.map(receiptMetadata) }
+        : rawInput;
     const access = checkAccess(session);
     const eventId = parseInput(validateEventId(eventIdInput));
     const data = parseInput(validateSaveOrder(input));
@@ -37,7 +52,12 @@ export class CreateOrderUseCase {
       ),
     );
     const current = await this.events.findOrder(id);
-    const fingerprint = JSON.stringify({ eventId, ...data });
+    const hashes = await inspectOrderReceipts(files);
+    const fingerprint = JSON.stringify({
+      eventId,
+      ...data,
+      ...(files.length ? { hashes } : {}),
+    });
     if (current && current.eventId !== eventId) return eventMissing();
     if (checkRepeat(current, data.requestId, fingerprint, access.user.id))
       return current!;
@@ -49,9 +69,20 @@ export class CreateOrderUseCase {
 
     const event = authorizedEvent;
     if (event.version !== data.catalogVersion) return eventChanged();
+    const fields = orderFields(data, event, current ?? undefined);
+    const kept = keepOrderReceipts([], data.retainedReceiptIds, files.length);
+    const stored = await storeOrderReceipts(
+      this.receipts,
+      eventId,
+      id,
+      data.requestId,
+      files,
+      hashes,
+    );
     const now = new Date().toISOString();
     const order: EventOrder = {
-      ...orderFields(data, event, current ?? undefined),
+      ...fields,
+      receipts: [...kept, ...stored],
       id,
       eventId,
       version: 1,

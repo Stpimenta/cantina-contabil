@@ -104,3 +104,26 @@
   -webkit-appearance: none;
   margin: 0;
 }
+
+.mobileSearchIcon {
+  display: none;
+}
+
+@media (max-width: 37.499rem) {
+  .mobileSearchIcon {
+    position: absolute;
+    inset-inline-start: var(--space-4);
+    inset-block: 0;
+    display: flex;
+    align-items: center;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+  .root.search.searchWithoutButtonOnMobile input {
+    padding-inline-start: var(--control-height);
+  }
+  .root.search.searchWithoutButtonOnMobile input,
+  .root.search.searchWithoutButtonOnMobile .control::after {
+    border-radius: var(--radius-pill);
+  }
+}

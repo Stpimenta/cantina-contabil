@@ -32,7 +32,12 @@ export function CommandLoading({
         description={<Skeleton />}
         actions={
           !restricted ? (
-            <Button variant="neutral" disabled>
+            <Button
+              variant="neutral"
+              disabled
+              mobileIcon={<Icon name="filter" />}
+              aria-label="Filtros"
+            >
               Gerenciar acessos
             </Button>
           ) : undefined
@@ -41,6 +46,7 @@ export function CommandLoading({
       <div className={styles.page}>
         <span className="sr-only">Sincronização pendente</span>
         <SearchForm
+          compactActionsOnMobile
           action="/events"
           label="Buscar pelo nome"
           query=""

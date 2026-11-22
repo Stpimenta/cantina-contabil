@@ -65,7 +65,9 @@ export default async function ProductCategoryPage({
     <div className="stack">
       <Breadcrumbs
         items={[
-          ...(session.role === "operator" ? [] : [{ label: "Home", href: "/" }]),
+          ...(session.role === "operator"
+            ? []
+            : [{ label: "Home", href: "/" }]),
           { label: "Produtos", href: "/products" },
           { label: result.ok ? result.value.category.name : "Grupo" },
         ]}
@@ -78,6 +80,7 @@ export default async function ProductCategoryPage({
             icon="box"
             title={result.value.category.name}
             description="Grupo de produtos"
+            hideDescriptionOnMobile
             compactActionsOnMobile
             actions={
               <EventActions
@@ -89,13 +92,33 @@ export default async function ProductCategoryPage({
             }
           />
 
-          <section className="stack" aria-labelledby="category-financial-title">
-            <h2 id="category-financial-title">Situação financeira</h2>
+          <section
+            className={styles.financial}
+            aria-labelledby="category-financial-title"
+          >
+            <h2 id="category-financial-title" className={styles.desktopOnly}>
+              Situação financeira
+            </h2>
             <CashBoxBalance
               prominent
               amountCents={result.value.category.realCents}
               pendingCents={result.value.category.pendingCents}
             />
+            <dl className="details">
+              <div>
+                <dt>Caixa</dt>
+                <dd>
+                  <Link
+                    className="text-link"
+                    href={`/cash-boxes/${result.value.category.cashBoxId}`}
+                  >
+                    {result.value.cashBoxes.find(
+                      (b) => b.id === result.value.category.cashBoxId,
+                    )?.name ?? "Ver caixa"}
+                  </Link>
+                </dd>
+              </div>
+            </dl>
             <div className={styles.actions}>
               <Link
                 className={buttonClassName({
@@ -125,29 +148,16 @@ export default async function ProductCategoryPage({
               />
             </div>
           </section>
-          <dl className="details">
-            <div>
-              <dt>Caixa</dt>
-              <dd>
-                <Link
-                  className="text-link"
-                  href={`/cash-boxes/${result.value.category.cashBoxId}`}
-                >
-                  {result.value.cashBoxes.find(
-                    (b) => b.id === result.value.category.cashBoxId,
-                  )?.name ?? "Ver caixa"}
-                </Link>
-              </dd>
-            </div>
-            {result.value.category.description && (
+          {result.value.category.description && (
+            <dl className="details">
               <div>
                 <dt>Descrição</dt>
                 <dd className="preserve-lines">
                   {result.value.category.description}
                 </dd>
               </div>
-            )}
-          </dl>
+            </dl>
+          )}
           <ProductStockList
             category={result.value.category}
             balances={result.value.balances}

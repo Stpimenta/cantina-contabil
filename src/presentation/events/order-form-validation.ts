@@ -15,7 +15,12 @@ export function orderStepForField(field: string): number {
     ["fulfillmentMode", "fulfilled", "contactPhone", "address"].includes(root)
   )
     return 1;
-  if (["total", "paid", "cash", "pix"].includes(root)) return 2;
+  if (
+    ["total", "paid", "cash", "pix", "receipts", "retainedReceiptIds"].includes(
+      root,
+    )
+  )
+    return 2;
   return 0;
 }
 export function validateOrderForm(

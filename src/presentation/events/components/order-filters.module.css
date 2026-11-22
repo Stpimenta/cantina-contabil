@@ -1,0 +1,4 @@
+.trigger[data-active="true"] {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
