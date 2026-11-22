@@ -23,6 +23,8 @@ git fetch origin
 
 **Não entregar uma branch como pronta para envio com a versão ainda pendente.** Regra simplificada aprovada pelo responsável em 11/11/2026: o agente incrementa automaticamente o último número de X.Y.Z ao preparar cada nova entrega, inclusive de documentação/testes. Não há classificação major/minor por tipo de mudança nem cálculo pelo prefixo feat/fix. Uma versão maior já preparada para a mesma entrega é preservada ao retomar; não incrementar novamente por repetição do procedimento.
 
+Uma correção posterior ao envio/integração não deve ser classificada automaticamente como complemento da mesma entrega. Se a main já alcançou a versão da branch, preparar novo incremento. Validar contra uma origin/main desatualizada não comprova prontidão: quando fetch/consulta remota falhar, informar a limitação e não afirmar que a comparação com a main atual passou.
+
 O incremento acontece localmente antes do commit, nos três pontos do pacote/lockfile. O workflow do GitHub não altera esses arquivos: valida, publica após o merge e cria a tag correspondente. As travas de incremento, versão ativa e tags imutáveis permanecem; não confundir tag automática com aumento do número no pacote.
 
 1. Atualizar a referência `origin/main` e conferir a versão de seu `package.json`.
