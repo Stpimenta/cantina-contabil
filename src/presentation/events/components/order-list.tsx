@@ -101,8 +101,7 @@ export function OrderList({
                   </p>
                   {order.pickupOn && (
                     <p className="muted record-meta">
-                      {recurring ? "Entrega prevista" : "Retirada prevista"}:{" "}
-                      {formatDateOnly(order.pickupOn)}
+                      Data de entrega: {formatDateOnly(order.pickupOn)}
                     </p>
                   )}
                 </>

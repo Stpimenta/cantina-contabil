@@ -144,7 +144,7 @@ function OrderFiltersModal({
       >
         <SelectField
           id={`${id}-period`}
-          label="Previsão de entrega ou retirada"
+          label="Data de entrega"
           value={selectedPeriod}
           disabled={pending}
           onValueChange={(value) => setSelectedPeriod(value as OrderPeriod)}
