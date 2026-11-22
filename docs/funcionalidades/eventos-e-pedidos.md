@@ -89,6 +89,8 @@ Nos detalhes do evento, abaixo de 600px, o nome no cabeçalho usa uma linha com 
 
 ### Eventos, produtos e pedidos
 
+- O campo pickupOn é apresentado como Data de entrega no formulário, lista de pedidos, filtros, planejamento de estoque e histórico. Remover os rótulos Entrega prevista, Retirada prevista e Previsão de entrega ou retirada não muda os dados, filtros ou ordenação.
+
 - Em eventos Cantina, o Mais (+) do pedido também mostra Retirada (A retirar/Retirado), inclusive após pagamento; compartilha collected com Comandas, conforme [contrato de Cantina](cantina-e-comandas.md#modalidade-cantina-e-comandas).
 
 - Na lista compartilhada de pedidos de Produtos/Eventos, as ações ficam no topo, ao lado do nome; no celular abaixo de 600px, os demais dados ocupam a largura abaixo dessa linha. Nomes longos quebram sem deslocar os controles. O resumo dos produtos tem limite visual de duas linhas, inclusive no celular, com reticências; o conteúdo completo permanece no DOM e pode ser consultado no Mais (+), quando disponível, ou em Editar. Não limitar os itens armazenados nem o conteúdo dos modais.

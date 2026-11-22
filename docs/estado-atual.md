@@ -6,7 +6,9 @@ Preferência de entrega registrada em [Git e publicação](operacao/git-e-public
 
 ## Entrega local
 
-- Branch `fix/orders-products-navigation`, baseada no mesmo commit da `origin/main` disponível: `cbef4c7`. Alterações locais sem commit/envio. Identidade Git do responsável configurada.
+- Correção rápida dos rótulos de pickupOn para Data de entrega na lista, filtros, planejamento e histórico; formulário já usava o texto. Sem mudança de dados/regras, migração ou dependências. Revisão estática e diff; sem testes/build/app. Versão 0.6.27 mantida no complemento da mesma entrega; fetch continua bloqueado, main remota atual não reconferida.
+
+- Branch `fix/orders-products-navigation`, baseada no mesmo commit da `origin/main` disponível: `cbef4c7`. Commit anterior `f433a4b` presente localmente e na referência disponível da branch remota; ajuste atual dos rótulos ainda sem commit/envio. Identidade Git do responsável configurada.
 - Versão **0.6.27** sincronizada no pacote e nas duas entradas do lockfile, validada por `validatePackageVersion` contra **0.6.26** da referência disponível. Nenhuma dependência alterada.
 - Git remoto não reconferido: fetch recusado por `.git/FETCH_HEAD` somente leitura; consulta direta ao GitHub falhou por DNS. Antes de enviar, atualizar `origin/main`, revalidar versão e conferir possível avanço da base/tag.
 - Produtos/Eventos/Comandas: busca mobile com lupa interna discreta, filtros em ícone, pedidos com ações no topo e resumo de duas linhas, breadcrumbs compactos e carregamentos alinhados. Composição usa controles compartilhados e CSS Modules dos donos; detalhes e estoque seguem os tokens atuais.

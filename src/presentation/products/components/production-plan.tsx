@@ -71,7 +71,7 @@ export function ProductionPlan({ eventId }: { eventId: string }) {
             <div className={styles.filters}>
               <SelectField
                 id={`${id}-period`}
-                label="Previsão de entrega ou retirada"
+                label="Data de entrega"
                 value={period}
                 disabled={load.pending}
                 options={periods}
