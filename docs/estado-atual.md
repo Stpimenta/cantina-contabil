@@ -6,10 +6,10 @@ Preferência de entrega registrada em [Git e publicação](operacao/git-e-public
 
 ## Entrega local
 
-- Correção rápida dos rótulos de pickupOn para Data de entrega na lista, filtros, planejamento e histórico; formulário já usava o texto. Sem mudança de dados/regras, migração ou dependências. Revisão estática e diff; sem testes/build/app. Versão 0.6.27 mantida no complemento da mesma entrega; fetch continua bloqueado, main remota atual não reconferida.
+- Correção rápida dos rótulos de pickupOn para Data de entrega na lista, filtros, planejamento e histórico; formulário já usava o texto. Sem mudança de dados/regras, migração ou dependências. Revisão estática e diff; sem testes/build/app. CI rejeitou a versão 0.6.27 por não ser maior que a main; correção local preparada em 0.6.28, sem mudança funcional adicional. Fetch continua bloqueado e main remota atual não reconferida.
 
 - Branch `fix/orders-products-navigation`, baseada no mesmo commit da `origin/main` disponível: `cbef4c7`. Commit anterior `f433a4b` presente localmente e na referência disponível da branch remota; ajuste atual dos rótulos ainda sem commit/envio. Identidade Git do responsável configurada.
-- Versão **0.6.27** sincronizada no pacote e nas duas entradas do lockfile, validada por `validatePackageVersion` contra **0.6.26** da referência disponível. Nenhuma dependência alterada.
+- Versão **0.6.28** sincronizada no pacote e nas duas entradas do lockfile, validada por `validatePackageVersion` contra a versão anterior da entrega **0.6.27**. Esta validação não confirma a versão atual da main remota; origin/main local permanece desatualizada em 0.6.26. Nenhuma dependência alterada.
 - Git remoto não reconferido: fetch recusado por `.git/FETCH_HEAD` somente leitura; consulta direta ao GitHub falhou por DNS. Antes de enviar, atualizar `origin/main`, revalidar versão e conferir possível avanço da base/tag.
 - Produtos/Eventos/Comandas: busca mobile com lupa interna discreta, filtros em ícone, pedidos com ações no topo e resumo de duas linhas, breadcrumbs compactos e carregamentos alinhados. Composição usa controles compartilhados e CSS Modules dos donos; detalhes e estoque seguem os tokens atuais.
 - Estoque usa somente a rolagem do corpo do modal e carregamento progressivo; planejamento consulta período automaticamente. Calendário e histórico reutilizam as mesmas bases em Produtos/Eventos. Calendário distingue hoje com círculo claro e seleção com círculo escuro; seleção prevalece quando coincide com hoje. Ajustes posteriores à revisão final: calendário ocupa tela inteira abaixo de 600px pela opção explícita fullScreenOnMobile do Modal compartilhado; demais larguras preservadas. Conferidos estaticamente sem nova execução de testes/build.
@@ -28,6 +28,11 @@ Preferência de entrega registrada em [Git e publicação](operacao/git-e-public
 - Corrigida a leitura D1 para normalizar comprovantes ausentes como receipts: [], compatível com pedidos legados e com repetição do cadastro sem anexo. Teste acrescenta conferência da leitura sem comprovantes.
 - Comparação do retorno repetido de criação no teste de comprovantes passou a toMatchObject, preservando conferência de todos os campos de negócio sem exigir ausência dos metadados adicionais de leitura (deletedAt/deletedBy/deletedByName/pickupOn). Contagem de objeto, auditoria e financeiro continua exigida.
 - Correções conferidas estaticamente, sem nova execução de testes/typecheck/build. Reexecutar deliveries.test.ts e order-receipts.test.ts antes de concluir envio. Versão 0.6.27 preservada na mesma entrega.
+
+## Correção de versão após rejeição do CI
+
+- Responsável enviou RELEASE_CHECK_FAILED: versão do PR precisa ser maior que a main. A 0.6.27 anterior não foi aceita; pacote e duas entradas do lockfile corrigidos para 0.6.28. Origem do erro: reutilização da versão com referência de main desatualizada.
+- Versão validada contra 0.6.27, diff e formatação conferidos. Fetch bloqueado por .git/FETCH_HEAD somente leitura e consulta direta ao GitHub bloqueada por DNS; versão/tag remota atual não confirmada. Sem commit/envio/testes/build, migração ou publicação pelo agente nesta correção. Regra de não reutilizar versão alcançada pela main explicitada no guia.
 
 ## Conferência de publicação após os comprovantes
 
