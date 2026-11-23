@@ -1,63 +1,52 @@
-# Estado atual — 21/11/2026
+# Estado atual — 22/11/2026
 
-Retomada curta. Use o [mapa de leitura](README.md) para escolher os contratos. A [retomada anterior preservada](historico/estado-preservado-2026-11-21.md) registra evidências antigas, sem substituir as regras atuais.
-
-Preferência de entrega registrada em [Git e publicação](operacao/git-e-publicacao.md#3-entregar-a-branch-e-o-pr): pedidos de comandos recebem git add ., git commit e git push, acompanhados de título/resumo do PR em inglês.
+Retomada curta. Use o [mapa de leitura](README.md) e os contratos das áreas. Resultados desta revisão não confirmam publicação.
 
 ## Entrega local
 
-- Correção rápida dos rótulos de pickupOn para Data de entrega na lista, filtros, planejamento e histórico; formulário já usava o texto. Sem mudança de dados/regras, migração ou dependências. Revisão estática e diff; sem testes/build/app. CI rejeitou a versão 0.6.27 por não ser maior que a main; correção local preparada em 0.6.28, sem mudança funcional adicional. Fetch continua bloqueado e main remota atual não reconferida.
+- Branch `feat/shared-product-stock`, sem commit/envio. A árvore já carregava as rotas não commitadas de `feat/delivery-routes`; as duas funcionalidades permanecem juntas, preservadas.
+- Estoque compartilhado entre produtos recorrentes, preservando preços, pedidos e respectivos caixas. Criação/edição permite selecionar produtos existentes para grupos novos/vazios; novos itens e vínculos são salvos no mesmo batch. Não duplica estoque físico. Desvincular exige escolher o saldo que acompanha o produto. Eventos não participam.
+- Pedidos recorrentes já reduzem o disponível da lista, somando demanda pendente de todos os produtos vinculados, com mínimo zero. Cadastro sem estoque continua permitido e Detalhes mantém Falta produzir; o modal Estoque preserva o saldo físico e a retirada não desconta duas vezes. Alteração local com revisão estática e regressões acrescentadas aos cenários de vínculo/retirada; checagem final isolada de tipos aprovada, sem nova execução de testes/build.
+- Planejamento abre Consolidado, com cenários individuais por produto e períodos filtrando somente demanda. Reposição, correção, exclusão e retirada/desfazer usam o saldo comum, exigindo Alteração em todos os grupos. Histórico preserva origem e redistribuições. Regras em [Produtos recorrentes](funcionalidades/produtos-recorrentes.md#estoque-compartilhado).
+- Interface simplificada: somente Vincular produtos existentes cria compartilhamento, com filtro por grupo de origem e lista de produtos com checkboxes à direita, centralizados verticalmente em cada linha; permite várias escolhas de uma vez e preserva a seleção entre grupos. Botão Selecionados (quantidade) confirma para o formulário. Produto manual começa com estoque próprio; preços continuam independentes. Ícone discreto de elos apenas informativo, sem abrir modal; na edição, fica junto ao rótulo do nome, sem se afastar em direção ao preço. Removidos Compartilhar estoque e os botões Histórico do estoque/Vínculos do produto do modal Estoque; auditoria e vínculos existentes preservados. Vincular dois produtos já cadastrados está em proposta, sem nova implementação. Revisão estática/formatação, sem novos testes/typecheck/build/navegador para esta alteração; conferência funcional fica com o responsável.
+- Rotas: entregadores reutilizáveis, equipe e saída por evento, montagem manual, várias viagens, transferência atômica, conclusão automática e acesso temporário individual. Ordenação inicial por endereço, sem cálculo geográfico/API paga. Contrato em [Rotas e entregadores](funcionalidades/entregas-e-enderecos.md#rotas-e-entregadores).
 
-- Branch `fix/orders-products-navigation`, baseada no mesmo commit da `origin/main` disponível: `cbef4c7`. Commit anterior `f433a4b` presente localmente e na referência disponível da branch remota; ajuste atual dos rótulos ainda sem commit/envio. Identidade Git do responsável configurada.
-- Versão **0.6.28** sincronizada no pacote e nas duas entradas do lockfile, validada por `validatePackageVersion` contra a versão anterior da entrega **0.6.27**. Esta validação não confirma a versão atual da main remota; origin/main local permanece desatualizada em 0.6.26. Nenhuma dependência alterada.
-- Git remoto não reconferido: fetch recusado por `.git/FETCH_HEAD` somente leitura; consulta direta ao GitHub falhou por DNS. Antes de enviar, atualizar `origin/main`, revalidar versão e conferir possível avanço da base/tag.
-- Produtos/Eventos/Comandas: busca mobile com lupa interna discreta, filtros em ícone, pedidos com ações no topo e resumo de duas linhas, breadcrumbs compactos e carregamentos alinhados. Composição usa controles compartilhados e CSS Modules dos donos; detalhes e estoque seguem os tokens atuais.
-- Estoque usa somente a rolagem do corpo do modal e carregamento progressivo; planejamento consulta período automaticamente. Calendário e histórico reutilizam as mesmas bases em Produtos/Eventos. Calendário distingue hoje com círculo claro e seleção com círculo escuro; seleção prevalece quando coincide com hoje. Ajustes posteriores à revisão final: calendário ocupa tela inteira abaixo de 600px pela opção explícita fullScreenOnMobile do Modal compartilhado; demais larguras preservadas. Conferidos estaticamente sem nova execução de testes/build.
-- Cantina: Situação do pedido permite marcar/desfazer Retirado usando collected também no +, junto ao pagamento em atualização única autorizada/versionada. Sem nova baixa de estoque. Link temporário visível, com copiar/confere no campo; QR e descarte ao fechar preservados.
-- Documentos donos atualizados; instruções antigas sobre resumo completo, posição do caixa e rolagem aninhada substituídas. Estado anterior preservado no histórico; regras não são replicadas nesta retomada.
+## Preparação para envio
 
-## Alteração posterior — comprovantes de pedidos
+- Versão **0.6.29** preservada e sincronizada no pacote e nas duas entradas do lockfile; dependências inalteradas. `validatePackageVersion` aprovou contra a referência disponível de `origin/main`, **0.6.28**.
+- Atualização remota **não confirmada**: `git fetch origin` falhou ao abrir `.git/FETCH_HEAD` por sistema de arquivos somente leitura. A consulta de referências com `git ls-remote origin` também falhou por resolução DNS de `github.com`. Tag `v0.6.29` não existe nas referências locais; estado remoto desconhecido. Conferir main/tag remotas antes de enviar.
+- Identidade Git configurada do responsável conferida; sem conflitos de merge/rebase ou arquivos de credenciais rastreados na revisão. Nenhum commit/push/PR/merge/tag/deploy realizado pelo agente.
 
-- Implementação local de upload opcional na etapa Pagamento de criar/editar pedidos e em Situação do pedido (+), reutilizando FileUploadField e o R2 privado existente; até 5 imagens/PDF de 5 MB. OrderReceiptUpload compartilha seleção e visualização entre os formulários; no +, Comprovantes é o último campo após pagamento/retirada. Anexos podem ser mantidos/removidos e abertos na edição/+; + aceita salvar apenas comprovantes e conserva os arquivos na confirmação de reposição; autenticação, permissão e vínculo conferidos no servidor.
-- Metadados no payload versionado já existente, sem chave privada na interface nem nova migração. Arquivos históricos preservados e fingerprint inclui hashes. Bucket/binding remoto não consultado nem alterado.
-- Quatro cenários de integração acrescentados em order-receipts.test.ts e dois cenários unitários de validação/etapas; somente revisão estática e formatação nesta alteração, sem testes/typecheck/build/app. As aprovações abaixo são anteriores e não validam esta implementação. Versão 0.6.27 mantida para a mesma entrega, ainda sem commit/envio.
+## Correções após a execução do responsável
 
-## Resultado do responsável e correções
+- O responsável executou a suíte completa: **424 testes passaram e 3 falharam**. Corrigidos localmente: contexto de estoque normalizado como `null` também na primeira resposta; teste de migração compara somente registros de auditoria, sem metadados físicos do D1; exclusão de grupo com entradas ativas preserva `STOCK_HAS_ENTRIES` antes da proteção de vínculo.
+- A correção do guarda usa a nova migração **0039_shared_stock_deletion_guard.sql**, preparada e não aplicada. 0038 foi preservada, pois já está aplicada localmente. Não reescreve dados ou auditoria.
+- Revisão estática, formatação e diff das correções; sem nova execução da integração, pois a restrição de loopback do agente permanece. Os três cenários precisam ser repetidos no terminal do responsável. O aviso do Wrangler no teste de proxy não foi a causa das falhas; configuração preservada.
 
-- Execução completa enviada em 21/11: **404 aprovados e 2 falhas** (406 testes/36 arquivos). Falhas em deliveries e order-receipts, sem bloqueio de Miniflare nessa execução. Aviso do Wrangler sobre durable_objects em env.next permanece separado das falhas.
-- Corrigida a leitura D1 para normalizar comprovantes ausentes como receipts: [], compatível com pedidos legados e com repetição do cadastro sem anexo. Teste acrescenta conferência da leitura sem comprovantes.
-- Comparação do retorno repetido de criação no teste de comprovantes passou a toMatchObject, preservando conferência de todos os campos de negócio sem exigir ausência dos metadados adicionais de leitura (deletedAt/deletedBy/deletedByName/pickupOn). Contagem de objeto, auditoria e financeiro continua exigida.
-- Correções conferidas estaticamente, sem nova execução de testes/typecheck/build. Reexecutar deliveries.test.ts e order-receipts.test.ts antes de concluir envio. Versão 0.6.27 preservada na mesma entrega.
+## Verificação final executada pelo agente
 
-## Correção de versão após rejeição do CI
+| Verificação              | Resultado real                                                                                                                                                                                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm test`               | 289 testes unitários passaram, em 25 arquivos. Os 138 casos de integração, em 14 arquivos, falharam na preparação por `listen EPERM: operation not permitted 127.0.0.1`; comportamento D1 não foi validado. Não substituir por banco do aplicativo/remoto.                     |
+| TypeScript isolado       | `tsc --noEmit --incremental false` passou novamente na revisão final, incluindo o desconto de pedidos pendentes, em cópia temporária sem `.env`, credenciais ou estado, com código/testes, dependências independentes e tipos de rota disponíveis. Cópia removida ao terminar. |
+| Build Cloudflare isolado | `npm run deploy -- --build-only` compilou o Next, mas parou na etapa de TypeScript: `Could not parse output from TypeScript's --showConfig`. O build completo, inspeção do pacote e dry-run não foram concluídos. Cópia temporária removida; builds em uso preservados.        |
+| Formatação e diff        | Prettier aprovou novamente todos os arquivos alterados/novos compatíveis; `git diff --check` passou. Versão 0.6.29 validada contra a referência local 0.6.28; fetch novamente bloqueado por `.git` somente leitura.                                                            |
+| Interface ao vivo        | Não iniciada pelo agente; não há validação funcional/visual pelo resultado de tipos ou compilação.                                                                                                                                                                             |
 
-- Responsável enviou RELEASE_CHECK_FAILED: versão do PR precisa ser maior que a main. A 0.6.27 anterior não foi aceita; pacote e duas entradas do lockfile corrigidos para 0.6.28. Origem do erro: reutilização da versão com referência de main desatualizada.
-- Versão validada contra 0.6.27, diff e formatação conferidos. Fetch bloqueado por .git/FETCH_HEAD somente leitura e consulta direta ao GitHub bloqueada por DNS; versão/tag remota atual não confirmada. Sem commit/envio/testes/build, migração ou publicação pelo agente nesta correção. Regra de não reutilizar versão alcançada pela main explicitada no guia.
-
-## Conferência de publicação após os comprovantes
-
-- Guia de Git/publicação e CI reconferido: branch correta, sem conflitos, identidade válida; 0.6.27 sincronizada e validada contra origin/main disponível (0.6.26). Diff e formatação de todos os arquivos alterados/novos aprovados. Sem novas migrações ou dependências.
-- Fetch continua bloqueado por .git/FETCH_HEAD somente leitura. Referência/tag remota atual e estado de produção não confirmados. Não declarar entrega pronta para envio até reconferir remoto e concluir verificações finais.
-- Responsável vai executar npm test. Também pendem typecheck e build isolado após os últimos ajustes; resultados anteriores abaixo não validam os comprovantes. Nenhum teste/build executado nesta conferência.
-
-## Revisão final solicitada
-
-- Revisão estática dos fluxos afetados, composição/CSS e responsividade; formatação dos arquivos alterados e diff sem erros. Sem app/navegador, capturas ou validação visual ao vivo.
-- Testes unitários: **232 aprovados**. Grupo explícito de release/API/deploy: **66 aprovados** (execução separada; não somar como cobertura inédita).
-- Integração: **53 aprovados; 115 bloqueados na preparação** por `listen EPERM` em loopback no Miniflare. Sem falha de asserção observada nessa execução. Dois cenários novos de Cantina cobrem retirada/pagamento, repetição/auditoria/estoque, desfazer, conflito de versão e falta de Alteração; ainda precisam executar em ambiente com Miniflare permitido.
-- Typecheck completo, incluindo os testes e os ajustes finais de carregamento: aprovado.
-- Build Cloudflare isolado: compilação Next aprovada, interrompida na leitura de TypeScript `--showConfig`. Pacote final/dry-run não concluídos. Ajustes finais de carregamento tiveram typecheck, sem novo build; conferência completa fica pendente.
-- Próximo passo do responsável: atualizar referência remota/revalidar versão, executar `npm test`, `npm run typecheck` e `npm run deploy -- --build-only`; revisar o diff, criar commit, enviar a branch e abrir PR. Não integrar com checks reprovados. Build isolado não publica.
+O TS7006 do batch de rotas informado anteriormente pelo responsável foi corrigido; a checagem isolada de tipos acima passou com essa correção. As tentativas bloqueadas não autorizam declarar a entrega pronta para publicação.
 
 ## Migrações e produção
 
-| Ambiente                 | Último estado confirmado                                                                                                                                                                                        |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1 local da pasta normal | Consulta somente de esquema/histórico em 16/11 confirmou 0026–0029 aplicadas, sem birth_date/phone_country/phone_number.                                                                                        |
-| Correção 0030            | Campos de perfil separados em 0030_local_account_profile.sql; preparada/testada, não aplicada pelo agente. Aplicação posterior pelo responsável não reconferida. Não reaplicar 0029 nem apagar histórico.       |
-| Supabase/Resend          | Responsável informou configuração local/Worker, SMTP, domínio, templates/URLs/prazo concluídos; não reconferidos remotamente. Projeto Auth compartilhado local/produção aprovado; D1/R2 local continua emulado. |
-| Produção                 | Nenhuma consulta, migração ou publicação pelo agente nesta entrega. Último registro anterior aponta v0.6.6; não confirma a versão hoje ativa.                                                                   |
+| Ambiente                 | Estado confirmado                                                                                                                                                      |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Código/SQL               | `0037_delivery_routes.sql`, `0038_shared_product_stock.sql` e nova correção `0039_shared_stock_deletion_guard.sql` presentes; 0038 e migrações anteriores preservadas. |
+| D1 local do aplicativo   | O responsável compartilhou log de 0038 aplicada e execução seguinte sem migrações pendentes. O agente não consultou nem alterou esse banco.                            |
+| D1/R2 e recursos remotos | Nenhuma consulta/migração/alteração nesta revisão. Aplicação remota de 0037/0038/0039 não confirmada; 0039 também não foi aplicada localmente pelo agente.             |
+| Publicação               | Não realizada; versão ativa não confirmada.                                                                                                                            |
 
-## Limites e produção
+## Pendências
 
-Esta entrega não cria migração nem altera banco local/remoto, dependências, recursos Cloudflare ou configuração de autenticação. Nenhum push, PR, merge ou deploy realizado pelo agente. Versão publicada e migrações aplicadas em produção não foram reconferidas; build, tag ou merge não são prova de publicação. Pendências anteriores ficam na retomada preservada e não autorizam novo escopo.
+- Conferir main e tag remotas; ajustar versão caso a main tenha avançado, preservando a regra de incrementar somente o último número.
+- Executar integração e build Cloudflare completo no terminal do responsável/CI com permissões normais; conferir funcionalmente a interface. As falhas de ambiente acima não validam as regras do D1 nem o pacote final.
+- Repetir os três cenários corrigidos e aplicar 0039 pelo fluxo local normal do responsável. Antes da publicação, confirmar migrações remotas. SQL remoto exige pedido explícito; Actions apenas consulta os nomes e não aplica migrações. Não executar deploy manual para contornar checks.
+- Preparar commit/envio após resolver as pendências. Agrupamento geográfico automático e WhatsApp permanecem fora do escopo.

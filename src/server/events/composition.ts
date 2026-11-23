@@ -1,3 +1,5 @@
+import { PrepareStockImportsUseCase } from "@/server/products/use-cases/prepare-stock-imports.use-case";
+import { D1SharedStockRepository } from "@/server/products/infrastructure/d1-shared-stock.repository";
 import { GetOrderReceiptUseCase } from "./use-cases/get-order-receipt.use-case";
 import { DurablePublicationCoordinator } from "@/server/canteen/infrastructure/publication-coordinator";
 import { UpdateOrderStatusUseCase } from "./use-cases/update-order-status.use-case";
@@ -30,6 +32,8 @@ export function createEvents() {
   const boxes = new D1CashBoxRepository(db);
   const supplies = new D1EventSupplyRepository(db);
   const receipts = new R2ReceiptRepository();
+  const shared = new D1SharedStockRepository(db);
+  const stockImports = new PrepareStockImportsUseCase(repo, shared);
   return {
     updateSupply: new UpdateSupplyUseCase(supplies, repo, boxes, receipts),
     deleteSupply: new DeleteSupplyUseCase(supplies, repo),
@@ -41,11 +45,11 @@ export function createEvents() {
     delete: new DeleteEventUseCase(repo),
     deleteOrder: new DeleteOrderUseCase(repo),
     boxes: new GetEventBoxesUseCase(repo),
-    create: new CreateEventUseCase(repo, boxes),
-    update: new UpdateEventUseCase(repo, boxes),
-    createOrder: new CreateOrderUseCase(repo, receipts),
-    updateOrder: new UpdateOrderUseCase(repo, receipts),
-    updateOrderStatus: new UpdateOrderStatusUseCase(repo, receipts),
+    create: new CreateEventUseCase(repo, boxes, stockImports),
+    update: new UpdateEventUseCase(repo, boxes, stockImports),
+    createOrder: new CreateOrderUseCase(repo, receipts, shared),
+    updateOrder: new UpdateOrderUseCase(repo, receipts, shared),
+    updateOrderStatus: new UpdateOrderStatusUseCase(repo, receipts, shared),
     list: new ListEventsUseCase(repo),
     get: new GetEventUseCase(repo),
     orders: new ListOrdersUseCase(repo),

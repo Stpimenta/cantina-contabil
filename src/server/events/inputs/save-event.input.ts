@@ -1,3 +1,4 @@
+import { stockImportInputSchema } from "@/server/products/inputs/stock-import.input";
 import { z } from "zod";
 import { validateInput } from "@/shared/validation/input";
 import { moneyInputSchema } from "@/shared/validation/money-input";
@@ -30,6 +31,7 @@ export const saveEventInputSchema = z
       .trim()
       .refine((v) => v.length <= 500),
     occursOn: z.string(),
+    stockImports: z.array(stockImportInputSchema).max(100).default([]),
     products: z
       .array(productSchema)
       .max(100)
@@ -50,6 +52,19 @@ export const saveEventInputSchema = z
       (!data.deliveryEnabled && !data.canteenEnabled),
     { path: ["kind"] },
   )
+  .refine(
+    (data) =>
+      !data.stockImports.length ||
+      (data.kind === "product_category" &&
+        data.stockImports.every((ref) =>
+          data.products.some((p) => p.id === ref.productId),
+        ) &&
+        new Set(data.stockImports.map((ref) => ref.productId)).size ===
+          data.stockImports.length &&
+        new Set(data.stockImports.map((ref) => ref.operationId)).size ===
+          data.stockImports.length),
+    { path: ["products"] },
+  )
   .refine((data) => !(data.deliveryEnabled && data.canteenEnabled), {
     path: ["canteenEnabled"],
   });
@@ -66,11 +81,15 @@ export function validateSaveEvent(input: unknown) {
       description: "DESCRIPTION_TOO_LONG",
       occursOn: "INVALID_DATE",
       products: "INVALID_EVENT_PRODUCTS",
+      stockImports: "INVALID_STOCK_IMPORT",
     },
   );
   if (!result.ok && result.error.issues) {
     for (const property of Object.keys(result.error.issues)) {
-      if (/^products\.\d+\.name$/.test(property))
+      if (property === "stockImports" || property.startsWith("stockImports.")) {
+        result.error.issues.stockImports = "INVALID_STOCK_IMPORT";
+        if (property !== "stockImports") delete result.error.issues[property];
+      } else if (/^products\.\d+\.name$/.test(property))
         result.error.issues[property] = "INVALID_PRODUCT_NAME";
       else if (/^products\.\d+\.price$/.test(property))
         result.error.issues[property] = "INVALID_PRODUCT_PRICE";

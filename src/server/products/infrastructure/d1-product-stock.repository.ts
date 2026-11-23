@@ -1,18 +1,52 @@
 import type { StockEntryCursor } from "../models/stock-entry-cursor.model";
-import { and, count, desc, eq, isNull, sql, lt, or } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  isNull,
+  sql,
+  lt,
+  or,
+  getTableColumns,
+} from "drizzle-orm";
 import type { Database } from "@/shared/infrastructure/database";
 import { hasDatabaseError } from "@/shared/infrastructure/database-error";
 import { throwBusinessError } from "@/shared/errors/business-error";
 import type { ProductStockRepository } from "../repositories/product-stock.repository";
 import type { StockEntry } from "../models/stock-entry.model";
 import { productStockEntries as entries } from "./product-stock-entry.schema";
+const memberCondition = (categoryId: string, productId: string) => sql`(
+ (${entries.eventId}=${categoryId} AND ${entries.productId}=${productId}) OR EXISTS(
+ SELECT 1 FROM product_stock_members a JOIN product_stock_members b ON a.stock_id=b.stock_id
+ WHERE a.event_id=${categoryId} AND a.product_id=${productId} AND b.event_id=${entries.eventId} AND b.product_id=${entries.productId}))`;
+const originFields = {
+  productName: sql<string>`coalesce((SELECT json_extract(p.value,'$.name') FROM events e,json_each(e.payload_json,'$.products') p WHERE e.id=${sql.identifier("product_stock_entries")}.${sql.identifier("event_id")} AND json_extract(p.value,'$.id')=${sql.identifier("product_stock_entries")}.${sql.identifier("product_id")}), '')`,
+  categoryName: sql<string>`coalesce((SELECT name FROM events WHERE id=${sql.identifier("product_stock_entries")}.${sql.identifier("event_id")}), '')`,
+};
+function entryValues({
+  productName: _productName,
+  categoryName: _categoryName,
+  ...entry
+}: StockEntry) {
+  return entry;
+}
 export class D1ProductStockRepository implements ProductStockRepository {
   constructor(private readonly db: Database) {}
-  async productionDemand(categoryId: string, range?: { from: string; to: string }) {
+  async productionDemand(
+    categoryId: string,
+    range?: { from: string; to: string },
+  ) {
     const inPeriod = range
       ? sql`json_extract(o.payload_json, '$.pickupOn') BETWEEN ${range.from} AND ${range.to}`
       : sql`1`;
-    return this.db.all<{ productId: string; name: string; pending: number; allPending: number; available: number }>(sql`
+    return this.db.all<{
+      productId: string;
+      name: string;
+      pending: number;
+      allPending: number;
+      available: number;
+    }>(sql`
       WITH demand AS (
         SELECT json_extract(i.value, '$.id') AS productId,
           json_extract(i.value, '$.name') AS name,
@@ -40,24 +74,53 @@ export class D1ProductStockRepository implements ProductStockRepository {
   async productInUse(categoryId: string, productId: string) {
     const rows = await this.db.all<{ used: number }>(sql`
       SELECT (EXISTS(SELECT 1 FROM product_stock_entries WHERE event_id=${categoryId} AND product_id=${productId} AND deleted_at IS NULL)
+      OR EXISTS(SELECT 1 FROM product_stock_members m WHERE m.event_id=${categoryId} AND m.product_id=${productId} AND ((SELECT count(*) FROM product_stock_members WHERE stock_id=m.stock_id)>1 OR coalesce((SELECT quantity FROM product_stock_balances WHERE event_id=m.event_id AND product_id=m.product_id),0)!=0))
       OR EXISTS(SELECT 1 FROM event_orders o, json_each(o.payload_json,'$.items') i
         WHERE o.event_id=${categoryId} AND o.deleted_at IS NULL AND json_extract(i.value,'$.id')=${productId})) AS used
     `);
     return Boolean(rows[0]?.used);
   }
   async balances(categoryId: string) {
-    const rows = await this.db.all<{ productId: string; quantity: number }>(
-      sql`SELECT product_id AS productId,quantity FROM product_stock_balances WHERE event_id=${categoryId}`,
+    const rows = await this.db.all<{
+      productId: string;
+      quantity: number;
+      stockId: string;
+    }>(
+      sql`SELECT product_id AS productId,quantity,CASE WHEN (SELECT count(*) FROM product_stock_members m WHERE m.stock_id=product_stock_balances.stock_id)>1 THEN stock_id END AS stockId FROM product_stock_balances WHERE event_id=${categoryId}`,
     );
     if (rows.some((r) => !Number.isSafeInteger(r.quantity) || r.quantity < 0))
       throw new Error("Invalid product stock balance");
-    return rows;
+    return rows.map(({ stockId, ...row }) =>
+      stockId ? { ...row, stockId } : row,
+    );
   }
-  async entriesBefore(categoryId: string, productId: string, cursor: StockEntryCursor | null, limit: number) {
-    return this.db.select().from(entries).where(and(
-      eq(entries.eventId, categoryId), eq(entries.productId, productId), isNull(entries.deletedAt),
-      cursor ? or(lt(entries.createdAt, cursor.createdAt), and(eq(entries.createdAt, cursor.createdAt), lt(entries.id, cursor.id))) : undefined,
-    )).orderBy(desc(entries.createdAt), desc(entries.id)).limit(limit).all();
+  async entriesBefore(
+    categoryId: string,
+    productId: string,
+    cursor: StockEntryCursor | null,
+    limit: number,
+  ) {
+    return this.db
+      .select({ ...getTableColumns(entries), ...originFields })
+      .from(entries)
+      .where(
+        and(
+          memberCondition(categoryId, productId),
+          isNull(entries.deletedAt),
+          cursor
+            ? or(
+                lt(entries.createdAt, cursor.createdAt),
+                and(
+                  eq(entries.createdAt, cursor.createdAt),
+                  lt(entries.id, cursor.id),
+                ),
+              )
+            : undefined,
+        ),
+      )
+      .orderBy(desc(entries.createdAt), desc(entries.id))
+      .limit(limit)
+      .all();
   }
   async entries(
     categoryId: string,
@@ -66,8 +129,7 @@ export class D1ProductStockRepository implements ProductStockRepository {
     pageSize: number,
   ) {
     const condition = and(
-      eq(entries.eventId, categoryId),
-      eq(entries.productId, productId),
+      memberCondition(categoryId, productId),
       isNull(entries.deletedAt),
     );
     const total =
@@ -80,7 +142,7 @@ export class D1ProductStockRepository implements ProductStockRepository {
       )?.total ?? 0;
     const current = Math.min(page, Math.max(1, Math.ceil(total / pageSize)));
     const items = await this.db
-      .select()
+      .select({ ...getTableColumns(entries), ...originFields })
       .from(entries)
       .where(condition)
       .orderBy(desc(entries.createdAt), desc(entries.id))
@@ -102,11 +164,14 @@ export class D1ProductStockRepository implements ProductStockRepository {
     // a silently skipped UPDATE would allow a partially saved batch.
     // Physical deletion is forbidden by product_stock_entry_no_delete.
     const update = (entry: StockEntry) =>
-      this.db.update(entries).set(entry).where(eq(entries.id, entry.id));
+      this.db
+        .update(entries)
+        .set(entryValues(entry))
+        .where(eq(entries.id, entry.id));
     try {
       if (addition) {
         await this.db.batch([
-          this.db.insert(entries).values(addition),
+          this.db.insert(entries).values(entryValues(addition)),
           update(first),
           ...rest.map(update),
         ]);
@@ -131,12 +196,12 @@ export class D1ProductStockRepository implements ProductStockRepository {
         expectedVersion === 0
           ? await this.db
               .insert(entries)
-              .values(entry)
+              .values(entryValues(entry))
               .onConflictDoNothing({ target: entries.id })
               .run()
           : await this.db
               .update(entries)
-              .set(entry)
+              .set(entryValues(entry))
               .where(
                 and(
                   eq(entries.id, entry.id),

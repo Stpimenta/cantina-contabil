@@ -16,11 +16,13 @@ import { useToast } from "@/components/ui/toast-provider";
 import { EventFormModal } from "./event-form-modal";
 export function EventActions({
   event,
+  sharedProductIds,
   recurring = event?.kind === "product_category",
   cashBoxes,
   today,
 }: {
   event?: Event;
+  sharedProductIds?: string[];
   recurring?: boolean;
   cashBoxes: { id: string; name: string }[];
   today: string;
@@ -93,6 +95,7 @@ export function EventActions({
       {open && (
         <EventFormModal
           event={event}
+          sharedProductIds={sharedProductIds}
           recurring={recurring}
           cashBoxes={cashBoxes}
           today={today}

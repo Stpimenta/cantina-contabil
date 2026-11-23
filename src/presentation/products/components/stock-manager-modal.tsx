@@ -1,4 +1,5 @@
 "use client";
+import { SharedStockIndicator } from "./shared-stock-indicator";
 import {
   useEffect,
   useId,
@@ -38,6 +39,7 @@ import { SectionFeedback } from "@/components/ui/section-feedback";
 import { useToast } from "@/components/ui/toast-provider";
 import styles from "./stock-manager-modal.module.css";
 export function StockManagerModal({
+  shared = false,
   categoryId,
   productId,
   productName,
@@ -46,6 +48,7 @@ export function StockManagerModal({
   writable,
   onClose,
 }: {
+  shared?: boolean;
   categoryId: string;
   productId: string;
   productName: string;
@@ -287,9 +290,14 @@ export function StockManagerModal({
       >
         <div className="stack">
           <div className={styles.header}>
-            <p className={styles.productName}>{productName}</p>
+            <p className={styles.productName}>
+              {productName}
+              {shared && <SharedStockIndicator />}
+            </p>
             <div className={styles.balance}>
-              <span className="muted record-meta">Estoque atual</span>
+              <span className="muted record-meta">
+                {shared ? "Estoque compartilhado" : "Estoque atual"}
+              </span>
               <strong>{balance.toLocaleString("pt-BR")}</strong>
             </div>
           </div>
@@ -341,6 +349,10 @@ export function StockManagerModal({
                       <div className={styles.content}>
                         <p className="muted record-meta">
                           {formatDateTime(entry.createdAt)}
+                        </p>
+                        <p className="muted record-meta">
+                          {entry.productName}
+                          {entry.categoryName ? ` — ${entry.categoryName}` : ""}
                         </p>
                       </div>
                       <div className={styles.entryControls}>

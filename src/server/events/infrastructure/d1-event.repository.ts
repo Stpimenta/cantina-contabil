@@ -1,3 +1,5 @@
+import type { StockLinkOperation } from "@/server/products/models/shared-stock.model";
+import { productStockLinks } from "@/server/products/infrastructure/product-stock-link.schema";
 import type { StockEntry } from "@/server/products/models/stock-entry.model";
 import { productStockEntries } from "@/server/products/infrastructure/product-stock-entry.schema";
 import { throwBusinessError } from "@/shared/errors/business-error";
@@ -190,8 +192,9 @@ export class D1EventRepository implements EventRepository {
         const balances = await this.db.all<{
           productId: string;
           quantity: number;
+          stockId?: string;
         }>(
-          sql`SELECT product_id AS productId,quantity FROM product_stock_balances WHERE event_id=${attemptedOrder.eventId}`,
+          sql`SELECT product_id AS productId,quantity,CASE WHEN (SELECT count(*) FROM product_stock_members m WHERE m.stock_id=product_stock_balances.stock_id)>1 THEN stock_id END AS stockId FROM product_stock_balances WHERE event_id=${attemptedOrder.eventId}`,
         );
         if (
           balances.some(
@@ -222,6 +225,8 @@ export class D1EventRepository implements EventRepository {
         });
       }
       for (const code of [
+        "STOCK_CHANGED",
+        "DELIVERY_ORDER_ASSIGNED",
         "WITHDRAWAL_ABOVE_ORDERED",
         "STOCK_INSUFFICIENT",
         "ORDER_BELOW_WITHDRAWN",
@@ -317,53 +322,98 @@ export class D1EventRepository implements EventRepository {
       )) AS present`);
     return row?.present === 1;
   }
-  create(e: Event) {
+  private async catalogBatch(
+    execute: () => Promise<{ meta: { changes: number } }[]>,
+    event: Event,
+  ) {
+    try {
+      const results = await execute();
+      return results[0];
+    } catch (cause) {
+      if (
+        hasDatabaseError(cause, "STOCK_CHANGED") ||
+        hasDatabaseError(cause, "INVALID_STOCK_INPUT")
+      ) {
+        const current = await this.find(event.id);
+        if (
+          current?.lastOperation === event.lastOperation &&
+          current.fingerprint === event.fingerprint &&
+          current.updatedBy === event.updatedBy
+        )
+          return { meta: { changes: 0 } };
+      }
+      throw cause;
+    }
+  }
+  create(e: Event, stockLinks: StockLinkOperation[] = []) {
+    const statement = this.db
+      .insert(events)
+      .values({
+        id: e.id,
+        cashBoxId: e.cashBoxId,
+        name: e.name,
+        description: e.description,
+        kind: e.kind ?? "event",
+        occursOn: e.kind === "product_category" ? null : e.occursOn,
+        deliveryEnabled: e.deliveryEnabled,
+        canteenEnabled: e.canteenEnabled,
+        ...metadata(e),
+        payloadJson: eventPayload(e),
+      })
+      .onConflictDoNothing({ target: events.id });
     return this.write(() =>
-      this.db
-        .insert(events)
-        .values({
-          id: e.id,
-          cashBoxId: e.cashBoxId,
-          name: e.name,
-          description: e.description,
-          kind: e.kind ?? "event",
-          occursOn: e.kind === "product_category" ? null : e.occursOn,
-          deliveryEnabled: e.deliveryEnabled,
-          canteenEnabled: e.canteenEnabled,
-          ...metadata(e),
-          payloadJson: eventPayload(e),
-        })
-        .onConflictDoNothing({ target: events.id })
-        .run(),
+      !stockLinks.length
+        ? statement.run()
+        : this.catalogBatch(
+            () =>
+              this.db.batch([
+                statement,
+                ...stockLinks.map((link) =>
+                  this.db.insert(productStockLinks).values(link),
+                ),
+              ]),
+            e,
+          ),
     );
   }
-  update(e: Event, expected: number) {
+  update(e: Event, expected: number, stockLinks: StockLinkOperation[] = []) {
+    const statement = this.db
+      .update(events)
+      .set({
+        name: e.name,
+        description: e.description,
+        kind: e.kind ?? "event",
+        occursOn: e.kind === "product_category" ? null : e.occursOn,
+        deliveryEnabled: e.deliveryEnabled,
+        canteenEnabled: e.canteenEnabled,
+        version: e.version,
+        updatedAt: e.updatedAt,
+        updatedBy: e.updatedBy,
+        updatedByName: e.updatedByName,
+        lastOperation: e.lastOperation,
+        fingerprint: e.fingerprint,
+        payloadJson: eventPayload(e),
+      })
+      .where(
+        and(
+          eq(events.id, e.id),
+          eq(events.version, expected),
+          isNull(events.deletedAt),
+        ),
+      );
     return this.write(() =>
-      this.db
-        .update(events)
-        .set({
-          name: e.name,
-          description: e.description,
-          kind: e.kind ?? "event",
-          occursOn: e.kind === "product_category" ? null : e.occursOn,
-          deliveryEnabled: e.deliveryEnabled,
-          canteenEnabled: e.canteenEnabled,
-          version: e.version,
-          updatedAt: e.updatedAt,
-          updatedBy: e.updatedBy,
-          updatedByName: e.updatedByName,
-          lastOperation: e.lastOperation,
-          fingerprint: e.fingerprint,
-          payloadJson: eventPayload(e),
-        })
-        .where(
-          and(
-            eq(events.id, e.id),
-            eq(events.version, expected),
-            isNull(events.deletedAt),
+      !stockLinks.length
+        ? statement.run()
+        : this.catalogBatch(
+            () =>
+              this.db.batch([
+                statement,
+                ...stockLinks.map((link) =>
+                  this.db.insert(productStockLinks).values(link),
+                ),
+              ]),
+            e,
           ),
-        )
-        .run(),
     );
   }
   softDelete(deletion: EventDeletion) {
@@ -467,6 +517,7 @@ export class D1EventRepository implements EventRepository {
             catalogVersion,
             ...metadata(o),
             payloadJson: orderPayload(o),
+            stockContext: o.stockContext ?? null,
           })
           .onConflictDoNothing({ target: eventOrders.id })
           .run(),
@@ -474,8 +525,12 @@ export class D1EventRepository implements EventRepository {
     );
   }
   async orderStockBalances(eventId: string) {
-    return this.db.all<{ productId: string; quantity: number }>(
-      sql`SELECT product_id AS productId, quantity FROM product_stock_balances WHERE event_id=${eventId}`,
+    return this.db.all<{
+      productId: string;
+      quantity: number;
+      stockId?: string;
+    }>(
+      sql`SELECT product_id AS productId, quantity,CASE WHEN (SELECT count(*) FROM product_stock_members m WHERE m.stock_id=product_stock_balances.stock_id)>1 THEN stock_id END AS stockId FROM product_stock_balances WHERE event_id=${eventId}`,
     );
   }
   async updateOrder(
@@ -501,6 +556,7 @@ export class D1EventRepository implements EventRepository {
           lastOperation: o.lastOperation,
           fingerprint: o.fingerprint,
           payloadJson: orderPayload(o),
+          stockContext: o.stockContext ?? null,
         })
         .where(
           and(

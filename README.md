@@ -10,12 +10,13 @@ O Ministério Contábil nasceu para organizar o financeiro de ministérios e eve
 - Registrar doações, entradas e saídas, com comprovantes nas movimentações quando necessário.
 - Cadastrar eventos, produtos e pedidos, acompanhando pagamentos e insumos comprados ou doados.
 - Em eventos com entregas habilitadas, registrar endereço/contato opcionais e acompanhar entrega ou retirada dos pedidos.
+- Organizar entregadores e rotas por evento, ajustar a ordem dos pedidos e liberar um link individual para confirmar as entregas.
 - Consultar o histórico e a autoria das alterações.
 - Acompanhar retirada de comandas na Cantina, inclusive com acesso temporário por evento.
 
 ## Para onde queremos ir
 
-A ideia é expandir o projeto para integrar pagamentos e ampliar o fluxo de pedidos. Para eventos com entregas, também queremos permitir a seleção de pedidos e o envio de rotas aos responsáveis pelas entregas.
+A ideia é expandir o projeto para integrar pagamentos e ampliar o fluxo de pedidos. Para eventos com entregas, queremos evoluir a sugestão de rotas por proximidade e a comunicação com os entregadores.
 
 Essas são possibilidades de evolução; ainda não são funcionalidades disponíveis.
 

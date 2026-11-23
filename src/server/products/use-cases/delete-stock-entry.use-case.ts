@@ -1,3 +1,5 @@
+import type { SharedStockRepository } from "../repositories/shared-stock.repository";
+import { sharedStockAccess } from "./shared-stock-access";
 import type { Session } from "@/server/auth/models/session.model";
 import type { EventRepository } from "@/server/events/repositories/event.repository";
 import type { ProductStockRepository } from "../repositories/product-stock.repository";
@@ -11,6 +13,7 @@ export class DeleteStockEntryUseCase {
   constructor(
     private readonly events: EventRepository,
     private readonly stock: ProductStockRepository,
+    private readonly shared?: SharedStockRepository,
   ) {}
   async execute(session: Session | null, input: unknown) {
     checkAccess(session);
@@ -18,11 +21,24 @@ export class DeleteStockEntryUseCase {
     const category = await this.events.find(data.categoryId);
     if (!category) return eventMissing();
     const actor = checkEventAccessWrite(session, category).user;
+    const stockAccess = await sharedStockAccess(
+      session,
+      this.shared,
+      category.id,
+      [data.productId],
+      true,
+    );
     const current = await this.stock.findEntry(data.entryId);
     if (
       !current ||
-      current.eventId !== category.id ||
-      current.productId !== data.productId
+      !(
+        (current.eventId === category.id &&
+          current.productId === data.productId) ||
+        stockAccess.members.some(
+          (m) =>
+            m.eventId === current.eventId && m.productId === current.productId,
+        )
+      )
     )
       return eventMissing();
     const fingerprint = JSON.stringify({
@@ -45,6 +61,7 @@ export class DeleteStockEntryUseCase {
     const now = new Date().toISOString();
     const entry = {
       ...current,
+      stockContext: stockAccess.context ?? null,
       deletedAt: now,
       deletedBy: actor.id,
       deletedByName: actor.name,

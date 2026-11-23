@@ -1,6 +1,7 @@
 import type { OrderAddress } from "./order-address.model";
 import type { OrderItem } from "./order-item.model";
 export interface EventOrder {
+  stockContext?: string | null;
   id: string;
   eventId: string;
   customerName: string;
@@ -11,7 +12,9 @@ export interface EventOrder {
   fulfilled: boolean;
   collected?: boolean;
   receipts?: import("./order-receipt.model").OrderReceipt[];
-  updatedActor?: import("@/server/canteen/models/command-actor.model").CommandActor;
+  updatedActor?:
+    | import("@/server/canteen/models/command-actor.model").CommandActor
+    | import("@/server/deliveries/models/delivery-actor.model").DeliveryActor;
   items: OrderItem[];
   pickupOn?: string;
   withdrawals?: { productId: string; quantity: number }[];

@@ -47,14 +47,15 @@ describe("temporary access activation link", () => {
       location.hash = "";
     });
     vi.stubGlobal("location", location);
-    vi.stubGlobal("history", { replaceState: clean });
+    const navigationState = { __NA: true };
+    vi.stubGlobal("history", { state: navigationState, replaceState: clean });
     renderToStaticMarkup(createElement(ActivateAccess));
     const capture = lifecycle.effects[0];
     capture();
     capture(); // Strict Mode replays setup after cleanup on the same mounted component.
     const html = renderToStaticMarkup(createElement(ActivateAccess));
     expect(location.hash).toBe("");
-    expect(clean).toHaveBeenCalledWith(null, "", "/command-access");
+    expect(clean).toHaveBeenCalledWith(navigationState, "", "/command-access");
     expect(lifecycle.secret).toBe(secret);
     expect(html).not.toContain('disabled=""');
     expect(html).not.toContain("Abra o link fornecido");

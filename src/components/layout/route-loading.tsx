@@ -1,3 +1,4 @@
+import { DeliveryLoading } from "@/presentation/deliveries/components/delivery-loading";
 import { OrderListLoading } from "@/presentation/events/components/order-list-loading";
 import { ProductsLoading } from "@/presentation/products/components/products-loading";
 import commandStyles from "@/presentation/canteen/components/command-board.module.css";
@@ -19,6 +20,16 @@ import balanceStyles from "@/presentation/cash-boxes/components/cash-box-balance
 import styles from "./route-loading.module.css";
 
 const areas = {
+  entregas: {
+    title: "Rotas de entrega",
+    icon: "calendar",
+    description: undefined,
+  },
+  entregasTemporarias: {
+    title: "Minhas entregas",
+    icon: "calendar",
+    description: undefined,
+  },
   produtos: { title: "Produtos", icon: "box", description: undefined },
   grupoProdutos: {
     title: "Grupo de produtos",
@@ -89,6 +100,9 @@ export type LoadingArea = keyof typeof areas;
 
 export function loadingAreaForPath(pathname: string): LoadingArea {
   const segments = pathname.split("/").filter(Boolean);
+  if (segments[0] === "deliveries") return "entregasTemporarias";
+  if (segments[0] === "events" && segments[2] === "deliveries")
+    return "entregas";
   if (segments[0] === "cash-boxes") return segments[1] ? "caixa" : "caixas";
   if (segments[0] === "commands") return "comandasTemporarias";
   if (segments[0] === "api-docs") return "apiDocs";
@@ -120,6 +134,8 @@ const creation = {
 
 function LoadingActions({ area }: { area: LoadingArea }) {
   if (
+    area === "entregas" ||
+    area === "entregasTemporarias" ||
     area === "produtos" ||
     area === "grupoProdutos" ||
     area === "pedidosProdutos" ||
@@ -179,6 +195,8 @@ function BalancePlaceholder() {
 }
 
 export function RouteLoading({ area }: { area: LoadingArea }) {
+  if (area === "entregas") return <DeliveryLoading />;
+  if (area === "entregasTemporarias") return <DeliveryLoading restricted />;
   if (area === "produtos") return <ProductsLoading section="list" />;
   if (area === "grupoProdutos") return <ProductsLoading section="detail" />;
   if (area === "pedidosProdutos") return <ProductsLoading section="orders" />;

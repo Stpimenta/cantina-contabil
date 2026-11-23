@@ -1,3 +1,5 @@
+import type { SharedStockRepository } from "../repositories/shared-stock.repository";
+import { sharedStockAccess } from "./shared-stock-access";
 import { checkAccess } from "@/shared/auth/check-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
@@ -17,6 +19,7 @@ export class SaveOrderWithdrawalUseCase {
   constructor(
     private readonly events: EventRepository,
     private readonly stock: ProductStockRepository,
+    private readonly shared?: SharedStockRepository,
   ) {}
   async execute(session: Session | null, input: unknown) {
     checkAccess(session);
@@ -27,6 +30,13 @@ export class SaveOrderWithdrawalUseCase {
     const actor = checkEventAccessWrite(session, category).user;
     const current = await this.events.findOrder(data.orderId);
     if (!current || current.eventId !== category.id) return eventMissing();
+    const stockAccess = await sharedStockAccess(
+      session,
+      this.shared,
+      category.id,
+      current.items.map((p) => p.id),
+      true,
+    );
     const fingerprint = JSON.stringify({ operation: "withdrawal", ...data });
     if (checkRepeat(current, data.requestId, fingerprint, actor.id))
       return current;
@@ -71,6 +81,7 @@ export class SaveOrderWithdrawalUseCase {
       });
     const order = {
       ...current,
+      stockContext: stockAccess.context ?? null,
       withdrawals: data.withdrawals,
       version: current.version + 1,
       updatedAt: new Date().toISOString(),

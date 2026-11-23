@@ -1,3 +1,5 @@
+import type { SharedStockRepository } from "../repositories/shared-stock.repository";
+import { sharedStockAccess } from "./shared-stock-access";
 import type { Session } from "@/server/auth/models/session.model";
 import type { EventRepository } from "@/server/events/repositories/event.repository";
 import type { ProductStockRepository } from "../repositories/product-stock.repository";
@@ -12,6 +14,7 @@ export class UpdateStockEntriesUseCase {
   constructor(
     private readonly events: EventRepository,
     private readonly stock: ProductStockRepository,
+    private readonly shared?: SharedStockRepository,
   ) {}
   async execute(session: Session | null, input: unknown) {
     checkAccess(session);
@@ -20,6 +23,13 @@ export class UpdateStockEntriesUseCase {
     if (!category || !category.products.some((p) => p.id === data.productId))
       return eventMissing();
     const actor = checkEventAccessWrite(session, category).user;
+    const stockAccess = await sharedStockAccess(
+      session,
+      this.shared,
+      category.id,
+      [data.productId],
+      true,
+    );
     const fingerprint = JSON.stringify({
       operation: "updateStockEntries",
       ...data,
@@ -29,8 +39,14 @@ export class UpdateStockEntriesUseCase {
       const entry = await this.stock.findEntry(change.entryId);
       if (
         !entry ||
-        entry.eventId !== category.id ||
-        entry.productId !== data.productId
+        !(
+          (entry.eventId === category.id &&
+            entry.productId === data.productId) ||
+          stockAccess.members.some(
+            (m) =>
+              m.eventId === entry.eventId && m.productId === entry.productId,
+          )
+        )
       )
         return eventMissing();
       current.push(entry);
@@ -83,6 +99,7 @@ export class UpdateStockEntriesUseCase {
     const now = new Date().toISOString();
     const updates = current.map((entry, i) => ({
       ...entry,
+      stockContext: stockAccess.context ?? null,
       quantity: data.entries[i].quantity,
       version: entry.version + 1,
       updatedAt: now,
@@ -108,6 +125,7 @@ export class UpdateStockEntriesUseCase {
     });
     const addition: StockEntry | undefined = data.addition
       ? {
+          stockContext: stockAccess.context ?? null,
           id: data.addition.entryId,
           eventId: category.id,
           productId: data.productId,

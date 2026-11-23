@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { useServerAction } from "@/shared/hooks/use-server-action";
 import { ErrorModal } from "@/components/modals/error-modal";
 import type { Result } from "@/shared/errors/application-error";
-export function ActivateAccess() {
+export function ActivateAccess({
+  activationPath = "/command-access/activate",
+  destinationPath = "/commands",
+}: {
+  activationPath?: string;
+  destinationPath?: string;
+}) {
   const [secret, setSecret] = useState<string | null>(null),
     router = useRouter();
   const captured = useRef(false);
@@ -14,7 +20,7 @@ export function ActivateAccess() {
     if (captured.current) return;
     captured.current = true;
     setSecret(new URLSearchParams(location.hash.slice(1)).get("chave"));
-    history.replaceState(null, "", location.pathname);
+    history.replaceState(history.state, "", location.pathname);
   }, []);
   const { execute, pending, error, closeError } = useServerAction({
     connectionMessage:
@@ -32,14 +38,14 @@ export function ActivateAccess() {
         onClick={() =>
           execute(
             async () => {
-              const r = await fetch("/command-access/activate", {
+              const r = await fetch(activationPath, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ secret }),
               });
               return r.json() as Promise<Result<{ eventId: string }>>;
             },
-            (v) => router.replace(`/commands/${v.eventId}`),
+            (v) => router.replace(`${destinationPath}/${v.eventId}`),
           )
         }
       >

@@ -1,0 +1,10 @@
+.indicator {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.trigger {
+  color: var(--color-text-muted);
+}

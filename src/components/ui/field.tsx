@@ -15,7 +15,7 @@ export function Field({
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & {
   id: string;
-  label: string;
+  label: ReactNode;
   error?: string;
   trailing?: ReactNode;
   labelAction?: ReactNode;
