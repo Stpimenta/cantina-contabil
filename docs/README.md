@@ -22,19 +22,19 @@ Comece pelo [estado atual](estado-atual.md) ao retomar o projeto. Depois escolha
 
 Cada arquivo reúne regras/dados, fluxo/UX e composição visual **somente daquela área**. Consulte as seções relacionadas à mudança, sem abrir as outras áreas.
 
-| Área                                                         | Documento dono                                                        |
-| ------------------------------------------------------------ | --------------------------------------------------------------------- |
-| Entrar, confirmação, convites, senha, usuários e Meus dados  | [Autenticação e usuários](funcionalidades/autenticacao-e-usuarios.md) |
-| Caixas, saldo, olhinho e histórico de caixa                  | [Caixas e saldos](funcionalidades/caixas-e-saldos.md)                 |
-| Doadores, doações e edição/exclusão                          | [Doações](funcionalidades/doacoes.md)                                 |
-| Eventos, produtos, pedidos e pagamentos                      | [Eventos e pedidos](funcionalidades/eventos-e-pedidos.md)             |
-| Produtos recorrentes, categorias, estoque e retiradas        | [Produtos recorrentes](funcionalidades/produtos-recorrentes.md)       |
-| Etapas, transporte, endereço/CEP e filtros de entrega        | [Entregas e endereços](funcionalidades/entregas-e-enderecos.md)       |
-| Compras/doações materiais, anexos e detalhes dos insumos     | [Insumos e comprovantes](funcionalidades/insumos-e-comprovantes.md)   |
-| Entradas/saídas manuais e seus comprovantes                  | [Movimentações](funcionalidades/movimentacoes.md)                     |
-| Resumo financeiro e painéis iniciais                         | [Home](funcionalidades/home.md)                                       |
-| Retirada, acesso temporário, gerenciamento e API de consulta | [Cantina e comandas](funcionalidades/cantina-e-comandas.md)           |
-| Socket, sincronização, hibernação e publicação durável       | [Transporte da Cantina](funcionalidades/cantina-websocket.md)         |
+| Área                                                           | Documento dono                                                        |
+| -------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Entrar, confirmação, convites, senha, usuários e Meus dados    | [Autenticação e usuários](funcionalidades/autenticacao-e-usuarios.md) |
+| Caixas, saldo, olhinho e histórico de caixa                    | [Caixas e saldos](funcionalidades/caixas-e-saldos.md)                 |
+| Doadores, doações e edição/exclusão                            | [Doações](funcionalidades/doacoes.md)                                 |
+| Eventos, produtos, pedidos e pagamentos                        | [Eventos e pedidos](funcionalidades/eventos-e-pedidos.md)             |
+| Produtos recorrentes, categorias, estoque e retiradas          | [Produtos recorrentes](funcionalidades/produtos-recorrentes.md)       |
+| Etapas, endereço/CEP, entregadores, rotas e acesso às entregas | [Entregas e endereços](funcionalidades/entregas-e-enderecos.md)       |
+| Compras/doações materiais, anexos e detalhes dos insumos       | [Insumos e comprovantes](funcionalidades/insumos-e-comprovantes.md)   |
+| Entradas/saídas manuais e seus comprovantes                    | [Movimentações](funcionalidades/movimentacoes.md)                     |
+| Resumo financeiro e painéis iniciais                           | [Home](funcionalidades/home.md)                                       |
+| Retirada, acesso temporário, gerenciamento e API de consulta   | [Cantina e comandas](funcionalidades/cantina-e-comandas.md)           |
+| Socket, sincronização, hibernação e publicação durável         | [Transporte da Cantina](funcionalidades/cantina-websocket.md)         |
 
 ## Exemplos de pedidos
 

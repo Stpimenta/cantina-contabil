@@ -2,6 +2,19 @@ import styles from "./icon.module.css";
 import type { SVGProps } from "react";
 
 const paths = {
+  stockLink: (
+    <>
+      <path d="M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l2-2" />
+    </>
+  ),
+  share: (
+    <>
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4" />
+    </>
+  ),
   alert: (
     <>
       <circle cx="12" cy="12" r="9" />

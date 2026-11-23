@@ -1,6 +1,10 @@
 import type { ErrorCategory } from "./application-error";
 
 export type BusinessCode =
+  | "STOCK_IMPORT_DUPLICATE"
+  | "INVALID_DELIVERY_INPUT"
+  | "DELIVERY_CHANGED"
+  | "DELIVERY_ORDER_ASSIGNED"
   | "WITHDRAWAL_ABOVE_ORDERED"
   | "STOCK_INSUFFICIENT"
   | "STOCK_ENTRY_REDUCTION_BLOCKED"
@@ -64,6 +68,9 @@ export type BusinessCode =
   | "ACCESS_DENIED";
 
 export type ValidationIssue =
+  | "INVALID_STOCK_IMPORT"
+  | "INVALID_DELIVERY_DRIVERS"
+  | "INVALID_DELIVERY_ORDERS"
   | "INVALID_ACCOUNT_NAME"
   | "PASSWORD_MISMATCH"
   | "INVALID_ACCOUNT_ACCESS"

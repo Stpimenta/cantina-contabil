@@ -1,3 +1,6 @@
+import { changedStockProducts } from "@/server/products/models/shared-stock.model";
+import type { SharedStockRepository } from "@/server/products/repositories/shared-stock.repository";
+import { sharedStockAccess } from "@/server/products/use-cases/shared-stock-access";
 import { receiptMetadata } from "@/shared/receipts/receipt-input";
 import type { ReceiptRepository } from "../repositories/receipt.repository";
 import {
@@ -28,6 +31,7 @@ export class UpdateOrderStatusUseCase {
   constructor(
     private readonly events: EventRepository,
     private readonly receipts?: ReceiptRepository,
+    private readonly shared?: SharedStockRepository,
   ) {}
   async execute(
     session: Session | null,
@@ -90,8 +94,9 @@ export class UpdateOrderStatusUseCase {
         : data.payment.method === "mixed"
           ? data.payment.cash
           : 0;
-    const order = {
+    const order: typeof current = {
       ...current,
+      stockContext: null,
       ...(current.updatedActor
         ? {
             updatedActor: {
@@ -130,6 +135,22 @@ export class UpdateOrderStatusUseCase {
       lastOperation: data.requestId,
       fingerprint,
     };
+    if (event.kind === "product_category") {
+      const changed = changedStockProducts(
+        order.withdrawals ?? [],
+        current.withdrawals ?? [],
+      );
+      if (changed.length) {
+        const access = await sharedStockAccess(
+          session,
+          this.shared,
+          event.id,
+          changed,
+          true,
+        );
+        order.stockContext = access.context ?? null;
+      }
+    }
     const additions: (StockEntry & { expectedAvailable: number })[] = [];
     if (data.stockConfirmation) {
       if (event.kind !== "product_category" || !usesWithdrawals)
@@ -163,6 +184,7 @@ export class UpdateOrderStatusUseCase {
         throwBusinessError({ code: "STOCK_CHANGED", category: "conflict" });
       for (const item of shortages) {
         additions.push({
+          stockContext: order.stockContext,
           id: crypto.randomUUID(),
           eventId,
           productId: item.productId,

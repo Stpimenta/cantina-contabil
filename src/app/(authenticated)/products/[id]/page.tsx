@@ -85,6 +85,9 @@ export default async function ProductCategoryPage({
             actions={
               <EventActions
                 recurring
+                sharedProductIds={result.value.balances
+                  .filter((balance) => balance.shared)
+                  .map((balance) => balance.productId)}
                 event={result.value.category}
                 cashBoxes={result.value.cashBoxes}
                 today={currentDateInSaoPaulo()}

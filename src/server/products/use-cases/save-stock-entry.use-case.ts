@@ -1,3 +1,5 @@
+import type { SharedStockRepository } from "../repositories/shared-stock.repository";
+import { sharedStockAccess } from "./shared-stock-access";
 import { checkAccess } from "@/shared/auth/check-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
@@ -12,6 +14,7 @@ export class SaveStockEntryUseCase {
   constructor(
     private readonly events: EventRepository,
     private readonly stock: ProductStockRepository,
+    private readonly shared?: SharedStockRepository,
   ) {}
   async execute(session: Session | null, input: unknown) {
     checkAccess(session);
@@ -20,6 +23,13 @@ export class SaveStockEntryUseCase {
     if (!category || !category.products.some((p) => p.id === data.productId))
       return eventMissing();
     const actor = checkEventAccessWrite(session, category).user;
+    const stockAccess = await sharedStockAccess(
+      session,
+      this.shared,
+      category.id,
+      [data.productId],
+      true,
+    );
     if (data.orderId) {
       const order = await this.events.findOrder(data.orderId);
       if (
@@ -34,7 +44,14 @@ export class SaveStockEntryUseCase {
     const fingerprint = JSON.stringify(data);
     if (
       current &&
-      (current.eventId !== category.id || current.productId !== data.productId)
+      !(
+        (current.eventId === category.id &&
+          current.productId === data.productId) ||
+        stockAccess.members.some(
+          (m) =>
+            m.eventId === current.eventId && m.productId === current.productId,
+        )
+      )
     )
       return eventMissing();
     if (checkRepeat(current, data.requestId, fingerprint, actor.id))
@@ -59,12 +76,13 @@ export class SaveStockEntryUseCase {
       throwBusinessError({ code: "STOCK_LIMIT", category: "conflict" });
     const now = new Date().toISOString();
     const entry: StockEntry = {
+      stockContext: stockAccess.context ?? null,
       deletedAt: null,
       deletedBy: null,
       deletedByName: null,
       id: data.entryId,
-      eventId: category.id,
-      productId: data.productId,
+      eventId: current?.eventId ?? category.id,
+      productId: current?.productId ?? data.productId,
       quantity: data.quantity,
       version: data.expectedVersion + 1,
       createdAt: current?.createdAt ?? now,

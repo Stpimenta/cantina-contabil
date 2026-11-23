@@ -1,3 +1,5 @@
+import type { SharedStockRepository } from "../repositories/shared-stock.repository";
+import { sharedStockAccess } from "./shared-stock-access";
 import { checkAccess } from "@/shared/auth/check-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkEventRead } from "@/shared/auth/check-cash-box-access";
@@ -14,6 +16,7 @@ export class ListStockEntriesUseCase {
   constructor(
     private readonly events: EventRepository,
     private readonly stock: ProductStockRepository,
+    private readonly shared?: SharedStockRepository,
   ) {}
   async execute(
     session: Session | null,
@@ -29,6 +32,7 @@ export class ListStockEntriesUseCase {
     if (!category || !category.products.some((p) => p.id === productId))
       return eventMissing();
     checkEventRead(session, category);
+    await sharedStockAccess(session, this.shared, id, [productId], false);
     return this.stock.entries(id, productId, data.page, DEFAULT_PAGE_SIZE);
   }
 }

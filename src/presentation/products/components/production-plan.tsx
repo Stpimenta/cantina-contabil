@@ -85,23 +85,7 @@ export function ProductionPlan({ eventId }: { eventId: string }) {
             ) : (
               <ul className="record-list">
                 {items.map((item) => (
-                  <li key={item.productId} className={styles.product}>
-                    <h3 className={styles.name}>{item.name}</h3>
-                    <dl className={styles.quantities}>
-                      <div>
-                        <dt>A entregar/retirar</dt>
-                        <dd>{item.pending.toLocaleString("pt-BR")} un.</dd>
-                      </div>
-                      <div>
-                        <dt>Estoque físico</dt>
-                        <dd>{item.physical.toLocaleString("pt-BR")} un.</dd>
-                      </div>
-                      <div className={styles.required}>
-                        <dt>Falta produzir</dt>
-                        <dd>{item.toProduce.toLocaleString("pt-BR")} un.</dd>
-                      </div>
-                    </dl>
-                  </li>
+                  <ProductionPlanRow key={item.productId} item={item} />
                 ))}
               </ul>
             )}
@@ -113,5 +97,41 @@ export function ProductionPlan({ eventId }: { eventId: string }) {
       )}
       <ErrorModal error={load.error} onClose={load.closeError} />
     </>
+  );
+}
+
+function ProductionPlanRow({ item }: { item: ProductionPlanItem }) {
+  const id = useId();
+  const [scenario, setScenario] = useState("all");
+  const value = item.scenarios?.find((s) => s.value === scenario) ?? item;
+  return (
+    <li className={styles.product}>
+      <h3 className={styles.name}>{item.name}</h3>
+      {item.scenarios && (
+        <SelectField
+          id={`${id}-scenario`}
+          label="Cenário do estoque"
+          value={
+            item.scenarios.some((s) => s.value === scenario) ? scenario : "all"
+          }
+          options={item.scenarios}
+          onValueChange={setScenario}
+        />
+      )}
+      <dl className={styles.quantities}>
+        <div>
+          <dt>A entregar/retirar</dt>
+          <dd>{value.pending.toLocaleString("pt-BR")} un.</dd>
+        </div>
+        <div>
+          <dt>Estoque físico{item.scenarios ? " compartilhado" : ""}</dt>
+          <dd>{value.physical.toLocaleString("pt-BR")} un.</dd>
+        </div>
+        <div className={styles.required}>
+          <dt>Falta produzir</dt>
+          <dd>{value.toProduce.toLocaleString("pt-BR")} un.</dd>
+        </div>
+      </dl>
+    </li>
   );
 }

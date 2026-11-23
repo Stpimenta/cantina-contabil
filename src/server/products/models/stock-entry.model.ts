@@ -1,4 +1,7 @@
 export interface StockEntry {
+  stockContext?: string | null;
+  productName?: string;
+  categoryName?: string;
   deletedAt: string | null;
   deletedBy: number | null;
   deletedByName: string | null;

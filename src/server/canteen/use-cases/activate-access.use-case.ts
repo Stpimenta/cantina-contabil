@@ -6,7 +6,10 @@ import type {
 import { credentialSchema } from "../inputs/command.input";
 export class ActivateAccessUseCase {
   constructor(
-    private readonly repo: CanteenRepository,
+    private readonly repo: Pick<
+      CanteenRepository,
+      "accessByLink" | "accessByCredential" | "activate"
+    >,
     private readonly codec: CredentialCodec,
   ) {}
   async execute(secret: unknown, currentCredential?: string) {

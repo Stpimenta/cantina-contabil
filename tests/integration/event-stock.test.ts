@@ -260,21 +260,65 @@ it("preserva pedidos legados na migração com zero livre e cobra apenas aumento
   await h.close();
   h = await harness(false, "0035_account_soft_delete.sql");
   const { event, productId } = await setup(0);
-  const order = await new CreateOrderUseCase(h.events).execute(
-    h.actor,
-    event.id,
-    input(productId, 7),
-  );
-  const before = await h.events.findOrder(order.id);
+  // This fixture runs against the historical schema, before stock_context existed.
+  const order = { id: uuid() },
+    now = new Date().toISOString();
+  const payload = JSON.stringify({
+    customerName: "Pessoa sintética",
+    note: "",
+    totalCents: 1000,
+    paid: false,
+    cashCents: 0,
+    pixCents: 0,
+    fulfilled: false,
+    fulfillmentMode: null,
+    address: null,
+    contactPhone: "",
+    items: [{ ...event.products[0], quantity: 7 }],
+    withdrawals: [],
+  });
+  await h.d1
+    .prepare(
+      `INSERT INTO event_orders(id,event_id,customer_name,note,total_cents,paid,catalog_version,version,created_at,created_by,created_by_name,updated_at,updated_by,updated_by_name,last_operation,fingerprint,payload_json)
+    VALUES(?,?,'Pessoa sintética','',1000,0,1,1,?,?,?,?,?,?,?,'legacy-fixture',?)`,
+    )
+    .bind(
+      order.id,
+      event.id,
+      now,
+      h.actor.user.id,
+      h.actor.user.name,
+      now,
+      h.actor.user.id,
+      h.actor.user.name,
+      order.id,
+      payload,
+    )
+    .run();
+  const before = await h.d1
+    .prepare("SELECT payload_json FROM event_orders WHERE id=?")
+    .bind(order.id)
+    .first<{ payload_json: string }>();
   const history = await h.events.history(event.id, 1, 15);
-  const migration = await readFile("migrations/0036_event_stock.sql", "utf8");
-  await h.d1.batch(
-    unstable_splitSqlQuery(migration).map((statement) =>
-      h.d1.prepare(statement),
-    ),
-  );
+  for (const name of [
+    "0036_event_stock.sql",
+    "0037_delivery_routes.sql",
+    "0038_shared_product_stock.sql",
+  ]) {
+    const migration = await readFile(`migrations/${name}`, "utf8");
+    await h.d1.batch(
+      unstable_splitSqlQuery(migration).map((statement) =>
+        h.d1.prepare(statement),
+      ),
+    );
+  }
   const stock = new D1ProductStockRepository(h.db);
-  expect(await h.events.findOrder(order.id)).toEqual(before);
+  expect(
+    await h.d1
+      .prepare("SELECT payload_json FROM event_orders WHERE id=?")
+      .bind(order.id)
+      .first(),
+  ).toEqual(before);
   expect(await h.events.history(event.id, 1, 15)).toEqual(history);
   expect(await stock.balances(event.id)).toContainEqual({
     productId,

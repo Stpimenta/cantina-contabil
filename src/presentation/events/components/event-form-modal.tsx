@@ -1,4 +1,8 @@
 "use client";
+import { ExistingProductsPicker } from "@/presentation/products/components/existing-products-picker";
+import type { StockImportOption } from "@/server/products/models/stock-import-option.model";
+import { loadStockImportOptionsAction } from "@/server/products/actions/shared-stock.action";
+import { SharedStockIndicator } from "@/presentation/products/components/shared-stock-indicator";
 import { checkProductRemovalAction } from "@/server/products/actions/check-product-removal.action";
 import { createRequestId } from "@/shared/identifiers/request-id";
 import styles from "./event-form-modal.module.css";
@@ -28,6 +32,7 @@ import { Icon } from "@/components/ui/icon";
 import { productIconLabel } from "@/shared/products/product-icons";
 export function EventFormModal({
   event,
+  sharedProductIds = [],
   recurring = event?.kind === "product_category",
   cashBoxes,
   today,
@@ -35,6 +40,7 @@ export function EventFormModal({
   onSaved,
 }: {
   event?: CantinaEvent;
+  sharedProductIds?: string[];
   recurring?: boolean;
   cashBoxes: { id: string; name: string }[];
   today: string;
@@ -44,6 +50,7 @@ export function EventFormModal({
   const id = useId();
   const [requestId] = useState(() => createRequestId());
   const initial: Omit<SaveEventInput, "requestId"> = {
+    stockImports: [],
     kind: recurring ? "product_category" : "event",
     cashBoxId: event?.cashBoxId ?? "",
     name: event?.name ?? "",
@@ -61,6 +68,10 @@ export function EventFormModal({
   };
   const [input, setInput] = useState(initial);
   const [baseline] = useState(() => JSON.stringify(initial));
+  const [importOptions, setImportOptions] = useState<
+    StockImportOption[] | null
+  >(null);
+  const [importLabels, setImportLabels] = useState<Record<string, string>>({});
   const [discard, setDiscard] = useState(false);
   const [iconIndex, setIconIndex] = useState<number | null>(null);
   const fieldIds: Record<string, string> = {
@@ -77,6 +88,7 @@ export function EventFormModal({
   fieldIds.products = input.products.length
     ? `${id}-product-0-name`
     : `${id}-products-add`;
+  fieldIds.stockImports = `${id}-products-import`;
   const {
     execute,
     pending: saving,
@@ -97,9 +109,13 @@ export function EventFormModal({
   const removal = useServerAction({
     connectionMessage: "Não foi possível verificar o produto. Tente novamente.",
   });
-  const pending = saving || removal.pending;
+  const sources = useServerAction({
+    connectionMessage:
+      "Não foi possível consultar os produtos existentes. Tente novamente.",
+  });
+  const pending = saving || removal.pending || sources.pending;
   function isPending() {
-    return isSaving() || removal.isPending();
+    return isSaving() || removal.isPending() || sources.isPending();
   }
   const groupError = Object.keys(fields ?? {}).some((key) =>
     key.startsWith("products."),
@@ -134,13 +150,60 @@ export function EventFormModal({
   }
   function removeProductRow(index: number) {
     const products = input.products.filter((_, i) => i !== index);
-    change("products", products);
+    setInput((current) => ({
+      ...current,
+      products,
+      stockImports: current.stockImports?.filter(
+        (ref) => ref.productId !== input.products[index].id,
+      ),
+    }));
     requestAnimationFrame(() => {
       const next = products.length
         ? `${id}-product-${Math.min(index, products.length - 1)}-name`
         : `${id}-products-add`;
       document.getElementById(next)?.focus();
     });
+  }
+  function bringProducts(products: StockImportOption[]) {
+    const next = products.map((option) => ({
+      option,
+      id: createRequestId(),
+      operationId: createRequestId(),
+    }));
+    setInput((current) => ({
+      ...current,
+      products: [
+        ...current.products,
+        ...next.map(({ option, id }) => ({
+          name: option.product.name,
+          icon: option.product.icon,
+          id,
+          price: moneyInputValue(option.product.priceCents),
+        })),
+      ],
+      stockImports: [
+        ...(current.stockImports ?? []),
+        ...next.map(({ option, id, operationId }) => ({
+          productId: id,
+          operationId,
+          sourceCategoryId: option.sourceCategoryId,
+          sourceProductId: option.sourceProductId,
+          sourceStockId: option.sourceStockId,
+          context: option.context,
+          expectedQuantity: option.quantity,
+        })),
+      ],
+    }));
+    setImportLabels((current) => ({
+      ...current,
+      ...Object.fromEntries(
+        next.map(({ id, option }) => [
+          id,
+          `${option.product.name} — ${option.categoryName}`,
+        ]),
+      ),
+    }));
+    setImportOptions(null);
   }
   function close() {
     if (isPending()) return;
@@ -181,160 +244,227 @@ export function EventFormModal({
             <Button
               type="submit"
               form={id}
-              busy={pending}
-              disabled={!cashBoxes.length}
+              busy={saving}
+              disabled={pending || !cashBoxes.length}
             >
               {recurring ? "Salvar grupo" : "Salvar evento"}
             </Button>
           </>
         }
       >
-        <form id={id} className="stack" noValidate onSubmit={submit}>
+        <form
+          id={id}
+          className={recurring ? styles.groupForm : "stack"}
+          noValidate
+          onSubmit={submit}
+        >
           {!cashBoxes.length && <p>Cadastre um caixa antes de continuar.</p>}
-          <div className="form-grid">
-            <div className="form-full">
-              <Field
-                id={`${id}-name`}
-                label={recurring ? "Nome do grupo" : "Nome do evento"}
-                value={input.name}
-                onChange={(e) => change("name", e.target.value)}
-                maxLength={100}
-                required
-                disabled={pending}
-                error={fields?.name}
-              />
-            </div>
-            <div className="form-full">
-              <SelectField
-                id={`${id}-box`}
-                label="Caixa"
-                value={input.cashBoxId}
-                onValueChange={(v) => change("cashBoxId", v)}
-                options={[
-                  { value: "", label: "Selecione um caixa" },
-                  ...cashBoxes.map((b) => ({ value: b.id, label: b.name })),
-                ]}
-                required
-                disabled={pending || !!event}
-                error={fields?.cashBoxId}
-              />
-            </div>
-            {!recurring && (
-              <>
-                <DateField
-                  id={`${id}-date`}
-                  name="occursOn"
-                  label="Data do evento"
-                  value={input.occursOn}
-                  onValueChange={(v) => change("occursOn", v)}
+          <section
+            className={recurring ? styles.groupSection : undefined}
+            aria-labelledby={recurring ? `${id}-group-details` : undefined}
+          >
+            {recurring && <h2 id={`${id}-group-details`}>Dados do grupo</h2>}
+            <div className="form-grid">
+              <div className="form-full">
+                <Field
+                  id={`${id}-name`}
+                  label={recurring ? "Nome do grupo" : "Nome do evento"}
+                  value={input.name}
+                  onChange={(e) => change("name", e.target.value)}
+                  maxLength={100}
                   required
                   disabled={pending}
-                  error={fields?.occursOn}
+                  error={fields?.name}
                 />
+              </div>
+              <div className="form-full">
                 <SelectField
-                  id={`${id}-delivery-enabled`}
-                  label="Modalidade"
-                  value={
-                    input.canteenEnabled
-                      ? "canteen"
-                      : input.deliveryEnabled
-                        ? "yes"
-                        : "no"
-                  }
-                  onValueChange={(v) =>
-                    setInput((current) => ({
-                      ...current,
-                      deliveryEnabled: v === "yes",
-                      canteenEnabled: v === "canteen",
-                    }))
-                  }
-                  disabled={pending}
+                  id={`${id}-box`}
+                  label="Caixa"
+                  value={input.cashBoxId}
+                  onValueChange={(v) => change("cashBoxId", v)}
                   options={[
-                    { value: "no", label: "Padrão" },
-                    { value: "yes", label: "Entregas" },
-                    { value: "canteen", label: "Cantina" },
+                    { value: "", label: "Selecione um caixa" },
+                    ...cashBoxes.map((b) => ({ value: b.id, label: b.name })),
                   ]}
+                  required
+                  disabled={pending || !!event}
+                  error={fields?.cashBoxId}
                 />
-              </>
-            )}
-            <div className="form-full">
-              <TextareaField
-                id={`${id}-description`}
-                label="Descrição (opcional)"
-                value={input.description}
-                onChange={(e) => change("description", e.target.value)}
-                maxLength={500}
-                disabled={pending}
-                error={fields?.description}
-              />
+              </div>
+              {!recurring && (
+                <>
+                  <DateField
+                    id={`${id}-date`}
+                    name="occursOn"
+                    label="Data do evento"
+                    value={input.occursOn}
+                    onValueChange={(v) => change("occursOn", v)}
+                    required
+                    disabled={pending}
+                    error={fields?.occursOn}
+                  />
+                  <SelectField
+                    id={`${id}-delivery-enabled`}
+                    label="Modalidade"
+                    value={
+                      input.canteenEnabled
+                        ? "canteen"
+                        : input.deliveryEnabled
+                          ? "yes"
+                          : "no"
+                    }
+                    onValueChange={(v) =>
+                      setInput((current) => ({
+                        ...current,
+                        deliveryEnabled: v === "yes",
+                        canteenEnabled: v === "canteen",
+                      }))
+                    }
+                    disabled={pending}
+                    options={[
+                      { value: "no", label: "Padrão" },
+                      { value: "yes", label: "Entregas" },
+                      { value: "canteen", label: "Cantina" },
+                    ]}
+                  />
+                </>
+              )}
+              <div className="form-full">
+                <TextareaField
+                  id={`${id}-description`}
+                  label="Descrição (opcional)"
+                  value={input.description}
+                  onChange={(e) => change("description", e.target.value)}
+                  maxLength={500}
+                  disabled={pending}
+                  error={fields?.description}
+                />
+              </div>
             </div>
-          </div>
-          <section className="stack-small" aria-labelledby={`${id}-products`}>
-            <h2 id={`${id}-products`}>Produtos (opcional)</h2>
-            <ul
-              className="record-list"
-              aria-describedby={groupError ? `${id}-products-error` : undefined}
-            >
-              {input.products.map((p, i) => (
-                <li key={p.id} className="record-row">
-                  <div className={styles.product}>
-                    <div className={styles.name}>
-                      <Field
-                        id={`${id}-product-${i}-name`}
-                        label="Nome do produto"
-                        value={p.name}
-                        maxLength={100}
-                        onChange={(e) => product(i, { name: e.target.value })}
-                        required
-                        disabled={pending}
-                        error={fields?.[`products.${i}.name`]}
-                      />
+          </section>
+          <section
+            className={recurring ? styles.groupSection : "stack-small"}
+            aria-labelledby={`${id}-products`}
+          >
+            <div className={recurring ? styles.sectionHeading : undefined}>
+              <h2 id={`${id}-products`}>Produtos (opcional)</h2>
+              {recurring && (
+                <p className="muted record-meta" role="status">
+                  {input.products.length}{" "}
+                  {input.products.length === 1 ? "produto" : "produtos"}
+                </p>
+              )}
+            </div>
+            {(input.products.length > 0 || !recurring) && (
+              <ul
+                className="record-list"
+                aria-describedby={
+                  groupError ? `${id}-products-error` : undefined
+                }
+              >
+                {input.products.map((p, i) => (
+                  <li
+                    key={p.id}
+                    className={recurring ? styles.productRow : "record-row"}
+                  >
+                    <div className={styles.product}>
+                      <div className={styles.name}>
+                        <Field
+                          id={`${id}-product-${i}-name`}
+                          label={
+                            <span className={styles.productLabel}>
+                              Nome do produto
+                              {recurring &&
+                                (sharedProductIds.includes(p.id) ||
+                                  input.stockImports?.some(
+                                    (ref) => ref.productId === p.id,
+                                  )) && (
+                                  <SharedStockIndicator
+                                    pending={
+                                      !!input.stockImports?.some(
+                                        (ref) => ref.productId === p.id,
+                                      )
+                                    }
+                                  />
+                                )}
+                            </span>
+                          }
+                          value={p.name}
+                          maxLength={100}
+                          onChange={(e) => product(i, { name: e.target.value })}
+                          required
+                          disabled={pending}
+                          error={fields?.[`products.${i}.name`]}
+                        />
+                      </div>
+                      <div className={styles.price}>
+                        <MoneyField
+                          id={`${id}-product-${i}-price`}
+                          label="Preço (R$)"
+                          value={p.price}
+                          onValueChange={(price) => product(i, { price })}
+                          required
+                          disabled={pending}
+                          error={fields?.[`products.${i}.price`]}
+                        />
+                      </div>
+                      <div className={styles.icon}>
+                        <span className={styles.label}>Ícone</span>
+                        <Button
+                          id={`${id}-product-${i}-icon`}
+                          type="button"
+                          variant="neutral"
+                          iconOnly
+                          disabled={pending}
+                          aria-haspopup="dialog"
+                          aria-invalid={!!fields?.[`products.${i}.icon`]}
+                          aria-describedby={
+                            fields?.[`products.${i}.icon`]
+                              ? `${id}-product-${i}-icon-error`
+                              : undefined
+                          }
+                          aria-label={`Escolher ícone do produto ${i + 1}. Atual: ${productIconLabel(p.icon)}`}
+                          title={`Ícone atual: ${productIconLabel(p.icon)}`}
+                          onClick={() => setIconIndex(i)}
+                        >
+                          <ProductIcon name={p.icon} />
+                        </Button>
+                      </div>
+                      <div className={styles.remove}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          iconOnly
+                          disabled={pending}
+                          aria-label={`Remover produto ${i + 1}${p.name ? `: ${p.name}` : ""}`}
+                          title="Remover produto"
+                          onClick={() => removeProduct(i)}
+                        >
+                          <Icon name="close" />
+                        </Button>
+                      </div>
+                      {fields?.[`products.${i}.icon`] && (
+                        <div className={styles.productError}>
+                          <FieldError
+                            id={`${id}-product-${i}-icon-error`}
+                            error={fields?.[`products.${i}.icon`]}
+                          />
+                        </div>
+                      )}
                     </div>
-                    <div className={styles.price}>
-                      <MoneyField
-                        id={`${id}-product-${i}-price`}
-                        label="Preço (R$)"
-                        value={p.price}
-                        onValueChange={(price) => product(i, { price })}
-                        required
-                        disabled={pending}
-                        error={fields?.[`products.${i}.price`]}
-                      />
-                    </div>
-                    <div className={styles.icon}>
-                      <span className={styles.label}>Ícone</span>
-                      <Button
-                        id={`${id}-product-${i}-icon`}
-                        type="button"
-                        variant="neutral"
-                        iconOnly
-                        disabled={pending}
-                        aria-haspopup="dialog"
-                        aria-label={`Escolher ícone do produto ${i + 1}. Atual: ${productIconLabel(p.icon)}`}
-                        title={`Ícone atual: ${productIconLabel(p.icon)}`}
-                        onClick={() => setIconIndex(i)}
-                      >
-                        <ProductIcon name={p.icon} />
-                      </Button>
-                    </div>
-                    <div className={styles.remove}>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        iconOnly
-                        disabled={pending}
-                        aria-label={`Remover produto ${i + 1}${p.name ? `: ${p.name}` : ""}`}
-                        title="Remover produto"
-                        onClick={() => removeProduct(i)}
-                      >
-                        <Icon name="close" />
-                      </Button>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <div className="inline">
+                    {importLabels[p.id] && (
+                      <p className={styles.origin}>
+                        Vínculo ao salvar: {importLabels[p.id]}.
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <FieldError id={`${id}-products-error`} error={groupError} />
+
+            <div className={styles.productActions}>
               <Button
                 aria-describedby={
                   groupError ? `${id}-products-error` : undefined
@@ -358,19 +488,64 @@ export function EventFormModal({
                 <Icon name="plus" />
                 Adicionar produto
               </Button>
+              {recurring && (
+                <Button
+                  type="button"
+                  variant="neutral"
+                  id={`${id}-products-import`}
+                  aria-haspopup="dialog"
+                  aria-describedby={
+                    fields?.stockImports ? `${id}-imports-error` : undefined
+                  }
+                  busy={sources.pending}
+                  disabled={pending || input.products.length >= 100}
+                  onClick={() => {
+                    if (isPending()) return;
+                    sources.execute(
+                      () => loadStockImportOptionsAction(event?.id),
+                      (options) =>
+                        setImportOptions(
+                          options.filter(
+                            (option) =>
+                              !input.stockImports?.some(
+                                (ref) =>
+                                  ref.sourceStockId === option.sourceStockId,
+                              ),
+                          ),
+                        ),
+                    );
+                  }}
+                >
+                  Vincular produtos existentes
+                </Button>
+              )}
             </div>
-            <FieldError id={`${id}-products-error`} error={groupError} />
+            {recurring && (
+              <FieldError
+                id={`${id}-imports-error`}
+                error={fields?.stockImports}
+              />
+            )}
           </section>
           <span className="sr-only" role="status">
-            {pending ? "Salvando evento" : ""}
+            {saving
+              ? recurring
+                ? "Salvando grupo"
+                : "Salvando evento"
+              : sources.pending
+                ? "Consultando produtos existentes"
+                : removal.pending
+                  ? "Verificando produto"
+                  : ""}
           </span>
         </form>
       </Modal>
       <ErrorModal
-        error={error ?? removal.error}
+        error={error ?? removal.error ?? sources.error}
         onClose={() => {
           closeError();
           removal.closeError();
+          sources.closeError();
         }}
       />
       {discard && (
@@ -380,6 +555,14 @@ export function EventFormModal({
           confirmLabel="Descartar"
           onConfirm={onClose}
           onCancel={() => setDiscard(false)}
+        />
+      )}
+      {importOptions && (
+        <ExistingProductsPicker
+          options={importOptions}
+          limit={100 - input.products.length}
+          onChoose={bringProducts}
+          onClose={() => setImportOptions(null)}
         />
       )}
       {iconIndex !== null && input.products[iconIndex] && (

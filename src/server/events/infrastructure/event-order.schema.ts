@@ -1,6 +1,7 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { events } from "./event.schema";
 export const eventOrders = sqliteTable("event_orders", {
+  stockContext: text("stock_context"),
   deletedAt: text("deleted_at"),
   deletedBy: integer("deleted_by"),
   deletedByName: text("deleted_by_name"),

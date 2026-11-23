@@ -7,6 +7,7 @@ import { ProductIcon } from "@/components/ui/product-icon";
 import { SectionFeedback } from "@/components/ui/section-feedback";
 import { useCashBoxAccess } from "@/components/ui/cash-box-access";
 import { formatCurrency } from "@/shared/formatting/currency";
+import { SharedStockIndicator } from "./shared-stock-indicator";
 import { ProductionPlan } from "./production-plan";
 import { StockManagerModal } from "./stock-manager-modal";
 import type { EventPage } from "@/server/events/repositories/event.repository";
@@ -21,7 +22,14 @@ export function ProductStockList({
   category: Event;
   stockProductId?: string;
   stockEntries: EventPage<StockEntry> | null;
-  balances: { productId: string; quantity: number }[];
+  balances: {
+    productId: string;
+    quantity: number;
+    availableQuantity?: number;
+    shared?: boolean;
+    writable?: boolean;
+    readable?: boolean;
+  }[];
 }) {
   const product = category.products.find((p) => p.id === stockProductId);
   const { canWriteEvent } = useCashBoxAccess();
@@ -64,20 +72,36 @@ export function ProductStockList({
                 <ProductIcon name={p.icon} />
                 <span>{p.name}</span>
               </p>
-              <p className="record-meta">{formatCurrency(p.priceCents)}</p>
+              <div className={`record-meta ${styles.priceLine}`}>
+                <span>{formatCurrency(p.priceCents)}</span>
+                {balances.find((b) => b.productId === p.id)?.shared && (
+                  <SharedStockIndicator />
+                )}
+              </div>
             </div>
             <div className={styles.actions}>
               <div className={styles.stock}>
                 <strong className={styles.stockValue}>
                   {(
-                    balances.find((b) => b.productId === p.id)?.quantity ?? 0
+                    balances.find((b) => b.productId === p.id)
+                      ?.availableQuantity ??
+                    balances.find((b) => b.productId === p.id)?.quantity ??
+                    0
                   ).toLocaleString("pt-BR")}
                 </strong>
                 <span className="muted record-meta">disponíveis</span>
               </div>
               <Button
                 variant="neutral"
-                disabled={navigating}
+                disabled={
+                  navigating ||
+                  balances.find((b) => b.productId === p.id)?.readable === false
+                }
+                title={
+                  balances.find((b) => b.productId === p.id)?.readable === false
+                    ? "É necessário acesso a todos os grupos vinculados."
+                    : undefined
+                }
                 aria-label={`Controlar estoque de ${p.name}`}
                 onClick={() => navigate(p.id)}
               >
@@ -89,6 +113,7 @@ export function ProductStockList({
       </ul>
       {!dismissed && product && stockEntries && (
         <StockManagerModal
+          shared={balances.find((b) => b.productId === product.id)?.shared}
           key={product.id}
           categoryId={category.id}
           productId={product.id}
@@ -97,7 +122,10 @@ export function ProductStockList({
             balances.find((b) => b.productId === product.id)?.quantity ?? 0
           }
           entries={stockEntries}
-          writable={canWriteEvent(category)}
+          writable={
+            canWriteEvent(category) &&
+            balances.find((b) => b.productId === product.id)?.writable !== false
+          }
           onClose={() => navigate()}
         />
       )}

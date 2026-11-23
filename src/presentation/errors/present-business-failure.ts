@@ -6,6 +6,13 @@ import type {
 } from "@/shared/errors/business-failure";
 
 const messages: Record<BusinessCode, string> = {
+  STOCK_IMPORT_DUPLICATE:
+    "Este produto já está neste grupo ou já foi selecionado para ele.",
+  INVALID_DELIVERY_INPUT: "Confira os dados da rota e dos entregadores.",
+  DELIVERY_CHANGED:
+    "As rotas ou pedidos foram alterados. Atualize a página e confira os dados antes de repetir.",
+  DELIVERY_ORDER_ASSIGNED:
+    "Este pedido está em uma rota. Remova-o da rota antes de excluir ou mudar para retirada. Para outra rota, use Mover.",
   WITHDRAWAL_ABOVE_ORDERED:
     "A quantidade retirada não pode ultrapassar a quantidade pedida de cada produto.",
   STOCK_INSUFFICIENT:
@@ -18,7 +25,7 @@ const messages: Record<BusinessCode, string> = {
   STOCK_CHANGED:
     "Este registro foi alterado. Atualize a página antes de tentar novamente.",
   STOCK_PRODUCT_IN_USE:
-    "Este produto possui entradas de estoque ou pedidos ativos e não pode ser removido do catálogo.",
+    "Este produto possui estoque, vínculo de estoque ou pedidos ativos. Desfaça o vínculo e resolva as pendências antes de removê-lo.",
   STOCK_HAS_ENTRIES:
     "Há entradas de estoque ativas. Exclua essas entradas antes de excluir o evento ou grupo.",
   ORDER_HAS_WITHDRAWALS:
@@ -102,6 +109,9 @@ const messages: Record<BusinessCode, string> = {
   ACCESS_DENIED: "Seu perfil não tem permissão para esta operação.",
 };
 const issueMessages: Record<ValidationIssue, string> = {
+  INVALID_DELIVERY_DRIVERS:
+    "Selecione os entregadores participantes do evento.",
+  INVALID_DELIVERY_ORDERS: "Selecione ao menos um pedido, sem repetir pedidos.",
   INVALID_ACCOUNT_NAME: "Informe seu nome completo, com até 200 caracteres.",
   INVALID_ACCOUNT_ACCESS: "Confira o perfil e os acessos selecionados.",
   PASSWORD_MISMATCH: "As senhas precisam ser iguais.",
@@ -109,6 +119,8 @@ const issueMessages: Record<ValidationIssue, string> = {
   INVALID_ACCESS_EXPIRY: "Informe data e horário futuros para o vencimento.",
   INVALID_ORDER_STATUS: "Escolha uma alteração para salvar.",
   INVALID_POSTAL_CODE: "Informe um CEP com oito dígitos.",
+  INVALID_STOCK_IMPORT:
+    "Remova e selecione novamente os produtos que deseja vincular.",
   INVALID_PRODUCT_NAME: "Informe o nome do produto.",
   INVALID_PRODUCT_PRICE: "Informe um preço válido.",
   INVALID_PRODUCT_ICON: "Escolha um ícone.",

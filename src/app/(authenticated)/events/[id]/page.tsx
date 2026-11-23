@@ -112,6 +112,17 @@ export default async function EventPage({
             }
             actions={
               <div className={styles.headerActions}>
+                {result.value.event.deliveryEnabled && (
+                  <Link
+                    href={`/events/${id}/deliveries`}
+                    className={buttonClassName({
+                      variant: "neutral",
+                      className: styles.commandsAction,
+                    })}
+                  >
+                    Rotas de entrega
+                  </Link>
+                )}
                 {result.value.event.canteenEnabled && (
                   <Link
                     href={`/events/${id}/commands`}

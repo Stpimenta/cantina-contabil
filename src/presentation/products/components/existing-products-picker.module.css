@@ -1,0 +1,62 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+.selected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--font-lg);
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  min-height: var(--control-height);
+  cursor: pointer;
+  border-bottom: var(--border-width) solid var(--color-border);
+  min-width: 0;
+}
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.name {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+  font-weight: var(--weight-semibold);
+}
+.name span {
+  min-width: 0;
+}
+.price {
+  font-variant-numeric: tabular-nums;
+  max-width: 100%;
+}
+
+.checkbox {
+  width: var(--font-lg);
+  height: var(--font-lg);
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+.row:has(.checkbox:disabled) {
+  opacity: var(--opacity-disabled);
+  cursor: default;
+}

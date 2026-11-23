@@ -1,3 +1,4 @@
+import type { PrepareStockImportsUseCase } from "@/server/products/use-cases/prepare-stock-imports.use-case";
 import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { checkAccess } from "@/shared/auth/check-access";
@@ -22,6 +23,7 @@ export class UpdateEventUseCase {
   constructor(
     private readonly events: EventRepository,
     private readonly boxes: CashBoxRepository,
+    private readonly stockImports?: PrepareStockImportsUseCase,
   ) {}
   async execute(
     session: Session | null,
@@ -87,7 +89,20 @@ export class UpdateEventUseCase {
       soldUnits: current.soldUnits,
       supplyCostCents: current.supplyCostCents,
     };
-    const outcome = await this.events.update(event, expected);
+    if (data.stockImports.length && !this.stockImports)
+      throwBusinessError({
+        code: "INVALID_EVENT_INPUT",
+        category: "validation",
+      });
+    const stockLinks = this.stockImports
+      ? await this.stockImports.execute(
+          session,
+          event,
+          data.stockImports,
+          current,
+        )
+      : [];
+    const outcome = await this.events.update(event, expected, stockLinks);
     if (outcome === "stale") {
       const saved = await this.events.find(id);
       if (checkRepeat(saved, data.requestId, fingerprint, access.user.id))

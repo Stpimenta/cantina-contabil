@@ -1,3 +1,4 @@
+import type { StockLinkOperation } from "@/server/products/models/shared-stock.model";
 import type { StockEntry } from "@/server/products/models/stock-entry.model";
 import type {
   OrderStatus,
@@ -48,8 +49,15 @@ export interface EventRepository {
   find(id: string): Promise<Event | null>;
   hasDeliveryOrders(eventId: string): Promise<boolean>;
   hasOrders(eventId: string): Promise<boolean>;
-  create(event: Event): Promise<EventWriteOutcome>;
-  update(event: Event, expectedVersion: number): Promise<EventWriteOutcome>;
+  create(
+    event: Event,
+    stockLinks?: StockLinkOperation[],
+  ): Promise<EventWriteOutcome>;
+  update(
+    event: Event,
+    expectedVersion: number,
+    stockLinks?: StockLinkOperation[],
+  ): Promise<EventWriteOutcome>;
   listOrders(
     eventId: string,
     query: string,
@@ -66,7 +74,7 @@ export interface EventRepository {
   ): Promise<EventWriteOutcome>;
   orderStockBalances(
     eventId: string,
-  ): Promise<{ productId: string; quantity: number }[]>;
+  ): Promise<{ productId: string; quantity: number; stockId?: string }[]>;
   updateOrder(
     order: EventOrder,
     expectedVersion: number,
