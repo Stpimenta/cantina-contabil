@@ -4,23 +4,23 @@ Retomada curta. Use o [mapa de leitura](README.md) e os contratos das áreas. Re
 
 ## Entrega local
 
-- Branch `feat/shared-product-stock`, sem commit/envio. A árvore já carregava as rotas não commitadas de `feat/delivery-routes`; as duas funcionalidades permanecem juntas, preservadas.
+- Branch `feat/shared-product-stock`: entrega principal e rotas preservadas no commit `2a1f198`, enviado pelo responsável. Ajustes posteriores do filtro de Produtos e estoque permanecem locais, sem novo commit; publicação não confirmada.
 - Estoque compartilhado entre produtos recorrentes, preservando preços, pedidos e respectivos caixas. Criação/edição permite selecionar produtos existentes para grupos novos/vazios; novos itens e vínculos são salvos no mesmo batch. Não duplica estoque físico. Desvincular exige escolher o saldo que acompanha o produto. Eventos não participam.
 - Pedidos recorrentes já reduzem o disponível da lista, somando demanda pendente de todos os produtos vinculados, com mínimo zero. Cadastro sem estoque continua permitido e Detalhes mantém Falta produzir; o modal Estoque preserva o saldo físico e a retirada não desconta duas vezes. Alteração local com revisão estática e regressões acrescentadas aos cenários de vínculo/retirada; checagem final isolada de tipos aprovada, sem nova execução de testes/build.
-- Planejamento abre Consolidado, com cenários individuais por produto e períodos filtrando somente demanda. Reposição, correção, exclusão e retirada/desfazer usam o saldo comum, exigindo Alteração em todos os grupos. Histórico preserva origem e redistribuições. Regras em [Produtos recorrentes](funcionalidades/produtos-recorrentes.md#estoque-compartilhado).
+- Planejamento abre Consolidado, com um único filtro de cenário no topo: Consolidado mostra todos, separados em vinculados (com ícone de elo) e sem vínculo; o filtro Produtos tem apenas Consolidado e Exclusivos do grupo (todos os produtos sem vínculo). Nomes não concatenam participantes. Períodos filtram somente demanda. Ajuste posterior ao commit revisado estaticamente, sem nova execução de tipos/testes/build. Reposição, correção, exclusão e retirada/desfazer usam o saldo comum, exigindo Alteração em todos os grupos. Histórico preserva origem e redistribuições. Regras em [Produtos recorrentes](funcionalidades/produtos-recorrentes.md#estoque-compartilhado).
 - Interface simplificada: somente Vincular produtos existentes cria compartilhamento, com filtro por grupo de origem e lista de produtos com checkboxes à direita, centralizados verticalmente em cada linha; permite várias escolhas de uma vez e preserva a seleção entre grupos. Botão Selecionados (quantidade) confirma para o formulário. Produto manual começa com estoque próprio; preços continuam independentes. Ícone discreto de elos apenas informativo, sem abrir modal; na edição, fica junto ao rótulo do nome, sem se afastar em direção ao preço. Removidos Compartilhar estoque e os botões Histórico do estoque/Vínculos do produto do modal Estoque; auditoria e vínculos existentes preservados. Vincular dois produtos já cadastrados está em proposta, sem nova implementação. Revisão estática/formatação, sem novos testes/typecheck/build/navegador para esta alteração; conferência funcional fica com o responsável.
 - Rotas: entregadores reutilizáveis, equipe e saída por evento, montagem manual, várias viagens, transferência atômica, conclusão automática e acesso temporário individual. Ordenação inicial por endereço, sem cálculo geográfico/API paga. Contrato em [Rotas e entregadores](funcionalidades/entregas-e-enderecos.md#rotas-e-entregadores).
 
 ## Preparação para envio
 
-- Versão **0.6.29** preservada e sincronizada no pacote e nas duas entradas do lockfile; dependências inalteradas. `validatePackageVersion` aprovou contra a referência disponível de `origin/main`, **0.6.28**.
+- Versão **0.6.30** preparada para o fix posterior ao envio de 0.6.29, sincronizada no pacote e nas duas entradas do lockfile; dependências inalteradas. `validatePackageVersion` conferida contra 0.6.29 do commit enviado e contra a referência local disponível de `origin/main`, 0.6.28. A main remota atual permanece sem confirmação: fetch bloqueado por `.git` somente leitura. Nenhum novo commit/envio pelo agente.
 - Atualização remota **não confirmada**: `git fetch origin` falhou ao abrir `.git/FETCH_HEAD` por sistema de arquivos somente leitura. A consulta de referências com `git ls-remote origin` também falhou por resolução DNS de `github.com`. Tag `v0.6.29` não existe nas referências locais; estado remoto desconhecido. Conferir main/tag remotas antes de enviar.
 - Identidade Git configurada do responsável conferida; sem conflitos de merge/rebase ou arquivos de credenciais rastreados na revisão. Nenhum commit/push/PR/merge/tag/deploy realizado pelo agente.
 
 ## Correções após a execução do responsável
 
 - O responsável executou a suíte completa: **424 testes passaram e 3 falharam**. Corrigidos localmente: contexto de estoque normalizado como `null` também na primeira resposta; teste de migração compara somente registros de auditoria, sem metadados físicos do D1; exclusão de grupo com entradas ativas preserva `STOCK_HAS_ENTRIES` antes da proteção de vínculo.
-- A correção do guarda usa a nova migração **0039_shared_stock_deletion_guard.sql**, preparada e não aplicada. 0038 foi preservada, pois já está aplicada localmente. Não reescreve dados ou auditoria.
+- A correção do guarda usa **0039_shared_stock_deletion_guard.sql**, aplicada em produção pelo responsável conforme log enviado, junto de 0037/0038. A migração 0038 foi preservada. Este fix do filtro não acrescenta SQL nem altera registros/auditoria.
 - Revisão estática, formatação e diff das correções; sem nova execução da integração, pois a restrição de loopback do agente permanece. Os três cenários precisam ser repetidos no terminal do responsável. O aviso do Wrangler no teste de proxy não foi a causa das falhas; configuração preservada.
 
 ## Verificação final executada pelo agente
@@ -37,12 +37,12 @@ O TS7006 do batch de rotas informado anteriormente pelo responsável foi corrigi
 
 ## Migrações e produção
 
-| Ambiente                 | Estado confirmado                                                                                                                                                      |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Código/SQL               | `0037_delivery_routes.sql`, `0038_shared_product_stock.sql` e nova correção `0039_shared_stock_deletion_guard.sql` presentes; 0038 e migrações anteriores preservadas. |
-| D1 local do aplicativo   | O responsável compartilhou log de 0038 aplicada e execução seguinte sem migrações pendentes. O agente não consultou nem alterou esse banco.                            |
-| D1/R2 e recursos remotos | Nenhuma consulta/migração/alteração nesta revisão. Aplicação remota de 0037/0038/0039 não confirmada; 0039 também não foi aplicada localmente pelo agente.             |
-| Publicação               | Não realizada; versão ativa não confirmada.                                                                                                                            |
+| Ambiente                 | Estado confirmado                                                                                                                                                                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Código/SQL               | `0037_delivery_routes.sql`, `0038_shared_product_stock.sql` e nova correção `0039_shared_stock_deletion_guard.sql` presentes; 0038 e migrações anteriores preservadas.                                                                              |
+| D1 local do aplicativo   | O responsável compartilhou log de 0038 aplicada e execução seguinte sem migrações pendentes. O agente não consultou nem alterou esse banco.                                                                                                         |
+| D1/R2 e recursos remotos | Nenhuma consulta/migração/alteração nesta revisão. Log enviado pelo responsável confirma 0037/0038/0039 aplicadas no banco remoto configurado. Nenhuma aplicação pelo agente; integridade pós-migração e nova execução do CI ainda não confirmadas. |
+| Publicação               | Não realizada; versão ativa não confirmada.                                                                                                                                                                                                         |
 
 ## Pendências
 

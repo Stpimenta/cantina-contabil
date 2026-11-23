@@ -101,9 +101,7 @@ export class GetProductionPlanUseCase {
         return [
           {
             productId: product.productId,
-            name: linked
-              .map((m) => `${m.productName} (${m.categoryName})`)
-              .join(" / "),
+            name: product.name,
             pending,
             physical,
             toProduce,

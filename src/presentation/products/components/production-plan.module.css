@@ -9,7 +9,7 @@
   align-items: flex-end;
   gap: var(--space-3);
 }
-.filters > :first-child {
+.filters > * {
   flex: 1 1 16rem;
   min-width: 0;
 }
@@ -21,7 +21,20 @@
   border-bottom: var(--border-width) solid var(--color-border);
 }
 .name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
   overflow-wrap: anywhere;
+}
+.name > span {
+  min-width: 0;
+}
+.group {
+  min-width: 0;
+}
+.groupTitle {
+  font-weight: var(--weight-semibold);
 }
 .quantities {
   display: grid;
