@@ -1,3 +1,4 @@
+import { stockConfirmationSchema } from "@/server/products/inputs/stock-confirmation.input";
 import { z } from "zod";
 import { validateInput } from "@/shared/validation/input";
 import {
@@ -46,6 +47,7 @@ export const deliverSchema = z.object({
   routeId: z.uuid(),
   version: z.number().int().positive(),
   fulfilled: z.boolean(),
+  stockConfirmation: stockConfirmationSchema.optional(),
 });
 export const deliveryAccessSchema = temporaryAccessSchema.extend({
   driverId: z.uuid(),

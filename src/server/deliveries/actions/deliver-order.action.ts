@@ -34,6 +34,8 @@ export async function deliverOrderAction(
       );
       revalidatePath(`/events/${eventId}`);
       revalidatePath(`/deliveries/${eventId}`);
+      revalidatePath("/events", "layout");
+      revalidatePath("/products", "layout");
       return value;
     },
   );

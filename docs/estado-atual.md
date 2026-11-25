@@ -1,52 +1,37 @@
-# Estado atual — 22/11/2026
+# Estado atual — 24/11/2026
 
-Retomada curta. Use o [mapa de leitura](README.md) e os contratos das áreas. Resultados desta revisão não confirmam publicação.
+Retomada curta. Use o [mapa de leitura](README.md) e os contratos das áreas.
 
 ## Entrega local
 
-- Branch `feat/shared-product-stock`: entrega principal e rotas preservadas no commit `2a1f198`, enviado pelo responsável. Ajustes posteriores do filtro de Produtos e estoque permanecem locais, sem novo commit; publicação não confirmada.
-- Estoque compartilhado entre produtos recorrentes, preservando preços, pedidos e respectivos caixas. Criação/edição permite selecionar produtos existentes para grupos novos/vazios; novos itens e vínculos são salvos no mesmo batch. Não duplica estoque físico. Desvincular exige escolher o saldo que acompanha o produto. Eventos não participam.
-- Pedidos recorrentes já reduzem o disponível da lista, somando demanda pendente de todos os produtos vinculados, com mínimo zero. Cadastro sem estoque continua permitido e Detalhes mantém Falta produzir; o modal Estoque preserva o saldo físico e a retirada não desconta duas vezes. Alteração local com revisão estática e regressões acrescentadas aos cenários de vínculo/retirada; checagem final isolada de tipos aprovada, sem nova execução de testes/build.
-- Planejamento abre Consolidado, com um único filtro de cenário no topo: Consolidado mostra todos, separados em vinculados (com ícone de elo) e sem vínculo; o filtro Produtos tem apenas Consolidado e Exclusivos do grupo (todos os produtos sem vínculo). Nomes não concatenam participantes. Períodos filtram somente demanda. Ajuste posterior ao commit revisado estaticamente, sem nova execução de tipos/testes/build. Reposição, correção, exclusão e retirada/desfazer usam o saldo comum, exigindo Alteração em todos os grupos. Histórico preserva origem e redistribuições. Regras em [Produtos recorrentes](funcionalidades/produtos-recorrentes.md#estoque-compartilhado).
-- Interface simplificada: somente Vincular produtos existentes cria compartilhamento, com filtro por grupo de origem e lista de produtos com checkboxes à direita, centralizados verticalmente em cada linha; permite várias escolhas de uma vez e preserva a seleção entre grupos. Botão Selecionados (quantidade) confirma para o formulário. Produto manual começa com estoque próprio; preços continuam independentes. Ícone discreto de elos apenas informativo, sem abrir modal; na edição, fica junto ao rótulo do nome, sem se afastar em direção ao preço. Removidos Compartilhar estoque e os botões Histórico do estoque/Vínculos do produto do modal Estoque; auditoria e vínculos existentes preservados. Vincular dois produtos já cadastrados está em proposta, sem nova implementação. Revisão estática/formatação, sem novos testes/typecheck/build/navegador para esta alteração; conferência funcional fica com o responsável.
-- Rotas: entregadores reutilizáveis, equipe e saída por evento, montagem manual, várias viagens, transferência atômica, conclusão automática e acesso temporário individual. Ordenação inicial por endereço, sem cálculo geográfico/API paga. Contrato em [Rotas e entregadores](funcionalidades/entregas-e-enderecos.md#rotas-e-entregadores).
+- Branch feat/event-shared-stock, criada pelo responsável a partir de origin/main após atualizar a main. Base local 0.6.30; versão 0.6.31 preparada no pacote e nas duas entradas do lockfile, validada por validatePackageVersion contra a referência local origin/main 0.6.30. Implementação sem commit/envio pelo agente. Atualização remota não reconferida: Git permanece somente leitura para o agente.
+- Eventos selecionam produtos existentes de grupos recorrentes pelo seletor já aprovado, compartilhando físico/demanda e preservando preço, pedidos e caixa do destino. Não selecionam outro evento nem juntam produtos já cadastrados.
+- Produtos e Eventos aceitam pedido sem estoque. Disponível desconta toda a demanda pendente; físico baixa apenas na retirada/entrega/Comanda. Falta na conclusão usa Adicionar tudo e salvar, com reposição e pedido atômicos. Desfazer devolve ao mesmo estoque.
+- Operador com Alteração no evento conclui/desfaz com saldo existente sem acesso aos demais participantes. Vínculo e reposição manual/confirmada/correções continuam exigindo autorização conjunta. Links temporários não repõem; falta bloqueia a conclusão e orienta regularização pelo responsável.
+- Regras em [Produtos recorrentes](funcionalidades/produtos-recorrentes.md#estoque-compartilhado) e [Eventos e pedidos](funcionalidades/eventos-e-pedidos.md#estoque-dos-eventos).
 
-## Preparação para envio
+## Banco e produção
 
-- Versão **0.6.30** preparada para o fix posterior ao envio de 0.6.29, sincronizada no pacote e nas duas entradas do lockfile; dependências inalteradas. `validatePackageVersion` conferida contra 0.6.29 do commit enviado e contra a referência local disponível de `origin/main`, 0.6.28. A main remota atual permanece sem confirmação: fetch bloqueado por `.git` somente leitura. Nenhum novo commit/envio pelo agente.
-- Atualização remota **não confirmada**: `git fetch origin` falhou ao abrir `.git/FETCH_HEAD` por sistema de arquivos somente leitura. A consulta de referências com `git ls-remote origin` também falhou por resolução DNS de `github.com`. Tag `v0.6.29` não existe nas referências locais; estado remoto desconhecido. Conferir main/tag remotas antes de enviar.
-- Identidade Git configurada do responsável conferida; sem conflitos de merge/rebase ou arquivos de credenciais rastreados na revisão. Nenhum commit/push/PR/merge/tag/deploy realizado pelo agente.
+- Nova 0040_event_shared_stock.sql preparada, sem aplicação em banco local/remoto. Preserva migrações anteriores, referências de abertura, entradas, pedidos e auditorias; converte o cálculo dos eventos para físico menos conclusões.
+- Nenhuma consulta de dados do aplicativo ou de produção, migração aplicada, deploy, tag, push, PR ou merge nesta entrega. Publicação e versão ativa não reconferidas.
 
-## Correções após a execução do responsável
+## Revisão e pendências
 
-- O responsável executou a suíte completa: **424 testes passaram e 3 falharam**. Corrigidos localmente: contexto de estoque normalizado como `null` também na primeira resposta; teste de migração compara somente registros de auditoria, sem metadados físicos do D1; exclusão de grupo com entradas ativas preserva `STOCK_HAS_ENTRIES` antes da proteção de vínculo.
-- A correção do guarda usa **0039_shared_stock_deletion_guard.sql**, aplicada em produção pelo responsável conforme log enviado, junto de 0037/0038. A migração 0038 foi preservada. Este fix do filtro não acrescenta SQL nem altera registros/auditoria.
-- Revisão estática, formatação e diff das correções; sem nova execução da integração, pois a restrição de loopback do agente permanece. Os três cenários precisam ser repetidos no terminal do responsável. O aviso do Wrangler no teste de proxy não foi a causa das falhas; configuração preservada.
+- Revisão estática de código, fluxos de autorização, JSX responsivo e contratos. Cenários de integração ajustados/ampliados para regra comum, concorrência, confirmação, acessos temporários e preservação na migração.
+- Testes, typecheck, build e app/navegador não executados, conforme orientação. Conferência funcional e execução final ficam com o responsável ou mediante pedido explícito.
+- Conferir migração 0040 pelo fluxo autorizado e executar os grupos afetados, tipos e build isolado na revisão final antes do envio. Não declarar pronta para publicação sem esses resultados e comparação atual da versão remota.
 
-## Verificação final executada pelo agente
+## Consistência e exclusões
 
-| Verificação              | Resultado real                                                                                                                                                                                                                                                                 |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `npm test`               | 289 testes unitários passaram, em 25 arquivos. Os 138 casos de integração, em 14 arquivos, falharam na preparação por `listen EPERM: operation not permitted 127.0.0.1`; comportamento D1 não foi validado. Não substituir por banco do aplicativo/remoto.                     |
-| TypeScript isolado       | `tsc --noEmit --incremental false` passou novamente na revisão final, incluindo o desconto de pedidos pendentes, em cópia temporária sem `.env`, credenciais ou estado, com código/testes, dependências independentes e tipos de rota disponíveis. Cópia removida ao terminar. |
-| Build Cloudflare isolado | `npm run deploy -- --build-only` compilou o Next, mas parou na etapa de TypeScript: `Could not parse output from TypeScript's --showConfig`. O build completo, inspeção do pacote e dry-run não foram concluídos. Cópia temporária removida; builds em uso preservados.        |
-| Formatação e diff        | Prettier aprovou novamente todos os arquivos alterados/novos compatíveis; `git diff --check` passou. Versão 0.6.29 validada contra a referência local 0.6.28; fetch novamente bloqueado por `.git` somente leitura.                                                            |
-| Interface ao vivo        | Não iniciada pelo agente; não há validação funcional/visual pelo resultado de tipos ou compilação.                                                                                                                                                                             |
+- Lista e planejamento agora consultam catálogo, participantes, físico e demanda em uma única instrução SQL. A autorização dos nomes/cenários usa os participantes do mesmo retrato. Sem novas tabelas, dependências ou migração adicional.
+- Planejamento de semana/mês usa a Data do evento para Eventos e a Data de entrega para Produtos, conforme aprovação. Período altera somente a demanda.
+- Removidos a Action, o caso de uso e a montagem da reposição antiga por item; confirmação continua junto da conclusão no batch existente. A Action anterior de retirada agora também revalida Eventos.
+- Cenários acrescentados para excluir/reduzir pedidos entre origens, déficit de produção, desfazer e excluir, repetição sem nova liberação, exclusão concorrente com retirada, exclusão de entrada compartilhada e bloqueio após consumo, períodos mistos, leitura consistente e mudança de saldo antes do commit da confirmação.
+- Revisão estática/formatação; cenários apenas preparados, sem execução de testes/tipos/build. A versão 0.6.31 desta mesma entrega foi preservada; migração 0040 continua não aplicada pelo agente.
 
-O TS7006 do batch de rotas informado anteriormente pelo responsável foi corrigido; a checagem isolada de tipos acima passou com essa correção. As tentativas bloqueadas não autorizam declarar a entrega pronta para publicação.
+## Ajustes após a suíte do responsável
 
-## Migrações e produção
-
-| Ambiente                 | Estado confirmado                                                                                                                                                                                                                                   |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Código/SQL               | `0037_delivery_routes.sql`, `0038_shared_product_stock.sql` e nova correção `0039_shared_stock_deletion_guard.sql` presentes; 0038 e migrações anteriores preservadas.                                                                              |
-| D1 local do aplicativo   | O responsável compartilhou log de 0038 aplicada e execução seguinte sem migrações pendentes. O agente não consultou nem alterou esse banco.                                                                                                         |
-| D1/R2 e recursos remotos | Nenhuma consulta/migração/alteração nesta revisão. Log enviado pelo responsável confirma 0037/0038/0039 aplicadas no banco remoto configurado. Nenhuma aplicação pelo agente; integridade pós-migração e nova execução do CI ainda não confirmadas. |
-| Publicação               | Não realizada; versão ativa não confirmada.                                                                                                                                                                                                         |
-
-## Pendências
-
-- Conferir main e tag remotas; ajustar versão caso a main tenha avançado, preservando a regra de incrementar somente o último número.
-- Executar integração e build Cloudflare completo no terminal do responsável/CI com permissões normais; conferir funcionalmente a interface. As falhas de ambiente acima não validam as regras do D1 nem o pacote final.
-- Repetir os três cenários corrigidos e aplicar 0039 pelo fluxo local normal do responsável. Antes da publicação, confirmar migrações remotas. SQL remoto exige pedido explícito; Actions apenas consulta os nomes e não aplica migrações. Não executar deploy manual para contornar checks.
-- Preparar commit/envio após resolver as pendências. Agrupamento geográfico automático e WhatsApp permanecem fora do escopo.
+- O responsável informou **440 testes aprovados e 4 falhas**, em 39 arquivos. Normalizado orderStockBalances para omitir stockId sem vínculo, conforme o contrato opcional, reaproveitando essa consulta no diagnóstico de falta.
+- Dois testes de criação/repetição agora conferem o retorno inicial pelos seus campos e comparam a repetição ao registro completo persistido, incluindo os metadados adicionais do banco. Conferência de pedido único e de entradas permanece.
+- O cenário de autorização usa o mesmo UUID em entryId/requestId, permitindo chegar à verificação de permissões em vez de falhar antes na validação da entrada.
+- Correções revisadas estaticamente e formatadas; sem nova execução de testes/tipos/build pelo agente. Versão 0.6.31 preservada nesta entrega; migração local/remota não aplicada pelo agente.

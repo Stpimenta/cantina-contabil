@@ -71,6 +71,7 @@ export interface EventRepository {
   createOrder(
     order: EventOrder,
     catalogVersion: number,
+    additions?: (StockEntry & { expectedAvailable: number })[],
   ): Promise<EventWriteOutcome>;
   orderStockBalances(
     eventId: string,

@@ -1,3 +1,4 @@
+import { stockConfirmationSchema } from "@/server/products/inputs/stock-confirmation.input";
 import { z } from "zod";
 import { validateInput } from "@/shared/validation/input";
 export const commandIdSchema = z.uuid();
@@ -13,6 +14,7 @@ export const collectCommandSchema = z.object({
   requestId: z.uuid(),
   version: z.number().int().positive(),
   collected: z.boolean(),
+  stockConfirmation: stockConfirmationSchema.optional(),
 });
 export const temporaryAccessSchema = z.object({
   requestId: z.uuid(),

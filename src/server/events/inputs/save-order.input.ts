@@ -1,3 +1,4 @@
+import { stockConfirmationSchema } from "@/server/products/inputs/stock-confirmation.input";
 import {
   receiptListSchema,
   RECEIPT_MAX_FILES,
@@ -79,6 +80,7 @@ export const saveOrderInputSchema = z
   .object({
     requestId: z.uuid(),
     catalogVersion: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+    stockConfirmation: stockConfirmationSchema.optional(),
   })
   .and(detailsSchema)
   .and(fulfillmentSchema)

@@ -26,7 +26,7 @@ export class LoadStockImportOptionsUseCase {
         : parseInput(validateEventId(targetInput));
     if (targetId) {
       const target = await this.events.find(targetId);
-      if (!target || target.kind !== "product_category") return eventMissing();
+      if (!target) return eventMissing();
       checkEventAccessWrite(session, target);
     }
     const all = await this.shared.candidates("");

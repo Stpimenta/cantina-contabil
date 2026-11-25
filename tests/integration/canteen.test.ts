@@ -1,5 +1,5 @@
 import { D1ProductStockRepository } from "@/server/products/infrastructure/d1-product-stock.repository";
-import { replenishEvent } from "../support/event-stock";
+import { replenishEvent, clearEventEntries } from "../support/event-stock";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { harness, type Harness } from "../support/harness";
 import { uuid, eventInput } from "../support/data";
@@ -80,7 +80,7 @@ async function access(s: Awaited<ReturnType<typeof setup>>) {
   };
 }
 describe("Cantina, acesso temporário e entrega durável", () => {
-  it("situação do pedido paga e retira uma única vez, sem baixar novamente o estoque", async () => {
+  it("situação do pedido paga e baixa o físico uma única vez", async () => {
     const s = await setup();
     const order = await createOrder(s.event);
     const stock = new D1ProductStockRepository(h.db);
@@ -115,7 +115,9 @@ describe("Cantina, acesso temporário e entrega durável", () => {
       realCents: 2000,
       pendingCents: 0,
     });
-    expect(await stock.balances(s.event.id)).toEqual(balance);
+    expect(await stock.balances(s.event.id)).toEqual(
+      balance.map((b) => ({ ...b, quantity: b.quantity - 2 })),
+    );
     const audit = await h.d1
       .prepare(
         "SELECT count(*) AS count FROM event_audit WHERE resource_id=? AND action='update'",
@@ -175,7 +177,7 @@ describe("Cantina, acesso temporário e entrega durável", () => {
       version: 2,
     });
   });
-  it("retira e desfaz sem mudar pagamento, saldo ou produtos; preserva autoria separada", async () => {
+  it("retira e desfaz o estoque sem mudar pagamento ou produtos; preserva autoria separada", async () => {
     const s = await setup(),
       order = await createOrder(s.event),
       a = await access(s);
@@ -183,7 +185,7 @@ describe("Cantina, acesso temporário e entrega durável", () => {
     const reservedBalance = await stock.balances(s.event.id);
     expect(reservedBalance).toContainEqual({
       productId: s.event.products[0].id,
-      quantity: 998,
+      quantity: 1000,
     });
     const input = {
       requestId: uuid(),
@@ -199,6 +201,9 @@ describe("Cantina, acesso temporário e entrega durável", () => {
     expect(
       await s.collect.execute(a.identity, s.event.id, order.id, input),
     ).toEqual(saved);
+    expect(await stock.balances(s.event.id)).toEqual(
+      reservedBalance.map((b) => ({ ...b, quantity: b.quantity - 2 })),
+    );
     const read = await h.events.findOrder(order.id);
     expect(read).toMatchObject({
       paid: false,
@@ -568,5 +573,42 @@ describe("Cantina, acesso temporário e entrega durável", () => {
       .bind(o.id)
       .all();
     expect(notices.results.map((r) => r.version)).toEqual([1, 2, 3, 4, 5]);
+  });
+});
+
+it("acesso temporário não repõe falta e usuário autorizado confirma reposição e retirada atomicamente", async () => {
+  const s = await setup(),
+    order = await createOrder(s.event),
+    a = await access(s);
+  await clearEventEntries(h, s.event);
+  const input = { requestId: uuid(), version: order.version, collected: true };
+  await expect(
+    s.collect.execute(a.identity, s.event.id, order.id, input),
+  ).rejects.toMatchObject({ details: { code: "STOCK_INSUFFICIENT" } });
+  const confirmed = {
+    ...input,
+    stockConfirmation: [
+      { productId: s.event.products[0].id, available: 0, missing: 2 },
+    ],
+  };
+  await expect(
+    s.collect.execute(a.identity, s.event.id, order.id, confirmed),
+  ).rejects.toMatchObject({ details: { code: "INVALID_STOCK_INPUT" } });
+  expect((await h.events.findOrder(order.id))?.version).toBe(1);
+  const saved = await s.collect.execute(
+    identity(),
+    s.event.id,
+    order.id,
+    confirmed,
+  );
+  expect(
+    await s.collect.execute(identity(), s.event.id, order.id, confirmed),
+  ).toEqual(saved);
+  expect((await h.events.findOrder(order.id))?.collected).toBe(true);
+  expect(
+    await new D1ProductStockRepository(h.db).balances(s.event.id),
+  ).toContainEqual({
+    productId: s.event.products[0].id,
+    quantity: 0,
   });
 });

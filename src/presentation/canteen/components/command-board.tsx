@@ -1,4 +1,6 @@
 "use client";
+import type { StockConfirmation } from "@/server/products/inputs/stock-confirmation.input";
+import { OrderStockShortageModal } from "@/presentation/products/components/order-stock-shortage-modal";
 import { createRequestId } from "@/shared/identifiers/request-id";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -32,15 +34,26 @@ export function CommandBoard({
   initial,
   basePath,
   canCollect = true,
+  temporary = false,
 }: {
   initial: CommandPage;
   basePath: string;
   canCollect?: boolean;
+  temporary?: boolean;
 }) {
   const [data, setData] = useState(initial),
     [connection, setConnection] = useState<
       "syncing" | "connected" | "offline" | "ended"
     >("syncing");
+  const operation = useRef<{
+    orderId: string;
+    input: {
+      requestId: string;
+      version: number;
+      collected: boolean;
+      stockConfirmation?: StockConfirmation;
+    };
+  } | null>(null);
   const [interrupted, setInterrupted] = useState(false);
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -305,19 +318,36 @@ export function CommandBoard({
                   variant="neutral"
                   busy={pending}
                   disabled={connection !== "connected" || !canCollect}
-                  onClick={() =>
-                    execute(
-                      () =>
-                        collectCommandAction(initial.eventId, order.id, {
+                  onClick={() => {
+                    if (
+                      !operation.current ||
+                      operation.current.orderId !== order.id ||
+                      operation.current.input.version !== order.version ||
+                      operation.current.input.collected === order.collected
+                    ) {
+                      operation.current = {
+                        orderId: order.id,
+                        input: {
                           requestId: createRequestId(),
                           version: order.version,
                           collected: !order.collected,
-                        }),
+                        },
+                      };
+                    }
+                    const attempt = operation.current;
+                    execute(
+                      () =>
+                        collectCommandAction(
+                          initial.eventId,
+                          attempt.orderId,
+                          attempt.input,
+                        ),
                       (v) => {
+                        operation.current = null;
                         void refreshRef.current(v.id, v.version);
                       },
-                    )
-                  }
+                    );
+                  }}
                 >
                   {order.collected ? "Desfazer retirada" : "Marcar retirado"}
                 </Button>
@@ -344,7 +374,55 @@ export function CommandBoard({
         query={initial.query}
         filters={filters}
       />
-      <ErrorModal error={error} onClose={closeError} />
+      {!temporary &&
+      operation.current &&
+      error?.code === "STOCK_INSUFFICIENT" &&
+      error.stockShortages?.length ? (
+        <OrderStockShortageModal
+          error={error}
+          busy={pending}
+          onClose={closeError}
+          onConfirm={() => {
+            const attempt = operation.current;
+            if (!attempt || pending) return;
+            attempt.input = {
+              ...attempt.input,
+              stockConfirmation: error.stockShortages!.map(
+                ({ productId, missing, available }) => ({
+                  productId,
+                  missing,
+                  available,
+                }),
+              ),
+            };
+            execute(
+              () =>
+                collectCommandAction(
+                  initial.eventId,
+                  attempt.orderId,
+                  attempt.input,
+                ),
+              (v) => {
+                operation.current = null;
+                void refreshRef.current(v.id, v.version);
+              },
+            );
+          }}
+        />
+      ) : (
+        <ErrorModal
+          error={
+            temporary && error?.code === "STOCK_INSUFFICIENT"
+              ? {
+                  ...error,
+                  message:
+                    "Estoque insuficiente. Peça ao responsável para regularizar o estoque antes de concluir.",
+                }
+              : error
+          }
+          onClose={closeError}
+        />
+      )}
     </div>
   );
 }

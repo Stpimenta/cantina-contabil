@@ -1,6 +1,5 @@
-import { changedStockProducts } from "@/server/products/models/shared-stock.model";
+import { prepareOrderStock } from "@/server/products/use-cases/prepare-order-stock";
 import type { SharedStockRepository } from "@/server/products/repositories/shared-stock.repository";
-import { sharedStockAccess } from "@/server/products/use-cases/shared-stock-access";
 import { receiptMetadata } from "@/shared/receipts/receipt-input";
 import type { ReceiptRepository } from "../repositories/receipt.repository";
 import {
@@ -77,23 +76,6 @@ export class UpdateOrderUseCase {
     const event = authorizedEvent;
     if (event.version !== data.catalogVersion) return eventChanged();
     const fields = orderFields(data, event, current ?? undefined);
-    let stockWriteContext: string | undefined;
-    if (event.kind === "product_category") {
-      const changed = changedStockProducts(
-        fields.withdrawals ?? [],
-        current.withdrawals ?? [],
-      );
-      if (changed.length) {
-        const access = await sharedStockAccess(
-          session,
-          this.shared,
-          event.id,
-          changed,
-          true,
-        );
-        stockWriteContext = access.context;
-      }
-    }
     const kept = keepOrderReceipts(
       current.receipts ?? [],
       data.retainedReceiptIds,
@@ -110,7 +92,7 @@ export class UpdateOrderUseCase {
     const now = new Date().toISOString();
     const order: EventOrder = {
       ...fields,
-      stockContext: stockWriteContext ?? null,
+      stockContext: null,
       receipts: [...kept, ...stored],
       id,
       eventId,
@@ -124,10 +106,21 @@ export class UpdateOrderUseCase {
       lastOperation: data.requestId,
       fingerprint,
     };
+    const stock = await prepareOrderStock(
+      session,
+      this.shared,
+      this.events,
+      event,
+      current,
+      order,
+      data.stockConfirmation,
+    );
+    order.stockContext = stock.context;
     const outcome = await this.events.updateOrder(
       order,
       expected,
       event.version,
+      stock.additions,
     );
     if (outcome === "stale") {
       const saved = await this.events.findOrder(id);

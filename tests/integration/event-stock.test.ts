@@ -44,77 +44,86 @@ function input(productId: string, quantity: number) {
     pix: "0",
   };
 }
-it("reserva na criação, repete sem duplicar e libera só ao reduzir/excluir", async () => {
-  const { event, stock, productId, box } = await setup();
+it("pedido sem estoque aumenta demanda sem baixar o físico e exclusão libera a pendência", async () => {
+  const { event, stock, productId } = await setup(0);
   const create = new CreateOrderUseCase(h.events);
   const data = input(productId, 7);
   const order = await create.execute(h.actor, event.id, data);
-  await create.execute(h.actor, event.id, data);
+  const stored = await h.events.findOrder(order.id);
+  expect(stored).toMatchObject(order);
+  expect(await create.execute(h.actor, event.id, data)).toEqual(stored);
+  expect((await h.events.listOrders(event.id, "", 1, 15)).total).toBe(1);
   expect(await stock.balances(event.id)).toContainEqual({
     productId,
-    quantity: 3,
+    quantity: 0,
   });
-  await expect(
-    create.execute(h.actor, event.id, input(productId, 4)),
-  ).rejects.toMatchObject({
-    details: {
-      code: "STOCK_INSUFFICIENT",
-      stockShortages: [{ productId, requested: 4, available: 3, missing: 1 }],
-    },
-  });
-  const before = await h.events.findOrder(order.id);
-  await expect(
-    new UpdateOrderUseCase(h.events).execute(h.actor, event.id, order.id, 1, {
-      ...input(productId, 11),
-      paid: true,
-      pix: "10",
-    }),
-  ).rejects.toMatchObject({ details: { code: "STOCK_INSUFFICIENT" } });
-  expect(await h.events.findOrder(order.id)).toEqual(before);
-  expect((await h.boxes.find(box.id))?.balanceCents).toBe(0);
-  const reduced = await new UpdateOrderUseCase(h.events).execute(
+  expect(await stock.productionDemand(event.id)).toContainEqual(
+    expect.objectContaining({ productId, allPending: 7 }),
+  );
+  const edited = await new UpdateOrderUseCase(h.events).execute(
     h.actor,
     event.id,
     order.id,
-    1,
-    input(productId, 5),
+    order.version,
+    input(productId, 11),
   );
   expect(await stock.balances(event.id)).toContainEqual({
     productId,
-    quantity: 5,
+    quantity: 0,
   });
   await new DeleteOrderUseCase(h.events).execute(
     h.actor,
     event.id,
-    reduced.id,
-    reduced.version,
+    edited.id,
+    edited.version,
   );
-  expect(await stock.balances(event.id)).toContainEqual({
-    productId,
-    quantity: 10,
-  });
-  expect(
-    (await h.events.history(event.id, 1, 15)).items.filter(
-      (r) => r.resourceType === "order",
-    ),
-  ).toHaveLength(3);
+  expect(await stock.productionDemand(event.id)).toEqual([]);
 });
-it("retirada e desfazimento não liberam a reserva; redução exige desfazer antes", async () => {
-  const { event, stock, productId } = await setup();
+it("confirma somente a falta e grava reposição, pagamento e retirada uma vez", async () => {
+  const { event, stock, productId, box } = await setup(3);
   const order = await new CreateOrderUseCase(h.events).execute(
     h.actor,
     event.id,
     input(productId, 7),
   );
   const status = new UpdateOrderStatusUseCase(h.events);
-  const done = await status.execute(h.actor, event.id, order.id, 1, {
+  const action = {
     requestId: uuid(),
     fulfilled: true,
+    payment: { method: "pix", cash: "0" },
+  };
+  await expect(
+    status.execute(h.actor, event.id, order.id, 1, action),
+  ).rejects.toMatchObject({
+    details: {
+      code: "STOCK_INSUFFICIENT",
+      stockShortages: [{ productId, requested: 7, available: 3, missing: 4 }],
+    },
   });
+  expect((await h.events.findOrder(order.id))?.version).toBe(1);
+  expect((await h.boxes.find(box.id))?.balanceCents).toBe(0);
+  await expect(
+    status.execute(h.actor, event.id, order.id, 1, {
+      ...action,
+      stockConfirmation: [{ productId, available: 2, missing: 5 }],
+    }),
+  ).rejects.toMatchObject({ details: { code: "STOCK_CHANGED" } });
+  const confirmed = {
+    ...action,
+    stockConfirmation: [{ productId, available: 3, missing: 4 }],
+  };
+  const done = await status.execute(h.actor, event.id, order.id, 1, confirmed);
+  expect(
+    await status.execute(h.actor, event.id, order.id, 1, confirmed),
+  ).toEqual(done);
   expect(await stock.balances(event.id)).toContainEqual({
     productId,
-    quantity: 3,
+    quantity: 0,
   });
+  expect((await stock.entries(event.id, productId, 1, 15)).items).toHaveLength(
+    2,
+  );
+  expect((await h.boxes.find(box.id))?.balanceCents).toBe(1000);
   await expect(
     new UpdateOrderUseCase(h.events).execute(
       h.actor,
@@ -132,36 +141,39 @@ it("retirada e desfazimento não liberam a reserva; redução exige desfazer ant
       done.version,
     ),
   ).rejects.toMatchObject({ details: { code: "ORDER_HAS_WITHDRAWALS" } });
-  const undone = await status.execute(
-    h.actor,
-    event.id,
-    order.id,
-    done.version,
-    { requestId: uuid(), fulfilled: false },
-  );
+  await status.execute(h.actor, event.id, order.id, done.version, {
+    requestId: uuid(),
+    fulfilled: false,
+  });
   expect(await stock.balances(event.id)).toContainEqual({
     productId,
-    quantity: 3,
+    quantity: 7,
   });
-  await new DeleteOrderUseCase(h.events).execute(
-    h.actor,
-    event.id,
-    order.id,
-    undone.version,
-  );
-  expect(await stock.balances(event.id)).toContainEqual({
-    productId,
-    quantity: 10,
-  });
+  expect((await h.boxes.find(box.id))?.balanceCents).toBe(1000);
 });
-it("dois pedidos concorrentes não reservam o mesmo estoque; pedido com um item em falta é atômico", async () => {
-  const { event, stock, productId } = await setup();
-  const outcomes = await Promise.allSettled(
+it("aceita pedidos concorrentes sem estoque mas impede duas conclusões de consumir o mesmo saldo", async () => {
+  const { event, stock, productId } = await setup(10);
+  const orders = await Promise.all(
     [1, 2].map(() =>
       new CreateOrderUseCase(h.events).execute(
         h.actor,
         event.id,
         input(productId, 7),
+      ),
+    ),
+  );
+  expect(await stock.balances(event.id)).toContainEqual({
+    productId,
+    quantity: 10,
+  });
+  const outcomes = await Promise.allSettled(
+    orders.map((order) =>
+      new UpdateOrderStatusUseCase(h.events).execute(
+        h.actor,
+        event.id,
+        order.id,
+        1,
+        { requestId: uuid(), fulfilled: true },
       ),
     ),
   );
@@ -171,39 +183,20 @@ it("dois pedidos concorrentes não reservam o mesmo estoque; pedido com um item 
     productId,
     quantity: 3,
   });
-  const second = { id: uuid(), name: "Sem estoque", icon: "bag", price: "10" };
-  const updated = await new UpdateEventUseCase(h.events, h.boxes).execute(
-    h.actor,
-    event.id,
-    1,
-    {
-      ...eventInput(event.cashBoxId),
-      requestId: uuid(),
-      products: [{ ...event.products[0], price: "10" }, second],
-    },
-  );
-  await expect(
-    new CreateOrderUseCase(h.events).execute(h.actor, event.id, {
-      ...input(productId, 1),
-      catalogVersion: updated.version,
-      items: [
-        { productId, quantity: 1 },
-        { productId: second.id, quantity: 1 },
-      ],
-    }),
-  ).rejects.toMatchObject({ details: { code: "STOCK_INSUFFICIENT" } });
-  expect(await stock.balances(event.id)).toContainEqual({
-    productId,
-    quantity: 3,
-  });
-  expect((await h.events.listOrders(event.id, "", 1, 15)).total).toBe(1);
 });
-it("protege correção/exclusão de entradas comprometidas, autorização e auditoria", async () => {
+it("protege correção de entrada já consumida, autorização e auditoria", async () => {
   const { event, stock, productId } = await setup();
-  await new CreateOrderUseCase(h.events).execute(
+  const order = await new CreateOrderUseCase(h.events).execute(
     h.actor,
     event.id,
     input(productId, 7),
+  );
+  await new UpdateOrderStatusUseCase(h.events).execute(
+    h.actor,
+    event.id,
+    order.id,
+    1,
+    { requestId: uuid(), fulfilled: true },
   );
   const entry = (await stock.entries(event.id, productId, 1, 15)).items[0];
   const save = new SaveStockEntryUseCase(h.events, stock);
@@ -256,7 +249,7 @@ it("protege correção/exclusão de entradas comprometidas, autorização e audi
     ),
   ).rejects.toMatchObject({ details: { code: "ACCESS_DENIED" } });
 });
-it("preserva pedidos legados na migração com zero livre e cobra apenas aumentos", async () => {
+it("preserva snapshots legados e recompõe o físico sem inventar entrada na transição", async () => {
   await h.close();
   h = await harness(false, "0035_account_soft_delete.sql");
   const { event, productId } = await setup(0);
@@ -304,6 +297,8 @@ it("preserva pedidos legados na migração com zero livre e cobra apenas aumento
     "0036_event_stock.sql",
     "0037_delivery_routes.sql",
     "0038_shared_product_stock.sql",
+    "0039_shared_stock_deletion_guard.sql",
+    "0040_event_shared_stock.sql",
   ]) {
     const migration = await readFile(`migrations/${name}`, "utf8");
     await h.d1.batch(
@@ -322,15 +317,19 @@ it("preserva pedidos legados na migração com zero livre e cobra apenas aumento
   expect(await h.events.history(event.id, 1, 15)).toEqual(history);
   expect(await stock.balances(event.id)).toContainEqual({
     productId,
-    quantity: 0,
+    quantity: 7,
   });
-  await expect(
-    new CreateOrderUseCase(h.events).execute(
-      h.actor,
-      event.id,
-      input(productId, 1),
-    ),
-  ).rejects.toMatchObject({ details: { code: "STOCK_INSUFFICIENT" } });
+  const extra = await new CreateOrderUseCase(h.events).execute(
+    h.actor,
+    event.id,
+    input(productId, 1),
+  );
+  await new DeleteOrderUseCase(h.events).execute(
+    h.actor,
+    event.id,
+    extra.id,
+    extra.version,
+  );
   const edited = await new UpdateOrderUseCase(h.events).execute(
     h.actor,
     event.id,
@@ -348,7 +347,7 @@ it("preserva pedidos legados na migração com zero livre e cobra apenas aumento
   );
   expect(await stock.balances(event.id)).toContainEqual({
     productId,
-    quantity: 0,
+    quantity: 10,
   });
   await new DeleteOrderUseCase(h.events).execute(
     h.actor,
@@ -361,7 +360,7 @@ it("preserva pedidos legados na migração com zero livre e cobra apenas aumento
     quantity: 10,
   });
 });
-it("entrega concluída mantém reserva e exige desfazer antes de reduzir ou excluir", async () => {
+it("entrega consome físico e desfazer devolve antes de reduzir ou excluir", async () => {
   const box = await h.box();
   const event = await new CreateEventUseCase(h.events, h.boxes).execute(
     h.actor,
@@ -428,7 +427,7 @@ it("entrega concluída mantém reserva e exige desfazer antes de reduzir ou excl
   );
   expect(await stock.balances(event.id)).toContainEqual({
     productId,
-    quantity: 3,
+    quantity: 10,
   });
   await new UpdateOrderUseCase(h.events).execute(
     h.actor,
@@ -442,6 +441,115 @@ it("entrega concluída mantém reserva e exige desfazer antes de reduzir ou excl
   );
   expect(await stock.balances(event.id)).toContainEqual({
     productId,
-    quantity: 4,
+    quantity: 10,
   });
+});
+
+it("migração mantém saldo físico e snapshots de evento com pedidos concluídos e pendentes", async () => {
+  await h.close();
+  h = await harness(false, "0039_shared_stock_deletion_guard.sql");
+  const { event, productId, stock } = await setup(10);
+  const first = await new CreateOrderUseCase(h.events).execute(
+    h.actor,
+    event.id,
+    input(productId, 7),
+  );
+  await new UpdateOrderStatusUseCase(h.events).execute(
+    h.actor,
+    event.id,
+    first.id,
+    1,
+    { requestId: uuid(), fulfilled: true },
+  );
+  await new CreateOrderUseCase(h.events).execute(
+    h.actor,
+    event.id,
+    input(productId, 1),
+  );
+  expect(await stock.balances(event.id)).toContainEqual({
+    productId,
+    quantity: 2,
+  });
+  const snapshots = (
+    await h.d1
+      .prepare("SELECT id,payload_json,version FROM event_orders ORDER BY id")
+      .all()
+  ).results;
+  const audit = (
+    await h.d1.prepare("SELECT * FROM event_audit ORDER BY id").all()
+  ).results;
+  const entries = (
+    await h.d1.prepare("SELECT * FROM product_stock_entries ORDER BY id").all()
+  ).results;
+  const migration = await readFile(
+    "migrations/0040_event_shared_stock.sql",
+    "utf8",
+  );
+  await h.d1.batch(
+    unstable_splitSqlQuery(migration).map((q) => h.d1.prepare(q)),
+  );
+  expect(await stock.balances(event.id)).toContainEqual({
+    productId,
+    quantity: 3,
+  });
+  expect(
+    (
+      await h.d1
+        .prepare("SELECT id,payload_json,version FROM event_orders ORDER BY id")
+        .all()
+    ).results,
+  ).toEqual(snapshots);
+  expect(
+    (await h.d1.prepare("SELECT * FROM event_audit ORDER BY id").all()).results,
+  ).toEqual(audit);
+  expect(
+    (
+      await h.d1
+        .prepare("SELECT * FROM product_stock_entries ORDER BY id")
+        .all()
+    ).results,
+  ).toEqual(entries);
+  expect(await stock.productionDemand(event.id)).toContainEqual(
+    expect.objectContaining({ productId, allPending: 1 }),
+  );
+});
+
+it("cadastro já concluído repõe somente após confirmação e repete sem duplicar entradas", async () => {
+  const box = await h.box();
+  const event = await new CreateEventUseCase(h.events, h.boxes).execute(
+    h.actor,
+    {
+      ...eventInput(box.id),
+      deliveryEnabled: true,
+    },
+  );
+  await replenishEvent(h, event, 3);
+  const productId = event.products[0].id,
+    create = new CreateOrderUseCase(h.events);
+  const data = {
+    ...input(productId, 8),
+    fulfillmentMode: "pickup",
+    fulfilled: true,
+  };
+  await expect(create.execute(h.actor, event.id, data)).rejects.toMatchObject({
+    details: { code: "STOCK_INSUFFICIENT" },
+  });
+  expect(await h.events.findOrder(data.requestId)).toBeNull();
+  const confirmed = {
+    ...data,
+    stockConfirmation: [{ productId, available: 3, missing: 5 }],
+  };
+  const saved = await create.execute(h.actor, event.id, confirmed);
+  const stored = await h.events.findOrder(saved.id);
+  expect(stored).toMatchObject(saved);
+  expect(await create.execute(h.actor, event.id, confirmed)).toEqual(stored);
+  expect((await h.events.listOrders(event.id, "", 1, 15)).total).toBe(1);
+  const stock = new D1ProductStockRepository(h.db);
+  expect(await stock.balances(event.id)).toContainEqual({
+    productId,
+    quantity: 0,
+  });
+  expect((await stock.entries(event.id, productId, 1, 15)).items).toHaveLength(
+    2,
+  );
 });

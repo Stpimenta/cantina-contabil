@@ -20,7 +20,7 @@ export class ManageSharedStockUseCase {
     const event = await this.events.find(data.categoryId);
     if (
       !event ||
-      event.kind !== "product_category" ||
+      (event.kind !== "product_category" && data.action === "link") ||
       !event.products.some((p) => p.id === data.productId)
     )
       return eventMissing();

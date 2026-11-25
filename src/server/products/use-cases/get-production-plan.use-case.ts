@@ -1,5 +1,4 @@
-import type { SharedStockRepository } from "../repositories/shared-stock.repository";
-import { sharedStockAccess } from "./shared-stock-access";
+import { checkStockMembers } from "./shared-stock-access";
 import { checkAccess } from "@/shared/auth/check-access";
 import { checkEventRead } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
@@ -18,7 +17,6 @@ export class GetProductionPlanUseCase {
   constructor(
     private readonly events: EventRepository,
     private readonly stock: ProductStockRepository,
-    private readonly shared?: SharedStockRepository,
   ) {}
   async execute(
     session: Session | null,
@@ -40,47 +38,17 @@ export class GetProductionPlanUseCase {
       period === "all"
         ? undefined
         : { from: today, to: end.toISOString().slice(0, 10) };
-    const demand = await this.stock.productionDemand(id, range);
-    const access = await sharedStockAccess(
-      session,
-      this.shared,
-      id,
-      event.products.map((p) => p.id),
-      false,
-    );
-    const demands = new Map([[id, demand]]);
-    for (const member of access.members)
-      if (!demands.has(member.eventId))
-        demands.set(
-          member.eventId,
-          await this.stock.productionDemand(member.eventId, range),
-        );
+    const positions = await this.stock.positions(id, range);
+    checkStockMembers(session, positions, false);
+    const products = positions.filter((p) => p.eventId === id);
     const seen = new Set<string>();
-    const balances = await this.stock.balances(id);
-    const products = [
-      ...event.products.map((product) => ({
-        productId: product.id,
-        name: product.name,
-      })),
-      ...demand.filter(
-        (row) =>
-          !event.products.some((product) => product.id === row.productId),
-      ),
-    ];
     return products.flatMap<ProductionPlanItem>((product) => {
-      const member = access.members.find(
-        (m) => m.eventId === id && m.productId === product.productId,
-      );
-      const linked = member
-        ? access.members.filter((m) => m.stockId === member.stockId)
-        : [];
+      const linked = positions.filter((p) => p.stockId === product.stockId);
       if (linked.length > 1) {
-        if (seen.has(member!.stockId)) return [];
-        seen.add(member!.stockId);
+        if (seen.has(product.stockId)) return [];
+        seen.add(product.stockId);
         const individual = linked.map((m) => {
-          const pending =
-            demands.get(m.eventId)?.find((d) => d.productId === m.productId)
-              ?.pending ?? 0;
+          const pending = m.pending;
           return {
             value: `${m.eventId}:${m.productId}`,
             label: `${m.productName} — ${m.categoryName}`,
@@ -90,7 +58,7 @@ export class GetProductionPlanUseCase {
           };
         });
         const pending = individual.reduce((sum, item) => sum + item.pending, 0),
-          physical = member!.quantity;
+          physical = product.quantity;
         const toProduce = Math.max(0, pending - physical);
         if (
           ![pending, physical, toProduce].every(
@@ -101,7 +69,7 @@ export class GetProductionPlanUseCase {
         return [
           {
             productId: product.productId,
-            name: product.name,
+            name: product.productName,
             pending,
             physical,
             toProduce,
@@ -118,16 +86,8 @@ export class GetProductionPlanUseCase {
           },
         ];
       }
-      const row = demand.find((item) => item.productId === product.productId);
-      const pending = row?.pending ?? 0;
-      const available =
-        row?.available ??
-        balances.find((item) => item.productId === product.productId)
-          ?.quantity ??
-        0;
-      const physical =
-        available +
-        (event.kind === "product_category" ? 0 : (row?.allPending ?? 0));
+      const pending = product.pending;
+      const physical = product.quantity;
       const toProduce = Math.max(0, pending - physical);
       if (
         ![pending, physical, toProduce].every(
@@ -138,7 +98,7 @@ export class GetProductionPlanUseCase {
       return [
         {
           productId: product.productId,
-          name: product.name,
+          name: product.productName,
           pending,
           physical,
           toProduce,
