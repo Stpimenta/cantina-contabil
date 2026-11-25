@@ -1,4 +1,5 @@
 "use server";
+import { revalidatePath } from "next/cache";
 import { createCanteen } from "../composition";
 import { commandIdentity } from "../infrastructure/http-identity";
 import { executeOperation } from "@/shared/errors/execute-operation";
@@ -16,12 +17,16 @@ export async function collectCommandAction(
       route: "/commands",
       method: "POST",
     },
-    async () =>
-      createCanteen().collect.execute(
+    async () => {
+      const value = await createCanteen().collect.execute(
         await commandIdentity(),
         eventId,
         id,
         input,
-      ),
+      );
+      revalidatePath("/products", "layout");
+      revalidatePath("/events", "layout");
+      return value;
+    },
   );
 }

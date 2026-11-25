@@ -25,7 +25,6 @@ export class PrepareStockImportsUseCase {
   ): Promise<StockLinkOperation[]> {
     if (!imports.length) return [];
     const actor = checkEventAccessWrite(session, destination).user;
-    if (destination.kind !== "product_category") return eventMissing();
     const used = new Set<string>();
     const operations: StockLinkOperation[] = [];
     for (const ref of imports) {

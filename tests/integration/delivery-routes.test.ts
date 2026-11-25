@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, describe, expect, it } from "vitest";
 import { harness, type Harness } from "../support/harness";
 import { eventInput, uuid } from "../support/data";
-import { replenishEvent } from "../support/event-stock";
+import { replenishEvent, clearEventEntries } from "../support/event-stock";
 import { CreateEventUseCase } from "@/server/events/use-cases/create-event.use-case";
 import { CreateOrderUseCase } from "@/server/events/use-cases/create-order.use-case";
 import { D1DeliveryRepository } from "@/server/deliveries/infrastructure/d1-delivery.repository";
@@ -171,7 +171,7 @@ describe("rotas de entrega", () => {
       s.orders[0]!.id,
     ]);
   });
-  it("entrega/desfaz com autoria do acesso, repetição única e sem alterar dinheiro ou estoque", async () => {
+  it("entrega/desfaz com autoria do acesso, baixa física única e sem alterar dinheiro", async () => {
     const s = await setup(),
       route = await s.route([s.orders[0]!.id]),
       a = await access(s);
@@ -200,7 +200,9 @@ describe("rotas de entrega", () => {
         createdBy: h.actor.user.id,
       },
     });
-    expect(await h.events.orderStockBalances(s.event.id)).toEqual(stockBefore);
+    expect(await h.events.orderStockBalances(s.event.id)).toEqual(
+      stockBefore.map((b) => ({ ...b, quantity: b.quantity - 1 })),
+    );
     expect(await h.events.find(s.event.id)).toMatchObject({
       realCents: before!.realCents,
       pendingCents: before!.pendingCents,
@@ -215,6 +217,7 @@ describe("rotas de entrega", () => {
     expect((await s.repo.orders(s.event.id, route.id))[0]!.fulfilled).toBe(
       false,
     );
+    expect(await h.events.orderStockBalances(s.event.id)).toEqual(stockBefore);
   });
   it("limita o acesso ao entregador e ao evento e recusa revogação/expiração", async () => {
     const s = await setup(),
@@ -325,5 +328,40 @@ describe("rotas de entrega", () => {
     await expect(s.route([s.orders[0]!.id], uuid())).rejects.toMatchObject({
       details: { code: "DELIVERY_CHANGED" },
     });
+  });
+});
+
+it("entregador temporário não repõe falta; responsável confirma reposição e entrega", async () => {
+  const s = await setup(),
+    route = await s.route([s.orders[0]!.id]),
+    a = await access(s);
+  await clearEventEntries(h, s.event);
+  const target = (await h.events.findOrder(s.orders[0]!.id))!;
+  const input = {
+    requestId: uuid(),
+    routeId: route.id,
+    version: target.version,
+    fulfilled: true,
+  };
+  const temporary = { kind: "temporary" as const, credential: a.credential };
+  await expect(
+    s.deliver.execute(temporary, s.event.id, target.id, input),
+  ).rejects.toMatchObject({ details: { code: "STOCK_INSUFFICIENT" } });
+  const confirmed = {
+    ...input,
+    stockConfirmation: [
+      { productId: s.event.products[0].id, available: 0, missing: 1 },
+    ],
+  };
+  await expect(
+    s.deliver.execute(temporary, s.event.id, target.id, confirmed),
+  ).rejects.toMatchObject({ details: { code: "INVALID_STOCK_INPUT" } });
+  const user = { kind: "user" as const, session: h.actor };
+  await s.deliver.execute(user, s.event.id, target.id, confirmed);
+  await s.deliver.execute(user, s.event.id, target.id, confirmed);
+  expect((await h.events.findOrder(target.id))?.fulfilled).toBe(true);
+  expect(await h.events.orderStockBalances(s.event.id)).toContainEqual({
+    productId: s.event.products[0].id,
+    quantity: 0,
   });
 });

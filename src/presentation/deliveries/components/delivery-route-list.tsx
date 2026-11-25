@@ -1,5 +1,7 @@
 "use client";
-import { useState } from "react";
+import type { StockConfirmation } from "@/server/products/inputs/stock-confirmation.input";
+import { OrderStockShortageModal } from "@/presentation/products/components/order-stock-shortage-modal";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { DeliveryRoute } from "@/server/deliveries/models/delivery-route.model";
 import type { DeliveryOrder } from "@/server/deliveries/models/delivery-order.model";
@@ -38,6 +40,16 @@ export function DeliveryRouteList({
   onEdit?: (id: string) => void;
   options?: Pick<DeliveryRoute, "id" | "name" | "version">[];
 }) {
+  const operation = useRef<{
+    orderId: string;
+    input: {
+      requestId: string;
+      routeId: string;
+      version: number;
+      fulfilled: boolean;
+      stockConfirmation?: StockConfirmation;
+    };
+  } | null>(null);
   const router = useRouter(),
     toast = useToast(),
     [cancel, setCancel] = useState<DisplayRoute | null>(null),
@@ -151,21 +163,35 @@ export function DeliveryRouteList({
                         <Button
                           variant={o.fulfilled ? "neutral" : "primary"}
                           disabled={pending}
-                          onClick={() =>
+                          onClick={() => {
+                            if (
+                              !operation.current ||
+                              operation.current.orderId !== o.id ||
+                              operation.current.input.routeId !== route.id ||
+                              operation.current.input.version !== o.version ||
+                              operation.current.input.fulfilled === o.fulfilled
+                            ) {
+                              operation.current = {
+                                orderId: o.id,
+                                input: {
+                                  requestId: createRequestId(),
+                                  routeId: route.id,
+                                  version: o.version,
+                                  fulfilled: !o.fulfilled,
+                                },
+                              };
+                            }
+                            const attempt = operation.current;
                             execute(
                               () =>
                                 deliverOrderAction(
                                   eventId,
-                                  o.id,
-                                  {
-                                    requestId: createRequestId(),
-                                    routeId: route.id,
-                                    version: o.version,
-                                    fulfilled: !o.fulfilled,
-                                  },
+                                  attempt.orderId,
+                                  attempt.input,
                                   temporary,
                                 ),
                               () => {
+                                operation.current = null;
                                 toast(
                                   o.fulfilled
                                     ? "Entrega desfeita."
@@ -173,8 +199,8 @@ export function DeliveryRouteList({
                                 );
                                 router.refresh();
                               },
-                            )
-                          }
+                            );
+                          }}
                         >
                           {o.fulfilled ? "Desfazer entrega" : "Marcar entregue"}
                         </Button>
@@ -196,7 +222,51 @@ export function DeliveryRouteList({
           </section>
         ))}
       </div>
-      <ErrorModal error={error} onClose={closeError} />
+      {!temporary &&
+      operation.current &&
+      error?.code === "STOCK_INSUFFICIENT" &&
+      error.stockShortages?.length ? (
+        <OrderStockShortageModal
+          error={error}
+          busy={pending}
+          onClose={closeError}
+          onConfirm={() => {
+            const attempt = operation.current;
+            if (!attempt || pending) return;
+            attempt.input = {
+              ...attempt.input,
+              stockConfirmation: error.stockShortages!.map(
+                ({ productId, missing, available }) => ({
+                  productId,
+                  missing,
+                  available,
+                }),
+              ),
+            };
+            execute(
+              () => deliverOrderAction(eventId, attempt.orderId, attempt.input),
+              () => {
+                operation.current = null;
+                toast("Entrega confirmada.");
+                router.refresh();
+              },
+            );
+          }}
+        />
+      ) : (
+        <ErrorModal
+          error={
+            temporary && error?.code === "STOCK_INSUFFICIENT"
+              ? {
+                  ...error,
+                  message:
+                    "Estoque insuficiente. Peça ao responsável para regularizar o estoque antes de concluir.",
+                }
+              : error
+          }
+          onClose={closeError}
+        />
+      )}
       {cancel && (
         <ConfirmationModal
           title="Cancelar rota?"

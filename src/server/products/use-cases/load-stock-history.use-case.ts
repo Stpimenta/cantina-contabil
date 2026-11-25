@@ -27,11 +27,7 @@ export class LoadStockHistoryUseCase {
       productId = parseInput(validateEventId(productInput));
     const { page } = parseInput(validateEventQuery({ page: pageInput }));
     const event = await this.events.find(id);
-    if (
-      !event ||
-      event.kind !== "product_category" ||
-      !event.products.some((p) => p.id === productId)
-    )
+    if (!event || !event.products.some((p) => p.id === productId))
       return eventMissing();
     checkEventRead(session, event);
     checkStockMembers(

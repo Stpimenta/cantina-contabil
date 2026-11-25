@@ -375,19 +375,18 @@ export function EventFormModal({
                           label={
                             <span className={styles.productLabel}>
                               Nome do produto
-                              {recurring &&
-                                (sharedProductIds.includes(p.id) ||
-                                  input.stockImports?.some(
-                                    (ref) => ref.productId === p.id,
-                                  )) && (
-                                  <SharedStockIndicator
-                                    pending={
-                                      !!input.stockImports?.some(
-                                        (ref) => ref.productId === p.id,
-                                      )
-                                    }
-                                  />
-                                )}
+                              {(sharedProductIds.includes(p.id) ||
+                                input.stockImports?.some(
+                                  (ref) => ref.productId === p.id,
+                                )) && (
+                                <SharedStockIndicator
+                                  pending={
+                                    !!input.stockImports?.some(
+                                      (ref) => ref.productId === p.id,
+                                    )
+                                  }
+                                />
+                              )}
                             </span>
                           }
                           value={p.name}
@@ -488,44 +487,40 @@ export function EventFormModal({
                 <Icon name="plus" />
                 Adicionar produto
               </Button>
-              {recurring && (
-                <Button
-                  type="button"
-                  variant="neutral"
-                  id={`${id}-products-import`}
-                  aria-haspopup="dialog"
-                  aria-describedby={
-                    fields?.stockImports ? `${id}-imports-error` : undefined
-                  }
-                  busy={sources.pending}
-                  disabled={pending || input.products.length >= 100}
-                  onClick={() => {
-                    if (isPending()) return;
-                    sources.execute(
-                      () => loadStockImportOptionsAction(event?.id),
-                      (options) =>
-                        setImportOptions(
-                          options.filter(
-                            (option) =>
-                              !input.stockImports?.some(
-                                (ref) =>
-                                  ref.sourceStockId === option.sourceStockId,
-                              ),
-                          ),
+              <Button
+                type="button"
+                variant="neutral"
+                id={`${id}-products-import`}
+                aria-haspopup="dialog"
+                aria-describedby={
+                  fields?.stockImports ? `${id}-imports-error` : undefined
+                }
+                busy={sources.pending}
+                disabled={pending || input.products.length >= 100}
+                onClick={() => {
+                  if (isPending()) return;
+                  sources.execute(
+                    () => loadStockImportOptionsAction(event?.id),
+                    (options) =>
+                      setImportOptions(
+                        options.filter(
+                          (option) =>
+                            !input.stockImports?.some(
+                              (ref) =>
+                                ref.sourceStockId === option.sourceStockId,
+                            ),
                         ),
-                    );
-                  }}
-                >
-                  Vincular produtos existentes
-                </Button>
-              )}
+                      ),
+                  );
+                }}
+              >
+                Vincular produtos existentes
+              </Button>
             </div>
-            {recurring && (
-              <FieldError
-                id={`${id}-imports-error`}
-                error={fields?.stockImports}
-              />
-            )}
+            <FieldError
+              id={`${id}-imports-error`}
+              error={fields?.stockImports}
+            />
           </section>
           <span className="sr-only" role="status">
             {saving

@@ -17,7 +17,7 @@ export async function createEventAction(input: unknown) {
       const session = await createAuth().getSession.execute();
       context.actorId = session?.user.id ?? 0;
       const value = await createEvents().create.execute(session, input);
-      revalidatePath("/events");
+      revalidatePath("/events", "layout");
       revalidatePath(`/events/${value.id}`);
       revalidatePath("/cash-boxes", "layout");
       revalidatePath("/products", "layout");

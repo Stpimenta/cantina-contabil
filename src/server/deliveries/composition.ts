@@ -1,3 +1,4 @@
+import { D1SharedStockRepository } from "@/server/products/infrastructure/d1-shared-stock.repository";
 import "server-only";
 import { createDatabase } from "@/shared/infrastructure/database";
 import { D1EventRepository } from "@/server/events/infrastructure/d1-event.repository";
@@ -32,7 +33,12 @@ export function createDeliveries() {
     start: new StartRouteUseCase(repo, events),
     cancel: new CancelRouteUseCase(repo, events),
     move: new MoveDeliveryUseCase(repo, events),
-    deliver: new DeliverOrderUseCase(repo, events, auth),
+    deliver: new DeliverOrderUseCase(
+      repo,
+      events,
+      auth,
+      new D1SharedStockRepository(db),
+    ),
     createAccess: new CreateDeliveryAccessUseCase(
       repo,
       events,

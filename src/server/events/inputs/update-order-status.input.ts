@@ -1,3 +1,4 @@
+import { stockConfirmationSchema } from "@/server/products/inputs/stock-confirmation.input";
 import {
   receiptListSchema,
   RECEIPT_MAX_FILES,
@@ -32,17 +33,7 @@ export function validateUpdateOrderStatus(input: unknown, totalCents?: number) {
           })
           .optional(),
         fulfilled: z.boolean().optional(),
-        stockConfirmation: z
-          .array(
-            z.object({
-              productId: z.uuid(),
-              missing: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
-              available: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
-            }),
-          )
-          .min(1)
-          .max(100)
-          .optional(),
+        stockConfirmation: stockConfirmationSchema.optional(),
       })
       .superRefine((data, ctx) => {
         if (data.stockConfirmation && data.fulfilled !== true)

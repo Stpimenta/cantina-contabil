@@ -55,10 +55,9 @@ export const saveEventInputSchema = z
   .refine(
     (data) =>
       !data.stockImports.length ||
-      (data.kind === "product_category" &&
-        data.stockImports.every((ref) =>
-          data.products.some((p) => p.id === ref.productId),
-        ) &&
+      (data.stockImports.every((ref) =>
+        data.products.some((p) => p.id === ref.productId),
+      ) &&
         new Set(data.stockImports.map((ref) => ref.productId)).size ===
           data.stockImports.length &&
         new Set(data.stockImports.map((ref) => ref.operationId)).size ===

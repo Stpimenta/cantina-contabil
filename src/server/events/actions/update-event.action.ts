@@ -26,7 +26,7 @@ export async function updateEventAction(
         version,
         input,
       );
-      revalidatePath("/events");
+      revalidatePath("/events", "layout");
       revalidatePath(`/events/${value.id}`);
       revalidatePath("/cash-boxes", "layout");
       revalidatePath("/products", "layout");

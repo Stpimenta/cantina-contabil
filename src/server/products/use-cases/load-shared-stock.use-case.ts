@@ -22,11 +22,7 @@ export class LoadSharedStockUseCase {
     const id = parseInput(validateEventId(categoryInput)),
       productId = parseInput(validateEventId(productInput));
     const event = await this.events.find(id);
-    if (
-      !event ||
-      event.kind !== "product_category" ||
-      !event.products.some((p) => p.id === productId)
-    )
+    if (!event || !event.products.some((p) => p.id === productId))
       return eventMissing();
     checkEventRead(session, event);
     const members = await this.shared.members(id, [productId]);

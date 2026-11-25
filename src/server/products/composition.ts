@@ -17,7 +17,6 @@ import { GetProductStockUseCase } from "./use-cases/get-product-stock.use-case";
 import { ListStockEntriesUseCase } from "./use-cases/list-stock-entries.use-case";
 import { SaveStockEntryUseCase } from "./use-cases/save-stock-entry.use-case";
 import { SaveOrderWithdrawalUseCase } from "./use-cases/save-order-withdrawal.use-case";
-import { ResolveOrderStockShortageUseCase } from "./use-cases/resolve-order-stock-shortage.use-case";
 export function createProducts() {
   const db = createDatabase();
   const events = new D1EventRepository(db);
@@ -29,16 +28,11 @@ export function createProducts() {
     shared: new LoadSharedStockUseCase(events, shared),
     manageShared: new ManageSharedStockUseCase(events, shared),
     stockHistory: new LoadStockHistoryUseCase(events, shared),
-    productionPlan: new GetProductionPlanUseCase(events, stock, shared),
-    resolveShortage: new ResolveOrderStockShortageUseCase(
-      events,
-      stock,
-      saveEntry,
-    ),
+    productionPlan: new GetProductionPlanUseCase(events, stock),
     loadEntries: new LoadStockEntriesUseCase(events, stock, shared),
     checkRemoval: new CheckProductRemovalUseCase(events, stock),
     list: new ListProductCategoriesUseCase(events),
-    stock: new GetProductStockUseCase(events, stock, shared),
+    stock: new GetProductStockUseCase(events, stock),
     entries: new ListStockEntriesUseCase(events, stock, shared),
     saveEntry,
     updateEntries: new UpdateStockEntriesUseCase(events, stock, shared),

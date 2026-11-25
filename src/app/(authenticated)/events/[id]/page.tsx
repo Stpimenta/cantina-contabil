@@ -136,6 +136,9 @@ export default async function EventPage({
                 )}
                 <div className={styles.editActions}>
                   <EventActions
+                    sharedProductIds={result.value.balances
+                      .filter((balance) => balance.shared)
+                      .map((balance) => balance.productId)}
                     event={result.value.event}
                     cashBoxes={result.value.cashBoxes}
                     today={currentDateInSaoPaulo()}

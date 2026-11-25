@@ -15,7 +15,7 @@ const memberSelect = sql`SELECT m.event_id AS eventId,m.product_id AS productId,
  FROM product_stock_members m JOIN events e ON e.id=m.event_id,
  json_each(e.payload_json,'$.products') p
  LEFT JOIN product_stock_balances b ON b.event_id=m.event_id AND b.product_id=m.product_id
- WHERE e.kind='product_category' AND e.deleted_at IS NULL AND json_extract(p.value,'$.id')=m.product_id`;
+ WHERE e.deleted_at IS NULL AND json_extract(p.value,'$.id')=m.product_id`;
 export class D1SharedStockRepository implements SharedStockRepository {
   constructor(private readonly db: Database) {}
   async members(categoryId: string, productIds: string[]) {
@@ -90,13 +90,33 @@ export class D1SharedStockRepository implements SharedStockRepository {
       WHERE EXISTS(SELECT 1 FROM members m WHERE m.event_id=a.event_id AND m.product_id=json_extract(a.after_json,'$.productId'))
       UNION ALL
       SELECT a.id||'-'||json_extract(i.value,'$.id'),json_extract(i.value,'$.name'),e.name,'withdrawal',a.actor_name,a.occurred_at,
-       json_object('quantity',coalesce((SELECT json_extract(w.value,'$.quantity') FROM json_each(a.before_json,'$.withdrawals') w WHERE json_extract(w.value,'$.productId')=json_extract(i.value,'$.id')),0)),
-       json_object('quantity',coalesce((SELECT json_extract(w.value,'$.quantity') FROM json_each(a.after_json,'$.withdrawals') w WHERE json_extract(w.value,'$.productId')=json_extract(i.value,'$.id')),0))
+       json_object('quantity',CASE WHEN e.canteen_enabled=1 THEN
+ CASE WHEN coalesce(json_extract(a.before_json,'$.collected'),0)=1 THEN
+ coalesce((SELECT json_extract(x.value,'$.quantity') FROM json_each(a.before_json,'$.items') x WHERE json_extract(x.value,'$.id')=json_extract(i.value,'$.id')),0) ELSE 0 END
+ WHEN e.delivery_enabled=1 THEN CASE WHEN coalesce(json_extract(a.before_json,'$.fulfilled'),0)=1 THEN
+ coalesce((SELECT json_extract(x.value,'$.quantity') FROM json_each(a.before_json,'$.items') x WHERE json_extract(x.value,'$.id')=json_extract(i.value,'$.id')),0) ELSE 0 END
+ ELSE coalesce((SELECT json_extract(w.value,'$.quantity') FROM json_each(a.before_json,'$.withdrawals') w WHERE json_extract(w.value,'$.productId')=json_extract(i.value,'$.id')),0) END),
+       json_object('quantity',CASE WHEN e.canteen_enabled=1 THEN
+ CASE WHEN coalesce(json_extract(a.after_json,'$.collected'),0)=1 THEN
+ coalesce((SELECT json_extract(x.value,'$.quantity') FROM json_each(a.after_json,'$.items') x WHERE json_extract(x.value,'$.id')=json_extract(i.value,'$.id')),0) ELSE 0 END
+ WHEN e.delivery_enabled=1 THEN CASE WHEN coalesce(json_extract(a.after_json,'$.fulfilled'),0)=1 THEN
+ coalesce((SELECT json_extract(x.value,'$.quantity') FROM json_each(a.after_json,'$.items') x WHERE json_extract(x.value,'$.id')=json_extract(i.value,'$.id')),0) ELSE 0 END
+ ELSE coalesce((SELECT json_extract(w.value,'$.quantity') FROM json_each(a.after_json,'$.withdrawals') w WHERE json_extract(w.value,'$.productId')=json_extract(i.value,'$.id')),0) END)
       FROM event_audit a JOIN events e ON e.id=a.event_id,json_each(a.after_json,'$.items') i
-      WHERE a.resource_type='order' AND e.kind='product_category'
+      WHERE a.resource_type='order'
       AND EXISTS(SELECT 1 FROM members m WHERE m.event_id=a.event_id AND m.product_id=json_extract(i.value,'$.id'))
-      AND coalesce((SELECT json_extract(w.value,'$.quantity') FROM json_each(a.before_json,'$.withdrawals') w WHERE json_extract(w.value,'$.productId')=json_extract(i.value,'$.id')),0)
-       !=coalesce((SELECT json_extract(w.value,'$.quantity') FROM json_each(a.after_json,'$.withdrawals') w WHERE json_extract(w.value,'$.productId')=json_extract(i.value,'$.id')),0)
+      AND CASE WHEN e.canteen_enabled=1 THEN
+ CASE WHEN coalesce(json_extract(a.before_json,'$.collected'),0)=1 THEN
+ coalesce((SELECT json_extract(x.value,'$.quantity') FROM json_each(a.before_json,'$.items') x WHERE json_extract(x.value,'$.id')=json_extract(i.value,'$.id')),0) ELSE 0 END
+ WHEN e.delivery_enabled=1 THEN CASE WHEN coalesce(json_extract(a.before_json,'$.fulfilled'),0)=1 THEN
+ coalesce((SELECT json_extract(x.value,'$.quantity') FROM json_each(a.before_json,'$.items') x WHERE json_extract(x.value,'$.id')=json_extract(i.value,'$.id')),0) ELSE 0 END
+ ELSE coalesce((SELECT json_extract(w.value,'$.quantity') FROM json_each(a.before_json,'$.withdrawals') w WHERE json_extract(w.value,'$.productId')=json_extract(i.value,'$.id')),0) END
+       !=CASE WHEN e.canteen_enabled=1 THEN
+ CASE WHEN coalesce(json_extract(a.after_json,'$.collected'),0)=1 THEN
+ coalesce((SELECT json_extract(x.value,'$.quantity') FROM json_each(a.after_json,'$.items') x WHERE json_extract(x.value,'$.id')=json_extract(i.value,'$.id')),0) ELSE 0 END
+ WHEN e.delivery_enabled=1 THEN CASE WHEN coalesce(json_extract(a.after_json,'$.fulfilled'),0)=1 THEN
+ coalesce((SELECT json_extract(x.value,'$.quantity') FROM json_each(a.after_json,'$.items') x WHERE json_extract(x.value,'$.id')=json_extract(i.value,'$.id')),0) ELSE 0 END
+ ELSE coalesce((SELECT json_extract(w.value,'$.quantity') FROM json_each(a.after_json,'$.withdrawals') w WHERE json_extract(w.value,'$.productId')=json_extract(i.value,'$.id')),0) END
       UNION ALL
       SELECT l.id,'','',l.action,l.actor_name,l.occurred_at,l.before_json,l.after_json FROM product_stock_links l
       WHERE EXISTS(SELECT 1 FROM members m,json_each(l.context_json) c WHERE m.event_id=json_extract(c.value,'$.eventId') AND m.product_id=json_extract(c.value,'$.productId'))

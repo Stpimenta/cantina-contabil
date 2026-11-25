@@ -38,6 +38,7 @@ export async function manageSharedStockAction(input: unknown) {
       context.actorId = session?.user.id ?? 0;
       const value = await createProducts().manageShared.execute(session, input);
       revalidatePath("/products", "layout");
+      revalidatePath("/events", "layout");
       return value;
     },
   );

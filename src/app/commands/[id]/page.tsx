@@ -51,7 +51,11 @@ export default async function TabletCommands({
         }
       />
       {result.ok ? (
-        <CommandBoard initial={result.value} basePath={`/commands/${id}`} />
+        <CommandBoard
+          temporary
+          initial={result.value}
+          basePath={`/commands/${id}`}
+        />
       ) : (
         <PageFailure error={result.error} />
       )}

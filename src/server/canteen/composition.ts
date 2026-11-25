@@ -1,3 +1,4 @@
+import { D1SharedStockRepository } from "@/server/products/infrastructure/d1-shared-stock.repository";
 import { GetCommandWindowUseCase } from "./use-cases/get-command-window.use-case";
 import "server-only";
 import { createDatabase } from "@/shared/infrastructure/database";
@@ -26,7 +27,11 @@ export function createCanteen() {
     auth,
     list: new ListCommandsUseCase(events, repo, auth),
     get: new GetCommandUseCase(events, auth),
-    collect: new CollectCommandUseCase(events, auth),
+    collect: new CollectCommandUseCase(
+      events,
+      auth,
+      new D1SharedStockRepository(db),
+    ),
     createAccess: new CreateAccessUseCase(repo, events, credentialCodec),
     activate: new ActivateAccessUseCase(repo, credentialCodec),
     accesses: new ListAccessUseCase(repo, events),

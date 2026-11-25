@@ -1,6 +1,5 @@
-import { changedStockProducts } from "@/server/products/models/shared-stock.model";
+import { prepareOrderStock } from "@/server/products/use-cases/prepare-order-stock";
 import type { SharedStockRepository } from "@/server/products/repositories/shared-stock.repository";
-import { sharedStockAccess } from "@/server/products/use-cases/shared-stock-access";
 import { receiptMetadata } from "@/shared/receipts/receipt-input";
 import type { ReceiptRepository } from "../repositories/receipt.repository";
 import {
@@ -8,8 +7,6 @@ import {
   inspectOrderReceipts,
   storeOrderReceipts,
 } from "./order-receipts";
-import { stockShortages } from "@/server/products/models/stock-shortages";
-import type { StockEntry } from "@/server/products/models/stock-entry.model";
 import { checkEventAccessWrite } from "@/shared/auth/check-cash-box-access";
 import type { Session } from "@/server/auth/models/session.model";
 import { throwBusinessError } from "@/shared/errors/business-error";
@@ -135,82 +132,16 @@ export class UpdateOrderStatusUseCase {
       lastOperation: data.requestId,
       fingerprint,
     };
-    if (event.kind === "product_category") {
-      const changed = changedStockProducts(
-        order.withdrawals ?? [],
-        current.withdrawals ?? [],
-      );
-      if (changed.length) {
-        const access = await sharedStockAccess(
-          session,
-          this.shared,
-          event.id,
-          changed,
-          true,
-        );
-        order.stockContext = access.context ?? null;
-      }
-    }
-    const additions: (StockEntry & { expectedAvailable: number })[] = [];
-    if (data.stockConfirmation) {
-      if (event.kind !== "product_category" || !usesWithdrawals)
-        throwBusinessError({
-          code: "INVALID_STOCK_INPUT",
-          category: "validation",
-        });
-      const shortages = stockShortages(
-        current.items,
-        current.items.map((item) => ({
-          productId: item.id,
-          quantity: item.quantity,
-        })),
-        current.withdrawals ?? [],
-        await this.events.orderStockBalances(eventId),
-      );
-      if (
-        shortages.length !== data.stockConfirmation.length ||
-        new Set(data.stockConfirmation.map((item) => item.productId)).size !==
-          data.stockConfirmation.length ||
-        shortages.some(
-          (item) =>
-            !data.stockConfirmation!.some(
-              (confirmed) =>
-                confirmed.productId === item.productId &&
-                confirmed.missing === item.missing &&
-                confirmed.available === item.available,
-            ),
-        )
-      )
-        throwBusinessError({ code: "STOCK_CHANGED", category: "conflict" });
-      for (const item of shortages) {
-        additions.push({
-          stockContext: order.stockContext,
-          id: crypto.randomUUID(),
-          eventId,
-          productId: item.productId,
-          quantity: item.missing,
-          expectedAvailable: item.available,
-          version: 1,
-          deletedAt: null,
-          deletedBy: null,
-          deletedByName: null,
-          createdAt: order.updatedAt,
-          updatedAt: order.updatedAt,
-          createdBy: actor.id,
-          createdByName: actor.name,
-          updatedBy: actor.id,
-          updatedByName: actor.name,
-          lastOperation: data.requestId,
-          fingerprint: JSON.stringify({
-            operation: "confirmStockAndWithdraw",
-            orderId: id,
-            requestId: data.requestId,
-            productId: item.productId,
-            quantity: item.missing,
-          }),
-        });
-      }
-    }
+    const stock = await prepareOrderStock(
+      session,
+      this.shared,
+      this.events,
+      event,
+      current,
+      order,
+      data.stockConfirmation,
+    );
+    order.stockContext = stock.context;
     const stored = await storeOrderReceipts(
       this.receipts,
       eventId,
@@ -224,7 +155,7 @@ export class UpdateOrderStatusUseCase {
       order,
       expected,
       event.version,
-      additions,
+      stock.additions,
     );
     if (outcome === "stale") {
       const saved = await this.events.findOrder(id);

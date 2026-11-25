@@ -1,3 +1,4 @@
+import { orderStockConsumption } from "@/server/products/models/order-stock";
 import type { StockLinkOperation } from "@/server/products/models/shared-stock.model";
 import { productStockLinks } from "@/server/products/infrastructure/product-stock-link.schema";
 import type { StockEntry } from "@/server/products/models/stock-entry.model";
@@ -189,37 +190,21 @@ export class D1EventRepository implements EventRepository {
           current.updatedBy === attemptedOrder.updatedBy
         )
           return "stale";
-        const balances = await this.db.all<{
-          productId: string;
-          quantity: number;
-          stockId?: string;
-        }>(
-          sql`SELECT product_id AS productId,quantity,CASE WHEN (SELECT count(*) FROM product_stock_members m WHERE m.stock_id=product_stock_balances.stock_id)>1 THEN stock_id END AS stockId FROM product_stock_balances WHERE event_id=${attemptedOrder.eventId}`,
-        );
-        if (
-          balances.some(
-            (b) => !Number.isSafeInteger(b.quantity) || b.quantity < 0,
-          )
-        )
-          throw new Error("Invalid product stock balance");
+        const balances = await this.orderStockBalances(attemptedOrder.eventId);
         const event = await this.find(attemptedOrder.eventId);
-        const reserved = event?.kind !== "product_category";
-        const quantities = (items: EventOrder["items"]) =>
-          items.map((item) => ({
-            productId: item.id,
-            quantity: item.quantity,
-          }));
         throwBusinessError({
           code: "STOCK_INSUFFICIENT",
           category: "conflict",
           stockShortages: stockShortages(
             attemptedOrder.items,
-            reserved
-              ? quantities(attemptedOrder.items)
-              : (attemptedOrder.withdrawals ?? []),
-            reserved
-              ? quantities(current?.items ?? [])
-              : (current?.withdrawals ?? []),
+            orderStockConsumption(
+              event ?? { deliveryEnabled: false, canteenEnabled: false },
+              attemptedOrder,
+            ),
+            orderStockConsumption(
+              event ?? { deliveryEnabled: false, canteenEnabled: false },
+              current,
+            ),
             balances,
           ),
         });
@@ -501,36 +486,71 @@ export class D1EventRepository implements EventRepository {
       .get();
     return row ? readOrder(row) : null;
   }
-  async createOrder(o: EventOrder, catalogVersion: number) {
+  async createOrder(
+    o: EventOrder,
+    catalogVersion: number,
+    additions?: (StockEntry & { expectedAvailable: number })[],
+  ) {
     await this.arm(o.eventId, o.lastOperation);
-    return this.write(
-      () =>
-        this.db
-          .insert(eventOrders)
-          .values({
-            id: o.id,
-            eventId: o.eventId,
-            customerName: o.customerName,
-            note: o.note,
-            totalCents: o.totalCents,
-            paid: o.paid,
-            catalogVersion,
-            ...metadata(o),
-            payloadJson: orderPayload(o),
-            stockContext: o.stockContext ?? null,
-          })
-          .onConflictDoNothing({ target: eventOrders.id })
-          .run(),
-      o,
-    );
+    return this.write(async () => {
+      const insert = this.db
+        .insert(eventOrders)
+        .values({
+          id: o.id,
+          eventId: o.eventId,
+          customerName: o.customerName,
+          note: o.note,
+          totalCents: o.totalCents,
+          paid: o.paid,
+          catalogVersion,
+          ...metadata(o),
+          payloadJson: orderPayload(o),
+          stockContext: o.stockContext ?? null,
+        })
+        .onConflictDoNothing({ target: eventOrders.id });
+      if (!additions?.length) return insert.run();
+      const entries = additions.map(({ expectedAvailable, ...entry }) =>
+        this.db.insert(productStockEntries).values({
+          ...entry,
+          quantity: sql`CASE WHEN NOT EXISTS(SELECT 1 FROM event_orders WHERE id=${o.id})
+            AND coalesce((SELECT quantity FROM product_stock_balances WHERE event_id=${o.eventId} AND product_id=${entry.productId}),0)=${expectedAvailable}
+            THEN ${entry.quantity} ELSE 0 END`,
+        }),
+      );
+      const [first, ...rest] = entries;
+      try {
+        const results = await this.db.batch([first!, ...rest, insert]);
+        return results[results.length - 1];
+      } catch (cause) {
+        const current = await this.findOrder(o.id);
+        if (
+          current?.lastOperation === o.lastOperation &&
+          current.fingerprint === o.fingerprint &&
+          current.updatedBy === o.updatedBy
+        )
+          return { meta: { changes: 0 } };
+        if (hasDatabaseError(cause, "INVALID_STOCK_INPUT"))
+          throwBusinessError({ code: "STOCK_CHANGED", category: "conflict" });
+        throw cause;
+      }
+    }, o);
   }
   async orderStockBalances(eventId: string) {
-    return this.db.all<{
+    const rows = await this.db.all<{
       productId: string;
       quantity: number;
-      stockId?: string;
+      stockId: string | null;
     }>(
       sql`SELECT product_id AS productId, quantity,CASE WHEN (SELECT count(*) FROM product_stock_members m WHERE m.stock_id=product_stock_balances.stock_id)>1 THEN stock_id END AS stockId FROM product_stock_balances WHERE event_id=${eventId}`,
+    );
+    if (
+      rows.some(
+        (row) => !Number.isSafeInteger(row.quantity) || row.quantity < 0,
+      )
+    )
+      throw new Error("Invalid product stock balance");
+    return rows.map(({ stockId, ...row }) =>
+      stockId ? { ...row, stockId } : row,
     );
   }
   async updateOrder(

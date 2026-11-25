@@ -1,3 +1,5 @@
+import { prepareOrderStock } from "@/server/products/use-cases/prepare-order-stock";
+import type { SharedStockRepository } from "@/server/products/repositories/shared-stock.repository";
 import {
   checkEventRead,
   checkEventAccessWrite,
@@ -21,6 +23,7 @@ export class CollectCommandUseCase {
   constructor(
     private readonly events: EventRepository,
     private readonly auth: CommandAuthorization,
+    private readonly shared?: SharedStockRepository,
   ) {}
   async execute(
     identity: CommandIdentity,
@@ -56,6 +59,7 @@ export class CollectCommandUseCase {
     if (current.version !== data.version) return eventChanged();
     const order = {
       ...current,
+      stockContext: null as string | null,
       collected: data.collected,
       version: current.version + 1,
       updatedAt: new Date().toISOString(),
@@ -68,10 +72,22 @@ export class CollectCommandUseCase {
       lastOperation: data.requestId,
       fingerprint,
     };
+    const stock = await prepareOrderStock(
+      identity.kind === "user" ? identity.session : null,
+      this.shared,
+      this.events,
+      event,
+      current,
+      order,
+      data.stockConfirmation,
+      identity.kind !== "user",
+    );
+    order.stockContext = stock.context;
     const result = await this.events.updateOrder(
       order,
       current.version,
       event.version,
+      stock.additions,
     );
     if (result === "stale") {
       const saved = await this.events.findOrder(id);

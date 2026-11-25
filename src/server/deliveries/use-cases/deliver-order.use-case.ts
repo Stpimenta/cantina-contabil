@@ -1,3 +1,5 @@
+import { prepareOrderStock } from "@/server/products/use-cases/prepare-order-stock";
+import type { SharedStockRepository } from "@/server/products/repositories/shared-stock.repository";
 import type { Session } from "@/server/auth/models/session.model";
 import type { EventRepository } from "@/server/events/repositories/event.repository";
 import type { DeliveryRepository } from "../repositories/delivery.repository";
@@ -14,6 +16,7 @@ export class DeliverOrderUseCase {
     private readonly repo: DeliveryRepository,
     private readonly events: EventRepository,
     private readonly auth: DeliveryAuthorization,
+    private readonly shared?: SharedStockRepository,
   ) {}
   async execute(
     identity: DeliveryIdentity,
@@ -72,6 +75,7 @@ export class DeliverOrderUseCase {
     const user = identity.kind === "user" ? identity.session!.user : null;
     const order = {
       ...current,
+      stockContext: null as string | null,
       fulfilled: data.fulfilled,
       version: current.version + 1,
       updatedAt: new Date().toISOString(),
@@ -83,10 +87,22 @@ export class DeliverOrderUseCase {
       lastOperation: data.requestId,
       fingerprint,
     };
+    const stock = await prepareOrderStock(
+      identity.kind === "user" ? identity.session : null,
+      this.shared,
+      this.events,
+      event,
+      current,
+      order,
+      data.stockConfirmation,
+      identity.kind !== "user",
+    );
+    order.stockContext = stock.context;
     const outcome = await this.events.updateOrder(
       order,
       current.version,
       event.version,
+      stock.additions,
     );
     if (outcome === "stale") {
       const saved = await this.events.findOrder(orderId);

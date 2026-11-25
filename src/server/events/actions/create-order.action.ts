@@ -28,7 +28,7 @@ export async function createOrderAction(
           ?.getAll("receipts")
           .filter((entry): entry is File => entry instanceof File) ?? [],
       );
-      revalidatePath("/events");
+      revalidatePath("/events", "layout");
       revalidatePath(`/events/${eventId}`);
       revalidatePath(`/events/${eventId}/orders`);
       revalidatePath("/cash-boxes", "layout");

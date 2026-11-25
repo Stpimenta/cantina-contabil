@@ -1,3 +1,7 @@
+import type { EventRepository } from "@/server/events/repositories/event.repository";
+import { DeleteOrderUseCase } from "@/server/events/use-cases/delete-order.use-case";
+import { UpdateOrderUseCase } from "@/server/events/use-cases/update-order.use-case";
+import { currentDateInSaoPaulo } from "@/shared/formatting/date-time";
 import { PrepareStockImportsUseCase } from "@/server/products/use-cases/prepare-stock-imports.use-case";
 import { LoadStockImportOptionsUseCase } from "@/server/products/use-cases/load-stock-import-options.use-case";
 import { UpdateEventUseCase } from "@/server/events/use-cases/update-event.use-case";
@@ -100,6 +104,7 @@ async function order(
   group: Event,
   quantity: number,
   items = group.products.slice(0, 1),
+  pickupOn = "2026-11-22",
 ) {
   return new CreateOrderUseCase(h.events, undefined, repos().shared).execute(
     h.actor,
@@ -108,7 +113,7 @@ async function order(
       requestId: uuid(),
       catalogVersion: group.version,
       customerName: "Pessoa sintética",
-      pickupOn: "2026-11-22",
+      pickupOn,
       note: "",
       items: items.map((p) => ({ productId: p.id, quantity })),
       total: String(
@@ -129,12 +134,11 @@ async function balance(group: Event, index = 0) {
 }
 
 async function available(group: Event, index = 0) {
-  const { stock, shared } = repos();
-  const balances = await new GetProductStockUseCase(
-    h.events,
-    stock,
-    shared,
-  ).execute(h.actor, group.id);
+  const { stock } = repos();
+  const balances = await new GetProductStockUseCase(h.events, stock).execute(
+    h.actor,
+    group.id,
+  );
   return balances.find((row) => row.productId === group.products[index].id)
     ?.availableQuantity;
 }
@@ -159,11 +163,11 @@ it("soma estoques de três produtos, consolida demanda sem duplicar saldo e pres
   expect(await available(a)).toBe(0);
   expect(await available(b)).toBe(0);
   expect(await available(c)).toBe(0);
-  const plan = await new GetProductionPlanUseCase(
-    h.events,
-    stock,
-    shared,
-  ).execute(h.actor, a.id, "all");
+  const plan = await new GetProductionPlanUseCase(h.events, stock).execute(
+    h.actor,
+    a.id,
+    "all",
+  );
   expect(plan).toHaveLength(1);
   expect(plan[0]).toMatchObject({ pending: 27, physical: 8, toProduce: 19 });
   expect(plan[0].scenarios).toEqual(
@@ -277,7 +281,6 @@ it("dois produtos vinculados no mesmo pedido não gastam o saldo duas vezes e re
   const plan = await new GetProductionPlanUseCase(
     h.events,
     repos().stock,
-    shared,
   ).execute(h.actor, a.id, "all");
   expect(plan).toHaveLength(1);
   expect(plan[0].pending).toBe(0);
@@ -734,4 +737,501 @@ it("falha no segundo vínculo reverte catálogo e primeiro vínculo juntos", asy
   );
   expect(await balance(a)).toBe(10);
   expect(await balance(b)).toBe(6);
+});
+
+async function importedEvent(
+  source: Event,
+  extra: {
+    canteenEnabled?: boolean;
+    deliveryEnabled?: boolean;
+    occursOn?: string;
+  } = {},
+) {
+  const box = await h.box(uuid());
+  const options = await importing().options.execute(h.actor);
+  const option = options.find((o) => o.sourceCategoryId === source.id)!;
+  return importing().create.execute(h.actor, {
+    ...eventInput(box.id),
+    ...extra,
+    ...selectedProducts([option]),
+    name: "Evento com bolos",
+    kind: "event",
+  });
+}
+async function eventOrder(event: Event, quantity: number) {
+  return new CreateOrderUseCase(h.events, undefined, repos().shared).execute(
+    h.actor,
+    event.id,
+    {
+      requestId: uuid(),
+      catalogVersion: event.version,
+      customerName: "Pessoa sintética",
+      note: "",
+      items: [{ productId: event.products[0].id, quantity }],
+      total: "20",
+      paid: false,
+      cash: "0",
+      pix: "0",
+      ...(event.deliveryEnabled ? { fulfillmentMode: "pickup" } : {}),
+    },
+  );
+}
+it("evento seleciona bolo existente sem duplicar estoque e consolida a demanda das duas origens", async () => {
+  const source = await category("Bolos de pote");
+  await add(source, 10);
+  const event = await importedEvent(source);
+  await order(source, 4);
+  const pending = await eventOrder(event, 8);
+  expect(await balance(source)).toBe(10);
+  expect(await balance(event)).toBe(10);
+  expect(await available(source)).toBe(0);
+  expect(await available(event)).toBe(0);
+  const plan = new GetProductionPlanUseCase(h.events, repos().stock);
+  expect(await plan.execute(h.actor, event.id, "all")).toMatchObject([
+    { pending: 12, physical: 10, toProduce: 2 },
+  ]);
+  const done = await repos().status.execute(h.actor, event.id, pending.id, 1, {
+    requestId: uuid(),
+    fulfilled: true,
+  });
+  expect(await balance(source)).toBe(2);
+  expect(await balance(event)).toBe(2);
+  expect(await available(source)).toBe(0);
+  await repos().status.execute(h.actor, event.id, pending.id, done.version, {
+    requestId: uuid(),
+    fulfilled: false,
+  });
+  expect(await balance(source)).toBe(10);
+  expect(await plan.execute(h.actor, source.id, "all")).toMatchObject([
+    { pending: 12, physical: 10, toProduce: 2 },
+  ]);
+  expect((await h.events.find(event.id))?.products[0].priceCents).toBe(
+    source.products[0].priceCents,
+  );
+  expect((await h.events.find(source.id))?.pendingCents).toBe(4000);
+  expect((await h.events.find(event.id))?.pendingCents).toBe(2000);
+});
+it("dois eventos usam o produto de origem sem oferecer produtos de eventos como fonte", async () => {
+  const source = await category("Bolos de pote");
+  await add(source, 10);
+  const first = await importedEvent(source);
+  const second = await importedEvent(source);
+  expect(await balance(first)).toBe(10);
+  expect(await balance(second)).toBe(10);
+  const options = await importing().options.execute(h.actor);
+  expect(options.map((o) => o.sourceCategoryId)).not.toContain(first.id);
+  expect(options.map((o) => o.sourceCategoryId)).not.toContain(second.id);
+  expect(
+    await repos().shared.members(source.id, [source.products[0].id]),
+  ).toHaveLength(3);
+  const firstOrder = await eventOrder(first, 3);
+  await repos().status.execute(h.actor, first.id, firstOrder.id, 1, {
+    requestId: uuid(),
+    fulfilled: true,
+  });
+  expect(await balance(second)).toBe(7);
+});
+it("operador somente do evento consome e devolve saldo comum mas não repõe nem corrige", async () => {
+  const source = await category("Bolos de pote");
+  await add(source, 5);
+  const event = await importedEvent(source);
+  const operator = {
+    ...h.actor,
+    role: "operator" as const,
+    eventIds: [event.id],
+    eventWriteIds: [event.id],
+  };
+  const pending = await eventOrder(event, 4);
+  const done = await repos().status.execute(operator, event.id, pending.id, 1, {
+    requestId: uuid(),
+    fulfilled: true,
+  });
+  expect(await balance(source)).toBe(1);
+  await repos().status.execute(operator, event.id, pending.id, done.version, {
+    requestId: uuid(),
+    fulfilled: false,
+  });
+  expect(await balance(source)).toBe(5);
+  const requestId = uuid();
+  await expect(
+    repos().save.execute(operator, {
+      categoryId: event.id,
+      productId: event.products[0].id,
+      entryId: requestId,
+      requestId,
+      expectedVersion: 0,
+      quantity: 1,
+    }),
+  ).rejects.toMatchObject({ details: { code: "ACCESS_DENIED" } });
+  const larger = await eventOrder(event, 8);
+  await expect(
+    repos().status.execute(operator, event.id, larger.id, 1, {
+      requestId: uuid(),
+      fulfilled: true,
+      stockConfirmation: [
+        { productId: event.products[0].id, available: 5, missing: 3 },
+      ],
+    }),
+  ).rejects.toMatchObject({ details: { code: "ACCESS_DENIED" } });
+  expect(await balance(source)).toBe(5);
+  expect((await h.events.findOrder(larger.id))?.version).toBe(1);
+  await repos().status.execute(h.actor, event.id, larger.id, 1, {
+    requestId: uuid(),
+    fulfilled: true,
+    stockConfirmation: [
+      { productId: event.products[0].id, available: 5, missing: 3 },
+    ],
+  });
+  expect(await balance(source)).toBe(0);
+});
+it("retiradas concorrentes em Produtos e Evento não consomem o mesmo saldo comum", async () => {
+  const source = await category("Bolos de pote");
+  await add(source, 10);
+  const event = await importedEvent(source);
+  const a = await order(source, 7),
+    b = await eventOrder(event, 7);
+  const results = await Promise.allSettled([
+    repos().status.execute(h.actor, source.id, a.id, 1, {
+      requestId: uuid(),
+      fulfilled: true,
+    }),
+    repos().status.execute(h.actor, event.id, b.id, 1, {
+      requestId: uuid(),
+      fulfilled: true,
+    }),
+  ]);
+  expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  expect(results.filter((r) => r.status === "rejected")).toHaveLength(1);
+  expect(await balance(source)).toBe(3);
+  expect(await balance(event)).toBe(3);
+});
+
+async function expectCommonPosition(
+  groups: Event[],
+  physical: number,
+  pending: number,
+) {
+  for (const group of groups) {
+    expect(await balance(group)).toBe(physical);
+    expect(await available(group)).toBe(Math.max(0, physical - pending));
+    expect(
+      await new GetProductionPlanUseCase(h.events, repos().stock).execute(
+        h.actor,
+        group.id,
+        "all",
+      ),
+    ).toMatchObject([
+      { physical, pending, toProduce: Math.max(0, pending - physical) },
+    ]);
+  }
+}
+it("excluir pedidos em Produtos e Evento libera a demanda de todos sem acrescentar estoque físico", async () => {
+  const source = await category("Bolos");
+  await add(source, 10);
+  const event = await importedEvent(source);
+  const productOrder = await order(source, 2),
+    soldAtEvent = await eventOrder(event, 3);
+  const remove = new DeleteOrderUseCase(h.events);
+  await expectCommonPosition([source, event], 10, 5);
+  await remove.execute(
+    h.actor,
+    source.id,
+    productOrder.id,
+    productOrder.version,
+  );
+  await expectCommonPosition([source, event], 10, 3);
+  await remove.execute(h.actor, event.id, soldAtEvent.id, soldAtEvent.version);
+  await expectCommonPosition([source, event], 10, 0);
+  await expect(
+    remove.execute(h.actor, event.id, soldAtEvent.id, soldAtEvent.version),
+  ).rejects.toMatchObject({ details: { code: "EVENT_NOT_FOUND" } });
+  await expectCommonPosition([source, event], 10, 0);
+});
+it("excluir e reduzir demanda acima do físico diminui a falta antes de liberar unidades disponíveis", async () => {
+  const source = await category("Bolos");
+  await add(source, 5);
+  const event = await importedEvent(source);
+  const productOrder = await order(source, 7),
+    soldAtEvent = await eventOrder(event, 4);
+  await expectCommonPosition([source, event], 5, 11);
+  await new DeleteOrderUseCase(h.events).execute(
+    h.actor,
+    event.id,
+    soldAtEvent.id,
+    1,
+  );
+  await expectCommonPosition([source, event], 5, 7);
+  const reduced = await new UpdateOrderUseCase(
+    h.events,
+    undefined,
+    repos().shared,
+  ).execute(h.actor, source.id, productOrder.id, productOrder.version, {
+    requestId: uuid(),
+    catalogVersion: source.version,
+    customerName: productOrder.customerName,
+    pickupOn: productOrder.pickupOn,
+    note: "",
+    items: [{ productId: source.products[0].id, quantity: 3 }],
+    total: "30",
+    paid: false,
+    cash: "0",
+    pix: "0",
+  });
+  await expectCommonPosition([source, event], 5, 3);
+  await new DeleteOrderUseCase(h.events).execute(
+    h.actor,
+    source.id,
+    reduced.id,
+    reduced.version,
+  );
+  await expectCommonPosition([source, event], 5, 0);
+});
+it("desfazer conclusão e excluir devolve unidades uma única vez no estoque compartilhado", async () => {
+  const source = await category("Bolos");
+  await add(source, 10);
+  const event = await importedEvent(source);
+  const pending = await eventOrder(event, 4);
+  const done = await repos().status.execute(h.actor, event.id, pending.id, 1, {
+    requestId: uuid(),
+    fulfilled: true,
+    payment: { method: "pix", cash: "0" },
+  });
+  await expectCommonPosition([source, event], 6, 0);
+  const remove = new DeleteOrderUseCase(h.events);
+  await expect(
+    remove.execute(h.actor, event.id, done.id, done.version),
+  ).rejects.toMatchObject({ details: { code: "ORDER_HAS_WITHDRAWALS" } });
+  await expectCommonPosition([source, event], 6, 0);
+  const undone = await repos().status.execute(
+    h.actor,
+    event.id,
+    done.id,
+    done.version,
+    { requestId: uuid(), fulfilled: false },
+  );
+  await expectCommonPosition([source, event], 10, 4);
+  await remove.execute(h.actor, event.id, undone.id, undone.version);
+  await expectCommonPosition([source, event], 10, 0);
+  expect((await h.events.find(event.id))?.realCents).toBe(0);
+});
+it("exclusão concorrente com retirada tem um único vencedor e não devolve unidades consumidas", async () => {
+  const source = await category("Bolos");
+  await add(source, 10);
+  const event = await importedEvent(source);
+  await order(source, 2);
+  const pending = await eventOrder(event, 4);
+  const results = await Promise.allSettled([
+    new DeleteOrderUseCase(h.events).execute(
+      h.actor,
+      event.id,
+      pending.id,
+      pending.version,
+    ),
+    repos().status.execute(h.actor, event.id, pending.id, pending.version, {
+      requestId: uuid(),
+      fulfilled: true,
+    }),
+  ]);
+  expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  expect(results.filter((r) => r.status === "rejected")).toHaveLength(1);
+  const current = await h.events.findOrder(pending.id);
+  if (current) {
+    expect(current.withdrawals).toEqual([
+      { productId: event.products[0].id, quantity: 4 },
+    ]);
+    await expectCommonPosition([source, event], 6, 2);
+  } else await expectCommonPosition([source, event], 10, 2);
+});
+it("excluir entrada reduz o físico em todos e é bloqueado após o consumo dessas unidades", async () => {
+  const source = await category("Bolos");
+  const initial = await add(source, 10);
+  const event = await importedEvent(source);
+  await order(source, 2);
+  const pending = await eventOrder(event, 3);
+  const remove = new DeleteStockEntryUseCase(
+    h.events,
+    repos().stock,
+    repos().shared,
+  );
+  await remove.execute(h.actor, {
+    requestId: uuid(),
+    categoryId: event.id,
+    productId: event.products[0].id,
+    entryId: initial.id,
+    expectedVersion: initial.version,
+  });
+  await expectCommonPosition([source, event], 0, 5);
+  const replacement = await add(event, 10);
+  await repos().status.execute(h.actor, event.id, pending.id, 1, {
+    requestId: uuid(),
+    fulfilled: true,
+  });
+  await expectCommonPosition([source, event], 7, 2);
+  await expect(
+    remove.execute(h.actor, {
+      requestId: uuid(),
+      categoryId: source.id,
+      productId: source.products[0].id,
+      entryId: replacement.id,
+      expectedVersion: replacement.version,
+    }),
+  ).rejects.toMatchObject({
+    details: { code: "STOCK_ENTRY_REDUCTION_BLOCKED" },
+  });
+  await expectCommonPosition([source, event], 7, 2);
+  expect((await repos().stock.findEntry(replacement.id))?.deletedAt).toBeNull();
+});
+it("semana e mês incluem pedidos de Eventos pela data do evento e Produtos pela data de entrega", async () => {
+  const source = await category("Bolos");
+  await add(source, 20);
+  const today = currentDateInSaoPaulo();
+  const after = (days: number) => {
+    const date = new Date(today + "T12:00:00Z");
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
+  };
+  const now = await importedEvent(source, { occursOn: today });
+  const thisMonth = await importedEvent(source, { occursOn: after(15) });
+  const later = await importedEvent(source, { occursOn: after(31) });
+  await order(source, 4, source.products, today);
+  await eventOrder(now, 2);
+  await eventOrder(thisMonth, 3);
+  await eventOrder(later, 5);
+  const plan = new GetProductionPlanUseCase(h.events, repos().stock);
+  for (const group of [source, now]) {
+    expect(await plan.execute(h.actor, group.id, "week")).toMatchObject([
+      { physical: 20, pending: 6 },
+    ]);
+    expect(await plan.execute(h.actor, group.id, "month")).toMatchObject([
+      { physical: 20, pending: 9 },
+    ]);
+    expect(await plan.execute(h.actor, group.id, "all")).toMatchObject([
+      { physical: 20, pending: 14 },
+    ]);
+    expect(await available(group)).toBe(6);
+  }
+});
+it("físico e demanda permanecem no mesmo retrato durante conclusão concorrente", async () => {
+  const source = await category("Bolos");
+  await add(source, 10);
+  const event = await importedEvent(source);
+  await order(source, 6);
+  const pending = await eventOrder(event, 3);
+  const stock = repos().stock;
+  const reads = Promise.all(
+    Array.from({ length: 4 }, () => stock.positions(source.id)),
+  );
+  await repos().status.execute(h.actor, event.id, pending.id, 1, {
+    requestId: uuid(),
+    fulfilled: true,
+  });
+  for (const rows of await reads) {
+    expect(rows).toHaveLength(2);
+    const physical = rows[0].quantity;
+    expect(rows.every((p) => p.quantity === physical)).toBe(true);
+    const demand = rows.reduce((sum, p) => sum + p.allPending, 0);
+    expect(physical - demand).toBe(1);
+    expect([7, 10]).toContain(physical);
+  }
+  await expectCommonPosition([source, event], 7, 6);
+});
+it("a leitura consistente não revela participantes ao operador autorizado somente no evento", async () => {
+  const source = await category("Bolos");
+  await add(source, 10);
+  const event = await importedEvent(source);
+  await eventOrder(event, 3);
+  const actor = {
+    ...h.actor,
+    role: "operator" as const,
+    eventIds: [event.id],
+    eventWriteIds: [event.id],
+  };
+  const stock = repos().stock;
+  const visible = await new GetProductStockUseCase(h.events, stock).execute(
+    actor,
+    event.id,
+  );
+  expect(visible).toMatchObject([
+    {
+      quantity: 10,
+      availableQuantity: 7,
+      shared: true,
+      readable: false,
+      writable: false,
+    },
+  ]);
+  expect(JSON.stringify(visible)).not.toContain(source.name);
+  await expect(
+    new GetProductionPlanUseCase(h.events, stock).execute(
+      actor,
+      event.id,
+      "all",
+    ),
+  ).rejects.toMatchObject({ details: { code: "ACCESS_DENIED" } });
+});
+
+it("reposição confirmada reverte integralmente quando o saldo muda antes do commit", async () => {
+  const source = await category("Bolos");
+  const event = await importedEvent(source);
+  const pending = await eventOrder(event, 4);
+  const before = await h.events.findOrder(pending.id);
+  class ConcurrentStockRepository extends D1EventRepository {
+    private changed = false;
+    async updateOrder(...args: Parameters<EventRepository["updateOrder"]>) {
+      if (!this.changed) {
+        this.changed = true;
+        await add(source, 1);
+      }
+      return super.updateOrder(...args);
+    }
+  }
+  const status = new UpdateOrderStatusUseCase(
+    new ConcurrentStockRepository(h.db, h.publications),
+    undefined,
+    repos().shared,
+  );
+  const request = {
+    requestId: uuid(),
+    fulfilled: true,
+    payment: { method: "pix", cash: "0" },
+    stockConfirmation: [
+      { productId: event.products[0].id, available: 0, missing: 4 },
+    ],
+  };
+  await expect(
+    status.execute(h.actor, event.id, pending.id, 1, request),
+  ).rejects.toMatchObject({ details: { code: "STOCK_CHANGED" } });
+  expect(await h.events.findOrder(pending.id)).toEqual(before);
+  expect((await h.events.find(event.id))?.realCents).toBe(0);
+  await expectCommonPosition([source, event], 1, 4);
+  const entries = await repos().stock.entries(
+    source.id,
+    source.products[0].id,
+    1,
+    15,
+  );
+  expect(entries.items.map((e) => e.quantity)).toEqual([1]);
+  const confirmed = {
+    ...request,
+    stockConfirmation: [
+      { productId: event.products[0].id, available: 1, missing: 3 },
+    ],
+  };
+  const done = await status.execute(
+    h.actor,
+    event.id,
+    pending.id,
+    1,
+    confirmed,
+  );
+  expect(
+    await status.execute(h.actor, event.id, pending.id, 1, confirmed),
+  ).toEqual(done);
+  await expectCommonPosition([source, event], 0, 0);
+  const quantities = (
+    await repos().stock.entries(source.id, source.products[0].id, 1, 15)
+  ).items
+    .map((e) => e.quantity)
+    .sort();
+  expect(quantities).toEqual([1, 3]);
 });

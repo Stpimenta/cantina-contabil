@@ -11,7 +11,6 @@ import { ListProductCategoriesUseCase } from "@/server/products/use-cases/list-p
 import { CreateOrderUseCase } from "@/server/events/use-cases/create-order.use-case";
 import { UpdateOrderStatusUseCase } from "@/server/events/use-cases/update-order-status.use-case";
 import { SaveOrderWithdrawalUseCase } from "@/server/products/use-cases/save-order-withdrawal.use-case";
-import { ResolveOrderStockShortageUseCase } from "@/server/products/use-cases/resolve-order-stock-shortage.use-case";
 let h: Harness;
 beforeEach(async () => {
   h = await harness();
@@ -19,7 +18,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await h?.close();
 });
-it("confirma uma falta por vez com autoria, sem duplicar entrada nem retirar o pedido", async () => {
+it("confirma toda a falta junto da retirada e não grava entradas parciais em falha ou repetição", async () => {
   const box = await h.box();
   const group = await new CreateEventUseCase(h.events, h.boxes).execute(
     h.actor,
@@ -49,66 +48,68 @@ it("confirma uma falta por vez com autoria, sem duplicar entrada nem retirar o p
       pix: "0",
     },
   );
-  const before = await h.events.findOrder(order.id);
-  expect(before).not.toBeNull();
-  const stock = new D1ProductStockRepository(h.db);
-  const resolve = new ResolveOrderStockShortageUseCase(
-    h.events,
-    stock,
-    new SaveStockEntryUseCase(h.events, stock),
-  );
   const writer = {
     ...h.actor,
     role: "operator" as const,
     eventIds: [group.id],
     eventWriteIds: [group.id],
   };
-  const requestId = uuid();
+  const status = new UpdateOrderStatusUseCase(h.events);
   const input = {
-    requestId,
-    entryId: requestId,
-    expectedVersion: 0,
-    categoryId: group.id,
-    orderId: order.id,
-    productId: group.products[0].id,
-    quantity: 4,
+    requestId: uuid(),
+    fulfilled: true,
+    stockConfirmation: group.products.map((p) => ({
+      productId: p.id,
+      available: 0,
+      missing: 4,
+    })),
   };
+  const stock = new D1ProductStockRepository(h.db);
   await expect(
-    resolve.execute({ ...writer, eventWriteIds: [] }, input),
+    status.execute(
+      { ...writer, eventWriteIds: [] },
+      group.id,
+      order.id,
+      1,
+      input,
+    ),
   ).rejects.toMatchObject({ details: { code: "ACCESS_DENIED" } });
   await expect(
-    resolve.execute(writer, { ...input, quantity: 3 }),
-  ).rejects.toMatchObject({ details: { code: "STOCK_CHANGED" } });
-  const remaining = await resolve.execute(writer, input);
-  expect(remaining).toHaveLength(1);
-  expect(remaining[0].productId).toBe(group.products[1].id);
-  expect(await resolve.execute(writer, input)).toEqual(remaining);
-  expect(await stock.balances(group.id)).toContainEqual({
-    productId: group.products[0].id,
-    quantity: 4,
-  });
-  const second = uuid();
-  expect(
-    await resolve.execute(writer, {
+    status.execute(writer, group.id, order.id, 1, {
       ...input,
-      requestId: second,
-      entryId: second,
-      productId: group.products[1].id,
+      stockConfirmation: input.stockConfirmation.map((p, i) => ({
+        ...p,
+        missing: i ? 3 : 4,
+      })),
     }),
-  ).toEqual([]);
-  expect(await h.events.findOrder(order.id)).toEqual(before);
+  ).rejects.toMatchObject({ details: { code: "STOCK_CHANGED" } });
+  expect((await h.events.findOrder(order.id))?.version).toBe(1);
+  for (const product of group.products)
+    expect(
+      (await stock.entries(group.id, product.id, 1, 15)).items,
+    ).toHaveLength(0);
+  const saved = await status.execute(writer, group.id, order.id, 1, input);
+  expect(saved.withdrawals).toEqual(
+    order.items.map((p) => ({ productId: p.id, quantity: 4 })),
+  );
+  expect(await status.execute(writer, group.id, order.id, 1, input)).toEqual(
+    saved,
+  );
+  for (const product of group.products) {
+    expect(await stock.balances(group.id)).toContainEqual({
+      productId: product.id,
+      quantity: 0,
+    });
+    expect(
+      (await stock.entries(group.id, product.id, 1, 15)).items,
+    ).toHaveLength(1);
+  }
   const audit = (await h.events.history(group.id, 1, 15)).items.filter(
-    (item) => item.resourceType === "stock",
+    (i) => i.resourceType === "stock",
   );
   expect(audit).toHaveLength(2);
   expect(
-    audit.every(
-      (item) =>
-        item.actorId === writer.user.id &&
-        item.actorName === writer.user.name &&
-        item.after.quantity === 4 &&
-        !!item.occurredAt,
-    ),
+    audit.every((i) => i.actorId === writer.user.id && i.after.quantity === 4),
   ).toBe(true);
 });
 it.each(["status", "withdrawal"])(

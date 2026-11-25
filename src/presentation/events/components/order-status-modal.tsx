@@ -1,9 +1,10 @@
 "use client";
+import type { StockConfirmation } from "@/server/products/inputs/stock-confirmation.input";
 import { OrderReceiptUpload } from "./order-receipt-upload";
 import { receiptMetadata } from "@/shared/receipts/receipt-input";
 import { createRequestId } from "@/shared/identifiers/request-id";
 import styles from "./order-form-modal.module.css";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import type { EventOrder } from "@/server/events/models/event-order.model";
 import { updateOrderStatusAction } from "@/server/events/actions/update-order-status.action";
 import { validateUpdateOrderStatus } from "@/server/events/inputs/update-order-status.input";
@@ -111,19 +112,35 @@ export function OrderStatusModal({
     for (const file of files) form.append("receipts", file);
     return form;
   }
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  const stockAttempt = useRef<{
+    key: string;
+    confirmation: StockConfirmation;
+  } | null>(null);
+  function saveStatus(confirmation?: StockConfirmation) {
+    if (isPending()) return;
+    const key = JSON.stringify(input);
+    if (confirmation) stockAttempt.current = { key, confirmation };
+    const submitted = {
+      ...input,
+      ...(stockAttempt.current?.key === key
+        ? { stockConfirmation: stockAttempt.current.confirmation }
+        : {}),
+    };
     execute(
       () =>
         updateOrderStatusAction(
           order.eventId,
           order.id,
           order.version,
-          input,
+          submitted,
           attachments(),
         ),
       onSaved,
     );
+  }
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    saveStatus();
   }
   const cashCents = parseMoney(cash);
   return (
@@ -263,33 +280,21 @@ export function OrderStatusModal({
           </span>
         </form>
       </Modal>
-      {recurring &&
-      error?.code === "STOCK_INSUFFICIENT" &&
-      error.stockShortages?.length ? (
+      {error?.code === "STOCK_INSUFFICIENT" && error.stockShortages?.length ? (
         <OrderStockShortageModal
           error={error}
           busy={pending}
-          onConfirm={() => {
-            if (isPending()) return;
-            const stockConfirmation = error.stockShortages!.map(
-              ({ productId, missing, available }) => ({
-                productId,
-                missing,
-                available,
-              }),
-            );
-            execute(
-              () =>
-                updateOrderStatusAction(
-                  order.eventId,
-                  order.id,
-                  order.version,
-                  { ...input, stockConfirmation },
-                  attachments(),
-                ),
-              onSaved,
-            );
-          }}
+          onConfirm={() =>
+            saveStatus(
+              error.stockShortages!.map(
+                ({ productId, missing, available }) => ({
+                  productId,
+                  missing,
+                  available,
+                }),
+              ),
+            )
+          }
           onClose={closeError}
         />
       ) : (

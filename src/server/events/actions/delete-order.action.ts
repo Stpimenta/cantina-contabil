@@ -26,7 +26,7 @@ export async function deleteOrderAction(
         id,
         version,
       );
-      revalidatePath("/events");
+      revalidatePath("/events", "layout");
       revalidatePath(`/events/${value.eventId}`);
       revalidatePath(`/events/${value.eventId}/orders`);
       revalidatePath("/cash-boxes", "layout");

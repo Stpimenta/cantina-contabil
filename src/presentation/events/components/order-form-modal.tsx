@@ -1,4 +1,6 @@
 "use client";
+import type { StockConfirmation } from "@/server/products/inputs/stock-confirmation.input";
+import { OrderStockShortageModal } from "@/presentation/products/components/order-stock-shortage-modal";
 import { OrderReceiptUpload } from "./order-receipt-upload";
 import { receiptMetadata } from "@/shared/receipts/receipt-input";
 import {
@@ -286,6 +288,36 @@ export function OrderFormModal({
     if (dirty) setDiscard(true);
     else onClose();
   }
+  const stockAttempt = useRef<{
+    key: string;
+    confirmation: StockConfirmation;
+  } | null>(null);
+  function saveOrder(confirmation?: StockConfirmation) {
+    if (isPending()) return;
+    const key = JSON.stringify(input);
+    if (confirmation) stockAttempt.current = { key, confirmation };
+    const submitted = {
+      ...input,
+      ...(stockAttempt.current?.key === key
+        ? { stockConfirmation: stockAttempt.current.confirmation }
+        : {}),
+    };
+    const attachments = new FormData();
+    for (const file of files) attachments.append("receipts", file);
+    execute(
+      () =>
+        order
+          ? updateOrderAction(
+              event.id,
+              order.id,
+              order.version,
+              submitted,
+              attachments,
+            )
+          : createOrderAction(event.id, submitted, attachments),
+      onSaved,
+    );
+  }
   function submit(e: FormEvent) {
     e.preventDefault();
     if (isPending()) return;
@@ -313,21 +345,7 @@ export function OrderFormModal({
       showError(failure);
       return;
     }
-    const attachments = new FormData();
-    for (const file of files) attachments.append("receipts", file);
-    execute(
-      () =>
-        order
-          ? updateOrderAction(
-              event.id,
-              order.id,
-              order.version,
-              input,
-              attachments,
-            )
-          : createOrderAction(event.id, input, attachments),
-      onSaved,
-    );
+    saveOrder();
   }
   return (
     <>
@@ -839,7 +857,26 @@ export function OrderFormModal({
           </span>
         </form>
       </Modal>
-      <ErrorModal error={error} onClose={closeError} />
+      {error?.code === "STOCK_INSUFFICIENT" && error.stockShortages?.length ? (
+        <OrderStockShortageModal
+          error={error}
+          busy={pending}
+          onClose={closeError}
+          onConfirm={() =>
+            saveOrder(
+              error.stockShortages!.map(
+                ({ productId, missing, available }) => ({
+                  productId,
+                  missing,
+                  available,
+                }),
+              ),
+            )
+          }
+        />
+      ) : (
+        <ErrorModal error={error} onClose={closeError} />
+      )}
       {discard && (
         <ConfirmationModal
           title="Descartar alterações?"
